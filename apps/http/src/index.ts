@@ -1,0 +1,50 @@
+// 1. LOAD ENV FIRST
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config();
+
+import express from "express";
+import router from "./routes/index.ts";
+import cors from "cors";
+import cookieparser from "cookie-parser"
+
+// This points to the .env at the root of quizmasterturbo
+console.log("🔥 PID:", process.pid);
+ 
+
+const app = express();
+app.use((req, res, next) => {
+  console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
+  next();
+});
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
+app.use(cookieparser());
+
+
+ 
+app.use(express.json());
+
+// all routes go through here
+app.use("/api/v1", router);
+
+const PORT = 3001;
+
+app.get("/", async (req, res) => {
+  res.json({
+    success: true,
+    message: "working fine on path /",
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
+process.stdin.resume();

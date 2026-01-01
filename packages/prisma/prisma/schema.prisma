@@ -1,0 +1,38 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String   @id @default(cuid())
+  username         String   @unique
+  email            String   @unique
+  password         String
+  avatar           String?
+  createdAt        DateTime @default(now())
+  receivedRequests Friend[] @relation("ReceivedRequests")
+  sentRequests     Friend[] @relation("SentRequests")
+}
+
+model Friend {
+  id         String       @id @default(uuid())
+  senderId   String
+  receiverId String
+  status     FriendStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  receiver   User         @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  sender     User         @relation("SentRequests", fields: [senderId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
