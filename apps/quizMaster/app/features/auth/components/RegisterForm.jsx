@@ -138,7 +138,7 @@ const RegisterForm = () => {
       {state.errors?.password && (
         <p className="text-red-500 text-sm">{state.errors.password}</p>
       )}
-      <button type="submit" className="btn btn-primary"  >
+      <button type="submit" className="btn btn-primary">
         {isPending ? "Registering..." : "Register"}
       </button>
       {/* SUCCESS */}
@@ -146,6 +146,9 @@ const RegisterForm = () => {
         <p className="text-green-600 text-sm">
           Account created successfully 🎉
         </p>
+      )}
+      {!state.success && state.message && (
+        <p className="text-red-600 text-sm mt-2">{state.message}</p>
       )}
     </form>
   );

@@ -86,8 +86,7 @@ export async function loginAction(
 
   // 1️⃣ Extract form data
   const rawData = {
-    username: formData.get("username"),
-    email: formData.get("email"),
+     email: formData.get("email"),
     password: formData.get("password"),
   };
 
@@ -144,6 +143,7 @@ export async function loginAction(
     // ✅ Set cookie from token in response body
     // This is necessary because server-to-server fetch doesn't forward Set-Cookie to browser
     const token = data?.data?.token || data?.token;
+    const hasSession = data?.data?.hasSession || data?.hasSession;
 
     if (token) {
       console.log(
@@ -151,13 +151,22 @@ export async function loginAction(
         token.substring(0, 20) + "..."
       );
 
+      const cookieStore = cookies();
+
       // Match Express server cookie settings exactly
-      cookies().set("token", token, {
+      cookieStore.set("token", token, {
         httpOnly: true,
         secure: false, // Match Express: false for localhost, true in production
         sameSite: "lax", // Match Express
         path: "/", // Match Express
         maxAge: 7 * 24 * 60 * 60, // 7 days in seconds (Express uses milliseconds, but Next.js expects seconds)
+      });
+
+      cookies().set("hasSession", "true", {
+        httpOnly: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
       });
 
       console.log("✅ Cookie set successfully");
@@ -199,4 +208,13 @@ export async function checkUsername(username: string) {
 
   console.log("response data", res.data);
   return res.data;
+}
+
+export async function logOut() {
+  const cookieStore = cookies();
+  cookieStore.delete("token"); // auth token
+  cookieStore.delete("hasSession"); // hasSession
+  console.log("logout done")
+  return { success: true };
+
 }

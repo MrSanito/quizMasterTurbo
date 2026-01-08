@@ -17,6 +17,9 @@ model User {
   createdAt        DateTime @default(now())
   receivedRequests Friend[] @relation("ReceivedRequests")
   sentRequests     Friend[] @relation("SentRequests")
+
+    quizAttempts QuizAttempt[] // 👈 THIS is the opposite relation
+
 }
 
 model Friend {
@@ -36,3 +39,95 @@ enum FriendStatus {
   ACCEPTED
   BLOCKED
 }
+
+
+//
+// =======================
+// QUIZ DOMAIN
+// =======================
+//
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+    icon      String  @default("📦")
+
+  quizzes   Quiz[]
+  createdAt DateTime @default(now())
+}
+
+model Quiz {
+  id          String        @id @default(cuid())
+
+  quizNumber  Int
+  title       String
+
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+
+  questions   Question[]
+  attempts    QuizAttempt[]
+
+  timeLimit   Int          // minutes
+  totalPoints Int
+
+  createdAt   DateTime     @default(now())
+}
+
+model Question {
+  id             String   @id @default(cuid())
+
+  quizId         String
+  quiz           Quiz     @relation(fields: [quizId], references: [id])
+
+  questionText   String
+  points         Int
+  negativePoints Int
+
+  options        Option[]
+
+  createdAt      DateTime @default(now())
+}
+
+model Option {
+  id         String   @id @default(cuid())
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  text       String
+  isCorrect  Boolean
+}
+
+//
+// =======================
+// USER QUIZ HISTORY
+// =======================
+//
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id]) // Links to User model
+
+   guestId   String?
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+
+
+  score     Int
+  total     Int
+  timeTaken Int
+
+  // 🔥 SNAPSHOT
+  questions Json
+
+  createdAt DateTime @default(now())
+
+  @@index([quizId])
+  @@index([userId])
+}
+
+
+

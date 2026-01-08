@@ -4,8 +4,14 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { useUser } from "@/app/(auth)/context/GetUserContext";
 
 const Navbar = () => {
+      const { user, loading, isLogin } = useUser();
+
+  
+
+
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -29,33 +35,50 @@ const Navbar = () => {
           <Link href="/categories" className="btn btn-ghost hover:text-primary">
             Categories
           </Link>
-          <Link
-            href="/leaderboard"
-            className="btn btn-ghost hover:text-primary"
-          >
-            Leaderboard
-          </Link>
-          <Link href="/register" className="btn btn-ghost hover:text-primary">
-            Register
-          </Link>
-          <Link href="/login" className="btn btn-ghost hover:text-primary">
-            Login
-          </Link>
+
+          {isLogin ? (
+            <>
+              <Link
+                href="/leaderboard"
+                className="btn btn-ghost hover:text-primary"
+              >
+                Leaderboard
+              </Link>
+              <Link
+                href="/dashboard"
+                className="btn btn-ghost hover:text-primary"
+              >
+                {user ? <p> {user.name} 👋</p> : " "}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="btn btn-ghost hover:text-primary"
+              >
+                Register
+              </Link>
+              <Link href="/login" className="btn btn-ghost hover:text-primary">
+                Login
+              </Link>{" "}
+            </>
+          )}
 
           {/* Show Profile Button when Signed In */}
-          <SignedIn>
+          {/* <SignedIn>
             <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          </SignedIn> */}
 
           {/* Show Custom Sign In / Sign Up when Signed Out */}
-          <SignedOut>
+          {/* <SignedOut>
             <Link href="/sign-in">
               <button className="btn btn-primary">Sign In</button>
             </Link>
             <Link href="/sign-up">
               <button className="btn btn-secondary">Sign Up</button>
             </Link>
-          </SignedOut>
+          </SignedOut> */}
         </div>
 
         {/* Mobile Menu Button */}
@@ -97,21 +120,33 @@ const Navbar = () => {
         >
           Leaderboard
         </Link>
+        <Link
+          href="/register"
+          className="btn btn-ghost text-lg hover:text-primary hover:bg-base-300"
+        >
+          Register
+        </Link>
+        <Link
+          href="/login"
+          className="btn btn-ghost text-lg hover:text-primary hover:bg-base-300"
+        >
+          Login
+        </Link>
 
         {/* Show Profile Button when Signed In */}
-        <SignedIn>
+        {/* <SignedIn>
           <UserButton afterSignOutUrl="/" />
-        </SignedIn>
+        </SignedIn> */}
 
         {/* Show Custom Sign In / Sign Up when Signed Out */}
-        <SignedOut>
+        {/* <SignedOut>
           <Link href="/sign-in">
             <button className="btn btn-primary w-full">Sign In</button>
           </Link>
           <Link href="/sign-up">
             <button className="btn btn-secondary w-full">Sign Up</button>
           </Link>
-        </SignedOut>
+        </SignedOut> */}
       </div>
 
       {/* Overlay for mobile */}

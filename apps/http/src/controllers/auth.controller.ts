@@ -20,7 +20,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     console.log("existuser :", existUser);
-
+ 
     // if yes assign jwt
     if (!existUser) {
       return res.status(404).json({
@@ -53,6 +53,7 @@ export const login = async (req: Request, res: Response) => {
         expiresIn: "7d",
       }
     );
+    const hasSession = true;
 
     console.log("token ", token);
 
@@ -64,8 +65,13 @@ export const login = async (req: Request, res: Response) => {
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
     });
+    res.cookie("hasSession", "true", {
+      httpOnly: false, // 👈 readable by JS
+      sameSite: "lax",
+      path: "/",
+    });
 
-     console.log("🍪 Cookie attributes:", {
+    console.log("🍪 Cookie attributes:", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -83,6 +89,7 @@ export const login = async (req: Request, res: Response) => {
           username: existUser.username,
         },
         token,
+        hasSession,
       },
     });
   } catch (error) {
@@ -183,7 +190,8 @@ export const checkUsername = async (req: Request, res: Response) => {
   // });
 };
 
-export const verifyUser = (req: Request, res: Response) => {
+export const verifyUser = async (req: Request, res: Response) => {
+  console.log("aa gayi bhai request");
   const token = req.cookies.token;
 
   if (!token) {
@@ -193,11 +201,29 @@ export const verifyUser = (req: Request, res: Response) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
+    console.log("decoded", decoded.email);
+
+    //get user from prisma and show
+
+    const currentUser = await prisma.user.findUnique({
+      where: {
+        email: decoded.email,
+      },
+    });
+
+    console.log("currentUser :", currentUser);
     return res.status(200).json({
+      success: true,
       valid: true,
-      userId: (decoded as any).userId,
+      user: {
+        id: currentUser.id,
+        name: currentUser.username,
+        email: currentUser.email,
+      },
     });
   } catch (error) {
-    return res.status(401).json({ valid: false });
+    return res
+      .status(401)
+      .json({ valid: false, success: false, message: "token is not valid" });
   }
 };

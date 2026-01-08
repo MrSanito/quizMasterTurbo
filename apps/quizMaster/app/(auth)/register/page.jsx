@@ -1,13 +1,39 @@
 "use client";
 
-import React, { useState, useActionState } from "react";
-import { FiEye } from "react-icons/fi";
-import { FiEyeOff } from "react-icons/fi";
-import { useRef } from "react";
+import React, { useEffect } from "react";
+
+import { useRouter } from "next/navigation";
+import { useUser } from "@/app/(auth)/context/GetUserContext";
+
 import RegisterForm from "../../features/auth/components/RegisterForm";
 import ClientOnly from "../../features/auth/components/ClientOnly";
 
+import Loading from "@/app/Loading";
+
 const Register = () => {
+  const router = useRouter();
+  const { loading, isLogin, isGuest, isMaxTryReached } = useUser();
+  console.log("isGuest", isGuest);
+
+  // ✅ Hook ALWAYS runs (no condition above it)
+  useEffect(() => {
+    if (!loading && isLogin) {
+      router.replace("/dashboard");
+    }
+  }, [loading, isLogin, router]);
+
+  //  ⏳ Still loading auth state
+  if (loading) {
+    return <Loading />;
+  }
+
+  // 🚫 Redirecting → render nothing
+  if (isLogin) {
+    router.replace("/dashboard");
+
+    return null;
+  }
+
   return (
     <ClientOnly>
       <div
@@ -16,6 +42,14 @@ const Register = () => {
       >
         <h3 className="text-3xl font-bold text-primary pb-6">Register Form </h3>
         <RegisterForm />
+        {isMaxTryReached && (
+          <div className="w-full max-w-md mx-auto mb-6 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-center shadow-sm">
+            <p className="text-sm text-warning leading-relaxed">
+              ⚠️ Guest limit ho chuki hai bhai 😌 Register kar lo warna quiz
+              gate band hi rahega 🚪❌
+            </p>
+          </div>
+        )}
       </div>
     </ClientOnly>
   );

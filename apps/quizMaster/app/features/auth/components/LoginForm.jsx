@@ -1,11 +1,23 @@
 import React from "react";
 import { useState, useActionState, useRef, useEffect } from "react";
 
-import { FiEye,FiEyeOff } from "react-icons/fi";
- import { loginAction } from "../actions";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { loginAction } from "../actions";
+
+import { useRouter } from "next/navigation";
 
 const LoginForm = () => {
+  const router = useRouter();
 
+  const avatars = [
+    "/avatars/avatar1.png",
+    "/avatars/avatar2.png",
+    "/avatars/avatar3.png",
+    "/avatars/avatar4.png",
+    "/avatars/avatar5.png",
+    "/avatars/avatar6.png",
+    "/avatars/avatar7.png",
+  ];
 
   const [form, setForm] = useState({
     username: "",
@@ -13,31 +25,47 @@ const LoginForm = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const initialState = {
     success: false,
     errors: {},
   };
-    const toggleEyeHandler = () => {
-      setShowPassword((prev) => !prev);
-    };
+
+
+
+
+  const toggleEyeHandler = () => {
+    setShowPassword((prev) => !prev);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     console.log(form);
   };
- 
 
-  
   const [state, formAction, isPending] = useActionState(
     loginAction,
     initialState
   );
-  useEffect(() => {
-  console.log("🧾 loginAction response:", state);
-  }, [state]);
 
+useEffect(() => {
+  if (!state.success) return;
+
+  const timer = setTimeout(() => {
+    router.push("/dashboard");
+  }, 3000); // ⏳ 3 seconds
+
+  // cleanup (important!)
+  return () => clearTimeout(timer);
+}, [state.success, router]);
+
+
+
+
+  useEffect(() => {
+    console.log("🧾 loginAction response:", state);
+  }, [state]);
 
   return (
     <form action={formAction}>
@@ -99,16 +127,19 @@ const LoginForm = () => {
         </div>
       </fieldset>
       {state.errors?.password && (
-        <p className="text-red-500 text-sm">{state.errors.password  }</p>
+        <p className="text-red-500 text-sm">{state.errors.password}</p>
       )}
       <button type="submit" className="btn btn-primary">
-        {isPending ? "Registering..." : "Login"}
+        {isPending ? "Loginig In..." : "Login"}
       </button>
       {/* SUCCESS */}
       {state.success && (
         <p className="text-green-600 text-sm">
-          Login Successfully Wallah🎉
+          Login Successfully 🎉 Redirecting...
         </p>
+      )}
+      {!state.success && state.message && (
+        <p className="text-red-600 text-sm mt-2">{state.message}</p>
       )}
     </form>
   );

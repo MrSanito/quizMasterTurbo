@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
+import Loading from "../Loading";
 
 // 🎯 Main Categories Page
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const router = useRouter(); 
+  const router = useRouter();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -24,7 +25,7 @@ export default function CategoriesPage() {
 
         const data = await response.json();
         console.log("Categories data:", data);
-        setCategories(data);
+        setCategories(data.categories ?? data); // supports both shapes
       } catch (error) {
         console.error("❌ Error fetching categories:", error);
         setError(error.message);
@@ -36,8 +37,12 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
+  if (loading) {
+    return <Loading />;
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
+    <div className="min-h-[80dvh] flex flex-col items-center justify-center  p-4">
       <h1 className="text-3xl font-bold text-white mb-6">Play by Category</h1>
 
       {/* ✅ No categories available fallback */}

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev ",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -15,8 +15,10 @@
     "@prisma/client": "^7.2.0",
     "@reduxjs/toolkit": "^2.6.1",
     "@types/pg": "^8.16.0",
+    "cookies-next": "^6.1.1",
     "daisyui": "^5.0.9",
     "dotenv": "^17.2.3",
+    "framer-motion": "^12.23.26",
     "lucide-react": "^0.482.0",
     "mongoose": "^8.13.0",
     "nanoid": "^5.1.6",

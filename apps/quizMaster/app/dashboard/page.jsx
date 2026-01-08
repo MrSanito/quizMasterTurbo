@@ -1,124 +1,103 @@
 "use client";
 
 import { FaCirclePlay, FaTrophy } from "react-icons/fa6";
-
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from "@clerk/nextjs";
-import Link from "next/link";
+import { useUser } from "@/app/(auth)/context/GetUserContext";
+import NotLoginComponent from "@/app/(auth)/Components/NotLoginComponent";
+import Loading from "@/app/Loading";
+import { data } from "@/app/dashboard/data";
 import Card from "@/components/Card";
+import MaxTryReached from "@/app/(auth)/Components/MaxTryReached";
+import QuizHistoryCard from "@/components/QuizHistoryCard";
+import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory"
+
 const Dashboard = () => {
-  const data = [
-    {
-      title: "Quizzes Played",
-      icon: "FaBook",
-      Content: "1245",
-      server: true,
-      progressBar: false,
-    },
-    {
-      title: "Current Streak",
-      icon: "FaGripfire",
-      Content: "42",
-      server: false,
-      progressBar: false,
-    },
-    {
-      title: "Total Essence",
-      icon: "IoDiamond",
-      Content: "850,000",
-      server: false,
-      progressBar: true,
-    },
-    {
-      title: "Global Rank",
-      icon: "LuCrown",
-      Content: "#14",
-      server: false,
-      progressBar: false,
-    },
-  ];
-  return (
-    <div className="min-h-screen flex flex-col items-center pt-12 bg-base-200">
-      {/* Show content when signed in */}
-      {/* <SignedIn> */}
-        <div className="text-center space-y-4 flex justify-between px-8 w-full">
+  const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
+    useUser();
+
+    const viewerId = user?.id ?? guest?.id;
+    const viewerType = user ? "user" : "guest";
+
+    console.log(viewerId, viewerType)
+
+
+  // 1️⃣ Loading (highest priority)
+  if (loading) {
+    return <Loading />;
+  }
+
+  // 2️⃣ Blocked guest
+  if (isMaxTryReached) {
+    return <MaxTryReached />;
+  }
+
+  // 3️⃣ Not logged in at all
+  if (!isLogin && !isGuest) {
+    return <NotLoginComponent />;
+  }
+
+  // 4️⃣ Guest user (allowed but limited)
+  if (isGuest) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-base-200">
+        <h2 className="text-xl font-bold text-warning">Guest Mode 👀</h2>
+        <p className="mt-2 text-neutral-500">Tries left: {guestLeft}</p>
+        <QuizPlayerHistory viewerId={viewerId} viewerType={viewerType} />
+      </div>
+    );
+  }
+
+  // 5️⃣ Logged-in user dashboard ✅
+  if (isLogin && user) {
+    return (
+      <div className="min-h-screen bg-base-200 px-4 py-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center max-w-7xl mx-auto">
+          {/* Title */}
           <div>
-            <h1 className="text-3xl font-bold pb-2 text-left">Dashboard!</h1>
-            <p className="text-lg">
-              Welcome back, Vishal. You're on a 3-day streak!
+            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+            <p className="text-base sm:text-lg">
+              👋 Welcome back,{" "}
+              <span className="font-semibold">{user.name}</span>
             </p>
           </div>
-          <div className="flex gap-3">
-            <button className="btn btn-active border border-warning">
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button className="btn border border-warning w-full sm:w-auto">
               <FaTrophy />
-              View Leaderboard
+              Leaderboard
             </button>
-            <button className="btn btn-active btn-primary">
+            <button className="btn btn-primary w-full sm:w-auto">
               <FaCirclePlay />
-              StartQuiz
+              Start Quiz
             </button>
-
-            {/* <UserButton afterSignOutUrl="/" /> */}
           </div>
         </div>
-        {/* card */}
-        <div className="flex justify-center gap-3">
-          {data.map((element, key) => (
-            <Card
-              key={key}
-              title={element.title}
-              icon={element.icon}
-              content={element.Content}
-              server={element.server}
-              progressBar={element.progressBar}
-            />
-          ))}
+
+        {/* Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-8 max-w-7xl mx-auto">
+          {Array.isArray(data) &&
+            data.map((element, key) => (
+              <Card
+                key={key}
+                title={element.title}
+                icon={element.icon}
+                content={element.Content}
+                server={element.server}
+                progressBar={element.progressBar}
+                size="full"
+              />
+            ))}
         </div>
+        <QuizPlayerHistory viewerId={viewerId} viewerType={viewerType} />
+      </div>
+    );
+  }
 
-        <div className="flex pt-10 gap-9 w-full items-center justify-around ">
-          <div>
-            <Card
-              title={`Battle Log `}
-              content={`content to hai bhai`}
-              size={[1 / 2]}
-              text={`sm`}
-            />
-          </div>
-          <div>
-            <Card />
-          </div>
-        </div>
-      {/* </SignedIn> */}
-
-      {/* Show warning + sign-in options when signed out */}
-      {/* <SignedOut> */}
-        <div className="flex flex-col items-center space-y-6 p-4 bg-base-100 shadow-xl rounded-lg w-1/4 px-10">
-          <h2 className="text-2xl font-bold text-red-500 mt-6">
-            Sign in to view this page!
-          </h2>
-          <p className="text-lg text-gray-600">
-            Access exclusive quizzes and content.
-          </p>
-
-          <div className="flex space-x-4">
-            {/* <SignInButton> */}
-              <button className="btn btn-primary">Sign In</button>
-            {/* </SignInButton> */}
-            {/* <SignUpButton> */}
-              <button className="btn btn-secondary">Sign Up</button>
-            {/* </SignUpButton> */}
-          </div>
-
-          <Link href="/" className="btn btn-link text-primary pb-6">
-            Back to Home
-          </Link>
-        </div>
-      {/* </SignedOut> */}
+  // 6️⃣ Fallback (should never happen)
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-error">⚠️ Something went wrong. Please refresh.</p>
     </div>
   );
 };

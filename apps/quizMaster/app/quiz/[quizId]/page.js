@@ -3,6 +3,7 @@ import Quiz from "@/models/Quiz";
 import ClientQuizPlayer from "./ClientQuizPlayer";
 import { headers } from "next/headers";
 import Link from "next/link";
+import NotFound from "@/app/not-found";
 
 export default async function QuizPage({ params }) {
   const isBlocked = headers().get("x-quiz-blocked") === "true";
@@ -51,9 +52,23 @@ export default async function QuizPage({ params }) {
 
     console.log("✅ Fetched Quiz:", quiz);
 
-    return <ClientQuizPlayer quiz={quiz} />;
+    return (
+    
+      <div className="min-h-[80dvh]">
+
+        <ClientQuizPlayer quiz={quiz} />
+      </div>
+  );
   } catch (error) {
     console.error("❌ Error fetching quiz:", error);
-    return <p className="text-red-500">Something went wrong 😓</p>;
+    return(
+      
+      
+      <div className="min-h-[80dvh] flex justify-center items-center text-center">
+        <p className="text-red-500">Something went wrong 😓</p>
+
+      </div>
+    );
+    
   }
 }

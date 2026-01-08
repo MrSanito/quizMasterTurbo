@@ -67,8 +67,8 @@ export default function ClientQuizPlayer({ quiz }) {
 
   if (!started) {
     return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <div className="card bg-base-200 shadow-xl max-w-2xl w-full">
+      <div className="min-h-[80dvh] flex flex-col items-center justify-center p-8">
+        <div className="card bg-base-200 shadow-xl max-w-lg w-full">
           <div className="card-body">
             <h1 className="card-title text-3xl font-bold text-primary mb-4">
               {quiz.title}
@@ -95,7 +95,7 @@ export default function ClientQuizPlayer({ quiz }) {
   const currentQuestion = quiz.questions[currentQuestionIndex];
 
   return (
-    <div className="flex flex-col items-center justify-center p-8">
+    <div className=" min-h-[75 dvh] flex flex-col items-center justify-center p-8">
       <div className="card bg-base-200 shadow-xl max-w-2xl w-full">
         <div className="card-body">
           {/* Progress and Score */}
@@ -135,8 +135,8 @@ export default function ClientQuizPlayer({ quiz }) {
                       ? option.isCorrect
                         ? "bg-success text-white"
                         : selectedOption === index
-                        ? "bg-error text-white"
-                        : "bg-base-300 text-base-content"
+                          ? "bg-error text-white"
+                          : "bg-base-300 text-base-content"
                       : "bg-base-300 text-base-content hover:bg-base-100"
                   }`}
                 >

@@ -20,7 +20,7 @@ export default async function QuizzesPage({ params }) {
     }
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-6">
+      <div className="min-h-screen flex flex-col items-center justify-center  p-6">
         <h1 className="text-3xl font-bold text-white mb-6">Choose a Quiz</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
