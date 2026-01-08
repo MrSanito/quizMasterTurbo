@@ -4,6 +4,8 @@
   "main": "./lib/prisma.ts",
   "types": "./lib/prisma.ts",
   "scripts": {
+        "build": "tsc",
+
     "seed": "node /prisma/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
