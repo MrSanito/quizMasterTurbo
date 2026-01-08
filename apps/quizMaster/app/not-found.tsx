@@ -3,9 +3,8 @@
 import React from "react";
 import { Home, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+
 const NotFound = () => {
-//   const router = useRouter();
   return (
     <div className="antialiased text-white min-h-[84dvh] flex flex-col relative overflow-hidden selection:bg-pink-500/30 selection:text-pink-200">
       <style jsx>{`
@@ -37,7 +36,6 @@ const NotFound = () => {
         <div className="text-center relative max-w-2xl mx-auto">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-64 sm:h-64 bg-blue-500/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
 
-          {/* Scale 404 text for mobile */}
           <h1 className="text-[7rem] sm:text-[12rem] font-bold leading-none tracking-tighter select-none animate-gradient text-transparent bg-clip-text bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 drop-shadow-2xl">
             404
           </h1>
@@ -48,8 +46,8 @@ const NotFound = () => {
             </h2>
 
             <p className="text-neutral-400 text-sm sm:text-lg font-light leading-relaxed max-w-xs sm:max-w-md mx-auto">
-              The page you're looking for seems to have drifted away. Let's get
-              you back on track.
+              The page you&apos;re looking for seems to have drifted away.
+              Let&apos;s get you back on track.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
@@ -61,10 +59,7 @@ const NotFound = () => {
                 Back to Home
               </Link>
 
-              <button
-                // onClick={() => router.back()}
-                className="btn btn-ghost w-full sm:w-auto text-pink-500 hover:text-pink-400 hover:bg-pink-500/10 px-8 h-12 min-h-0 rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2"
-              >
+              <button className="btn btn-ghost w-full sm:w-auto text-pink-500 hover:text-pink-400 hover:bg-pink-500/10 px-8 h-12 min-h-0 rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2">
                 <ArrowLeft size={18} />
                 Go Back
               </button>
@@ -72,7 +67,6 @@ const NotFound = () => {
           </div>
         </div>
 
-        {/* Decorative Bottom Element - adjusted for 78vh container */}
         <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] sm:text-xs text-neutral-600 font-mono tracking-widest opacity-50">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
           SYSTEM_ERROR_404

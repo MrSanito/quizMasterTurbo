@@ -1,11 +1,10 @@
 {
   "name": "@repo/db",
   "version": "1.0.0",
-  "main": "./lib/prisma.ts",
-  "types": "./lib/prisma.ts",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
   "scripts": {
-        "build": "tsc",
-
+    "build": "prisma generate && tsc",
     "seed": "node /prisma/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

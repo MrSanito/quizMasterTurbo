@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
@@ -24,7 +24,6 @@ export default function ClientQuizPlayer({ quiz }) {
   const [autoNext, setAutoNext] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /* 🔥 ONLY CHANGE: SAVE TEXT INSTEAD OF ID */
   const [answers, setAnswers] = useState<
     Record<
       string,
@@ -41,26 +40,19 @@ export default function ClientQuizPlayer({ quiz }) {
     null
   );
 
-  /* ---------------- TIMER ---------------- */
-  useEffect(() => {
-    if (!started || isAnswered || isSubmitting) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleTimeUp();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [started, isAnswered, isSubmitting]);
+  /* ---------------- NEXT QUESTION ---------------- */
+  const handleNextQuestion = useCallback(() => {
+    if (currentQuestionIndex < quiz.questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setTimeLeft(20);
+      setSelectedOptionIndex(null);
+      setIsAnswered(false);
+      setQuestionStartTime(Date.now());
+    }
+  }, [currentQuestionIndex, quiz.questions.length]);
 
   /* ---------------- TIME UP ---------------- */
-  const handleTimeUp = () => {
+  const handleTimeUp = useCallback(() => {
     const q = quiz.questions[currentQuestionIndex];
     const correctOption = q.options.find((o) => o.isCorrect)!;
 
@@ -82,7 +74,31 @@ export default function ClientQuizPlayer({ quiz }) {
     if (autoNext) {
       setTimeout(handleNextQuestion, 2000);
     }
-  };
+  }, [
+    quiz,
+    currentQuestionIndex,
+    questionStartTime,
+    autoNext,
+    handleNextQuestion,
+  ]);
+
+  /* ---------------- TIMER ---------------- */
+  useEffect(() => {
+    if (!started || isAnswered || isSubmitting) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleTimeUp();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [started, isAnswered, isSubmitting, handleTimeUp]);
 
   /* ---------------- OPTION SELECT ---------------- */
   const handleOptionSelect = (optionIndex: number) => {
@@ -108,24 +124,12 @@ export default function ClientQuizPlayer({ quiz }) {
       },
     }));
 
-    /* 🔥 TEXT-BASED COMPARISON */
     setScore((prev) =>
       selectedOption.text === correctOption.text ? prev + 4 : prev - 1
     );
 
     if (autoNext) {
       setTimeout(handleNextQuestion, 2000);
-    }
-  };
-
-  /* ---------------- NEXT QUESTION ---------------- */
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < quiz.questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setTimeLeft(20);
-      setSelectedOptionIndex(null);
-      setIsAnswered(false);
-      setQuestionStartTime(Date.now());
     }
   };
 
@@ -215,14 +219,12 @@ export default function ClientQuizPlayer({ quiz }) {
     <div className="min-h-[75dvh] flex items-center justify-center p-8">
       <div className="card bg-base-200 shadow-xl max-w-2xl w-full">
         <div className="card-body">
-          {/* HEADER */}
           <div className="flex justify-between mb-4">
             <div>
               Question {currentQuestionIndex + 1} / {quiz.questions.length}
               <div className="font-bold text-primary">Score: {score}</div>
             </div>
 
-            {/* 🔥 AUTO NEXT STILL HERE */}
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
                 type="checkbox"
@@ -234,7 +236,6 @@ export default function ClientQuizPlayer({ quiz }) {
             </label>
           </div>
 
-          {/* TIMER */}
           <div className="mb-4">
             <div className="w-full bg-base-300 h-2 rounded">
               <div
@@ -245,10 +246,8 @@ export default function ClientQuizPlayer({ quiz }) {
             <p className="text-right mt-1">Time left: {timeLeft}s</p>
           </div>
 
-          {/* QUESTION */}
           <h2 className="text-xl mb-6">{currentQuestion.questionText}</h2>
 
-          {/* OPTIONS */}
           <div className="space-y-3">
             {currentQuestion.options.map((option, index) => (
               <button
@@ -270,7 +269,6 @@ export default function ClientQuizPlayer({ quiz }) {
             ))}
           </div>
 
-          {/* ACTIONS */}
           {isAnswered && (
             <div className="mt-6 flex justify-end gap-3">
               {!autoNext && !isLastQuestion && (

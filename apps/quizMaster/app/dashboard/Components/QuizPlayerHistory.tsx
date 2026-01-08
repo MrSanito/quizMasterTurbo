@@ -61,7 +61,7 @@ const QuizPlayerHistory = ({
     };
 
     fetchHistory();
-  }, []);
+  }, [viewerId, viewerType]);
 
   /* ---------------- loading ---------------- */
   if (loading) {

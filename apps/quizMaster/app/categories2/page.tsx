@@ -6,11 +6,11 @@ import { ArrowRightIcon } from "@heroicons/react/24/solid";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-import { useUser } from "@/app/(auth)/context/GetUserContext";
-import Loading from "@/app/Loading";
-import NotLoginComponent from "@/app/(auth)/Components/NotLoginComponent";
-import MaxTryReached from "@/app/(auth)/Components/MaxTryReached";
-
+ import { useUser } from "../(auth)/context/GetUserContext";
+ import Loading from "../Loading";
+ import NotLoginComponent from "../(auth)/components/NotLoginComponent"
+ import MaxTryReached from "../(auth)/components/MaxTryReached"
+ 
 type Category = {
   _id: string;
   name: string;

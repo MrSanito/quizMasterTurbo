@@ -1,7 +1,15 @@
-import { prisma } from "@repo/db/lib/prisma.ts";
+import { Request, Response } from "express";
+import {prisma} from "@repo/db"
+import type { Prisma } from "@repo/db"; // ✅ FIXED import (package entry)
 
-export const getQuiz = async (req: Request, res: Response) => {
-  console.log("get quiz")
+
+/* ================= GET QUIZ ================= */
+
+export const getQuiz = async (
+  req: Request<{ quizId: string }>,
+  res: Response
+) => {
+  console.log("get quiz");
   const { quizId } = req.params;
   console.log(req.params);
 
@@ -11,6 +19,7 @@ export const getQuiz = async (req: Request, res: Response) => {
       message: "Quiz ID is required in the URL parameters",
     });
   }
+
   try {
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
@@ -20,14 +29,12 @@ export const getQuiz = async (req: Request, res: Response) => {
         title: true,
         categoryId: true,
         timeLimit: true,
-
         questions: {
           select: {
             id: true,
             questionText: true,
             points: true,
             negativePoints: true,
-
             options: {
               select: {
                 id: true,
@@ -46,27 +53,28 @@ export const getQuiz = async (req: Request, res: Response) => {
         message: "Quiz not found",
       });
     }
+
     function shuffleArray<T>(array: T[]): T[] {
       return [...array].sort(() => Math.random() - 0.5);
     }
 
-    // 🔄 Format into Mongo-style output
     const formattedQuiz = {
       _id: quiz.id,
       quizNumber: quiz.quizNumber,
       title: quiz.title,
       categoryId: quiz.categoryId,
       timeLimit: quiz.timeLimit,
-      totalPoints: quiz.questions.reduce((sum, q) => sum + q.points, 0),
-
-      questions: quiz.questions.map((q) => ({
+      totalPoints: quiz.questions.reduce(
+        (sum: number, q: (typeof quiz.questions)[number]) => sum + q.points,
+        0
+      ),
+      questions: quiz.questions.map((q: (typeof quiz.questions)[number]) => ({
         _id: q.id,
         questionText: q.questionText,
         points: q.points,
         negativePoints: q.negativePoints,
-
         options: shuffleArray(
-          q.options.map((o) => ({
+          q.options.map((o: (typeof q.options)[number]) => ({
             _id: o.id,
             text: o.text,
             isCorrect: o.isCorrect,
@@ -83,16 +91,30 @@ export const getQuiz = async (req: Request, res: Response) => {
     console.error("❌ getQuiz error:", err);
     return res.status(500).json({
       success: false,
-      err,
       message: "Failed to fetch quiz",
     });
   }
 };
 
-export const submitQuiz = async (req: Request, res: Response) => {
+/* ================= SUBMIT QUIZ ================= */
+
+interface SubmitQuizBody {
+  score: number;
+  total: number;
+  timeTaken: number;
+  questions: Prisma.InputJsonValue;
+  userId?: string;
+  guestId?: string;
+}
+
+export const submitQuiz = async (
+  req: Request<{ quizId: string }, {}, SubmitQuizBody>,
+  res: Response
+) => {
   try {
     const { quizId } = req.params;
     const { score, total, timeTaken, questions, userId, guestId } = req.body;
+
     console.log("ATTEMPT DATA", {
       quizId,
       userId,
@@ -112,7 +134,6 @@ export const submitQuiz = async (req: Request, res: Response) => {
       });
     }
 
-    // 🔐 AUTH VALIDATION
     if ((userId && guestId) || (!userId && !guestId)) {
       return res.status(400).json({
         success: false,
@@ -128,7 +149,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
         score,
         total,
         timeTaken,
-        questions, // minimal snapshot
+        questions,
       },
     });
 
@@ -145,16 +166,23 @@ export const submitQuiz = async (req: Request, res: Response) => {
   }
 };
 
+/* ================= RESULT / HISTORY PLACEHOLDERS ================= */
+
 export const resultOfQuiz = (req: Request, res: Response) => {
   console.log("lalal");
 };
 
 export const historyQuiz = async (req: Request, res: Response) => {};
 
-export const getQuizResultByAttemptId = async (req: Request, res: Response) => {
+/* ================= RESULT BY ATTEMPT ================= */
+
+export const getQuizResultByAttemptId = async (
+  req: Request<{ attemptId: string }>,
+  res: Response
+) => {
   try {
     const { attemptId } = req.params;
-    console.log(attemptId)
+    console.log(attemptId);
 
     if (!attemptId) {
       return res.status(400).json({
@@ -164,9 +192,7 @@ export const getQuizResultByAttemptId = async (req: Request, res: Response) => {
     }
 
     const attempt = await prisma.quizAttempt.findUnique({
-      where: {
-        id: attemptId,
-      },
+      where: { id: attemptId },
       include: {
         quiz: {
           select: {
@@ -197,7 +223,6 @@ export const getQuizResultByAttemptId = async (req: Request, res: Response) => {
       });
     }
 
-    console.log(attempt)
     return res.status(200).json({
       success: true,
       attempt,
@@ -211,17 +236,18 @@ export const getQuizResultByAttemptId = async (req: Request, res: Response) => {
   }
 };
 
+/* ================= QUIZ HISTORY ================= */
 
 export const getQuizHistory = async (req: Request, res: Response) => {
+  console.log("aa gayi request on quizzes/history");
 
-  console.log("aa gayi request on quizzes/history")
   try {
     const { viewerId, viewerType } = req.query as {
       viewerId?: string;
       viewerType?: "user" | "guest";
     };
 
-    console.log(viewerId, viewerType)
+    console.log(viewerId, viewerType);
 
     if (!viewerId || !viewerType) {
       return res.status(400).json({

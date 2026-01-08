@@ -5,17 +5,13 @@ import { usePathname } from "next/navigation";
 import axios from "axios";
 import { deleteCookie, getCookie } from "cookies-next";
 
-/* ------------------ axios ------------------ */
-
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-console.log(API_URL);
+
 const api = axios.create({
   baseURL: `${API_URL}`,
   withCredentials: true,
-  // timeout: 3000,
 });
 
-/* ------------------ context ------------------ */
 const UserContext = createContext({
   user: null,
   isLogin: false,
@@ -28,17 +24,14 @@ const UserContext = createContext({
   incrementGuestCount: () => {},
 });
 
-/* ------------------ helpers ------------------ */
 const MAX_GUEST_TRIES = 3;
 
 function generateGuestId() {
   return "guest_" + crypto.randomUUID();
 }
 
-/* ------------------ provider ------------------ */
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
-
   const [isLogin, setIsLogin] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [isMaxTryReached, setIsMaxTryReached] = useState(false);
@@ -47,28 +40,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [guest, setGuest] = useState(null);
   const [guestCount, setGuestCount] = useState(0);
 
-  /* -------- ROUTE INFO -------- */
   const pathname = usePathname();
   const PUBLIC_ROUTES = ["/abFout"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  /* -------- SESSION HINT COOKIE -------- */
   const hasSession = getCookie("hasSession");
 
-  /* -------- AUTH CHECK (OPTIMIZED) -------- */
   useEffect(() => {
     let cancelled = false;
 
     const runAuthFlow = async () => {
       setLoading(true);
 
-      // ✅ Public route → skip all auth
       if (isPublicRoute) {
         setLoading(false);
         return;
       }
 
-      // 🚀 NO SESSION → DIRECT GUEST MODE (NO API CALL)
       if (!hasSession) {
         setUser(null);
         setIsLogin(false);
@@ -76,9 +64,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 🔐 POSSIBLE LOGIN → VERIFY WITH SERVER
       try {
-        console.log("fetching data");
         const res = await api.post("/auth/verify_token");
 
         if (cancelled) return;
@@ -86,22 +72,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (res.data?.success) {
           setUser(res.data.user);
           setIsLogin(true);
-
-          // reset guest flags
           setIsGuest(false);
           setIsMaxTryReached(false);
           setGuest(null);
-localStorage.removeItem("guestId");
-           localStorage.removeItem("guestQuizCount");
+          localStorage.removeItem("guestId");
+          localStorage.removeItem("guestQuizCount");
         } else {
-          // invalid session
           setUser(null);
           setIsLogin(false);
         }
-      } catch (error) {
-        console.log("erros", error);
-        // token expired / invalid
-          deleteCookie("hasSession");
+      } catch {
+        deleteCookie("hasSession");
         setUser(null);
         setIsLogin(false);
       } finally {
@@ -114,9 +95,8 @@ localStorage.removeItem("guestId");
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [pathname, hasSession, isPublicRoute]);
 
-  /* -------- GUEST LOGIC (CLIENT ONLY) -------- */
   useEffect(() => {
     if (isLogin) return;
 
@@ -142,12 +122,10 @@ localStorage.removeItem("guestId");
     }
   }, [isLogin]);
 
-  /* -------- GUEST COUNT -------- */
   const incrementGuestCount = () => {
     if (isLogin) return;
 
     const newCount = guestCount + 1;
-
     setGuestCount(newCount);
     localStorage.setItem("guestQuizCount", String(newCount));
 
@@ -176,5 +154,4 @@ localStorage.removeItem("guestId");
   );
 }
 
-/* ------------------ hook ------------------ */
 export const useUser = () => useContext(UserContext);

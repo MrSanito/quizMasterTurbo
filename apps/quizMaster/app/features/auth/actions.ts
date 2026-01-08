@@ -151,7 +151,7 @@ export async function loginAction(
         token.substring(0, 20) + "..."
       );
 
-      const cookieStore = cookies();
+      const cookieStore =  await cookies();
 
       // Match Express server cookie settings exactly
       cookieStore.set("token", token, {
@@ -162,7 +162,7 @@ export async function loginAction(
         maxAge: 7 * 24 * 60 * 60, // 7 days in seconds (Express uses milliseconds, but Next.js expects seconds)
       });
 
-      cookies().set("hasSession", "true", {
+      cookieStore.set("hasSession", "true", {
         httpOnly: false,
         sameSite: "lax",
         path: "/",
@@ -211,7 +211,7 @@ export async function checkUsername(username: string) {
 }
 
 export async function logOut() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete("token"); // auth token
   cookieStore.delete("hasSession"); // hasSession
   console.log("logout done")

@@ -1,5 +1,6 @@
 import ClientQuizPlayer from "./ClientQuizPlayer";
-import QuizAuthGuard from "@/components/QuizAuthGuard";
+ import QuizAuthGuard from "../../../components/QuizAuthGuard";
+
 
 import QuizNotFound from "./components/QuizNotFound";
 
@@ -9,7 +10,7 @@ type QuizPageProps = {
   };
 };
 
-export default async function QuizPage({ params }: QuizPageProps) {
+export default async function QuizPage({ params }) {
   const { quizId } = params;
 
   try {

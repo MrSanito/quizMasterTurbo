@@ -9,6 +9,10 @@
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.0.3",
     "prettier": "^3.7.4",
     "turbo": "^2.7.1",
     "typescript": "5.9.2"
@@ -21,7 +25,6 @@
     "apps/*",
     "packages/*"
   ],
-  
   "dependencies": {
     "socket.io": "^4.8.2"
   }

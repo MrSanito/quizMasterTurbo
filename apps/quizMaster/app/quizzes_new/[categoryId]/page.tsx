@@ -7,10 +7,10 @@ import Link from "next/link";
 import axios from "axios";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
 
-import { useUser } from "@/app/(auth)/context/GetUserContext";
-import Loading from "@/app/Loading";
-import NotLoginComponent from "@/app/(auth)/Components/NotLoginComponent";
-import MaxTryReached from "@/app/(auth)/Components/MaxTryReached";
+import { useUser } from "../../(auth)/context/GetUserContext";
+ import Loading from "../../Loading"
+import NotLoginComponent from "../../(auth)/components/NotLoginComponent";
+import MaxTryReached from "../../(auth)/components/MaxTryReached";
 
 type Quiz = {
   _id: string;
@@ -22,7 +22,7 @@ type Quiz = {
 export default function QuizzesByCategoryPage() {
   /* ---------------- HOOKS (ALWAYS FIRST) ---------------- */
 
-  const { categoryId } = useParams();
+  const { categoryId } = useParams<{ categoryId: string }>();
   const router = useRouter();
 
   const { loading, isLogin, isGuest, isMaxTryReached } = useUser();

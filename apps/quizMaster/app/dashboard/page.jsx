@@ -2,23 +2,21 @@
 
 import { FaCirclePlay, FaTrophy } from "react-icons/fa6";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
-import NotLoginComponent from "@/app/(auth)/Components/NotLoginComponent";
+ import NotLoginComponent from "../(auth)/components/NotLoginComponent";
+ import MaxTryReached from "../(auth)/components/MaxTryReached";
 import Loading from "@/app/Loading";
 import { data } from "@/app/dashboard/data";
 import Card from "@/components/Card";
-import MaxTryReached from "@/app/(auth)/Components/MaxTryReached";
-import QuizHistoryCard from "@/components/QuizHistoryCard";
-import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory"
+ import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";
 
 const Dashboard = () => {
   const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
     useUser();
 
-    const viewerId = user?.id ?? guest?.id;
-    const viewerType = user ? "user" : "guest";
+  const viewerId = user?.id ?? guest?.id;
+  const viewerType = user ? "user" : "guest";
 
-    console.log(viewerId, viewerType)
-
+  console.log(viewerId, viewerType);
 
   // 1️⃣ Loading (highest priority)
   if (loading) {
