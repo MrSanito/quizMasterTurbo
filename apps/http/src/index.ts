@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     credentials: true,
    })
 );
@@ -33,7 +33,7 @@ app.use(cookieparser());
 // all routes go through here
 app.use("/api/v1", router);
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.get("/", async (req, res) => {
   res.json({
