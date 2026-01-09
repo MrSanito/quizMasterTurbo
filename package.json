@@ -22,10 +22,9 @@
     "typescript": "5.9.2"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18 <=22"
   },
   "packageManager": "npm@10.8.2",
-  
   "dependencies": {
     "socket.io": "^4.8.2"
   }

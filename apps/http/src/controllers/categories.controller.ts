@@ -64,7 +64,7 @@ export const fetchQuizzies = async (
     });
 
  
-    const formatted = quizzes.map((q) => ({
+    const formatted = quizzes.map((q:any) => ({
       _id: q.id,
       quizNumber: q.quizNumber,
       title: q.title,
