@@ -5,22 +5,25 @@ import React from "react";
 import { FaCirclePlay } from "react-icons/fa6";
 import { Check, Timer, Trophy, Flame } from "lucide-react";
 import { motion } from "framer-motion";
+import type { Variants } from "framer-motion";
+
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0 },
 };
 
-const float = {
+const float: Variants = {
   animate: {
     y: [0, -10, 0],
     transition: {
-      duration: 4,
+      duration: 2,
       repeat: Infinity,
       ease: "easeInOut",
     },
   },
 };
+ 
 
 const HeroSection = () => {
   return (

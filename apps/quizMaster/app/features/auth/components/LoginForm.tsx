@@ -38,7 +38,7 @@ const LoginForm = () => {
     setShowPassword((prev) => !prev);
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e:any) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     console.log(form);
@@ -114,8 +114,8 @@ useEffect(() => {
           <button
             type="button"
             className="absolute inset-y-0 right-0 flex items-center px-4"
-            onClick={(e) => {
-              toggleEyeHandler(e);
+            onClick={(e:any) => {
+              toggleEyeHandler();
             }}
           >
             {showPassword ? (

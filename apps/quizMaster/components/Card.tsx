@@ -10,6 +10,7 @@ const Card = ({
   server,
   progressBar = false,
   text = "xl",
+  
 }) => {
   const iconMap = {
     FaBook,

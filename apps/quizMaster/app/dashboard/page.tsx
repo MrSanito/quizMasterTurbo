@@ -83,8 +83,7 @@ const Dashboard = () => {
                 content={element.Content}
                 server={element.server}
                 progressBar={element.progressBar}
-                size="full"
-              />
+               />
             ))}
         </div>
         <QuizPlayerHistory viewerId={viewerId} viewerType={viewerType} />

@@ -1,6 +1,10 @@
 {
   "name": "quizMasterTurbo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -21,10 +25,7 @@
     "node": ">=18"
   },
   "packageManager": "npm@10.8.2",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  
   "dependencies": {
     "socket.io": "^4.8.2"
   }

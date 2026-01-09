@@ -1,6 +1,8 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+
     // File Layout
     "rootDir": "src",
     "outDir": "dist",
@@ -15,9 +17,9 @@
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    
+
     "strict": true,
-     "verbatimModuleSyntax": false,
+    "verbatimModuleSyntax": false,
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module

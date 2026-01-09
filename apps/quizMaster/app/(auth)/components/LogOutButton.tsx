@@ -1,5 +1,5 @@
 import React from "react";
-import { logOut } from "../features/auth/actions";
+ import { logOut } from "@/app/features/auth/actions";
 
 
 const LogOutButton = () => {
