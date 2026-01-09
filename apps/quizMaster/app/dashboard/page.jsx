@@ -4,7 +4,7 @@ import { FaCirclePlay, FaTrophy } from "react-icons/fa6";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
  import NotLoginComponent from "../(auth)/components/NotLoginComponent";
  import MaxTryReached from "../(auth)/components/MaxTryReached";
-import Loading from "@/app/Loading";
+import Loading from "@/components/Loading";
 import { data } from "@/app/dashboard/data";
 import Card from "@/components/Card";
  import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";

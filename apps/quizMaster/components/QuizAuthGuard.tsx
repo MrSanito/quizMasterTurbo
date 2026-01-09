@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
  import { useUser } from "../app/(auth)/context/GetUserContext";
-import Loading from "../app/Loading";
+import Loading from "./Loading";
 import NotLoginComponent from "../app/(auth)/components/NotLoginComponent";
 import MaxTryReached from "../app/(auth)/components/MaxTryReached";
 

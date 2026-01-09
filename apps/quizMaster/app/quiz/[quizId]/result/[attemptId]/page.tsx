@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import { useUser } from "../../../../(auth)/context/GetUserContext";
+import Loading from "@/components/Loading";
+import NotLoginComponent from "../../../../(auth)/components/NotLoginComponent";
+import MaxTryReached from "../../../../(auth)/components/MaxTryReached";
 
 /* ================= TYPES ================= */
 
@@ -68,8 +72,9 @@ function normalizeAttempt(
 
 export default function ClientQuizResult() {
   const { attemptId } = useParams<{ attemptId: string }>();
+  const { loading, isLogin, isGuest, guest, user, isMaxTryReached } = useUser();
 
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<NormalizedQuestion[]>([]);
   const [quizId, setQuizId] = useState<string>("");
@@ -77,13 +82,23 @@ export default function ClientQuizResult() {
   /* ================= FETCH ================= */
 
   useEffect(() => {
-    if (!attemptId) return;
+    // 🚫 Don't fetch if auth blocks the page
+    if (loading || isMaxTryReached || (!isLogin && !isGuest) || !attemptId)
+      return;
 
     const fetchResult = async () => {
       try {
+        const authPayload = isLogin
+          ? { userId: user.id }
+          : { guestId: guest.id };
+
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/result/${attemptId}`,
-          { withCredentials: true }
+          {
+            params: {
+              auth: JSON.stringify(authPayload),
+            },
+          }
         );
 
         const attempt = res.data?.attempt ?? res.data?.data?.attempt;
@@ -100,20 +115,54 @@ export default function ClientQuizResult() {
           normalizeAttempt(attempt.questions, attempt.quiz.questions)
         );
         setQuizId(attempt.quizId);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load quiz result");
+      } catch (err: any) {
+        console.error("❌ Fetch result error:", err);
+
+        // ✅ BACKEND-AWARE ERROR HANDLING
+        if (err.response) {
+          const status = err.response.status;
+          const message = err.response.data?.message || "Something went wrong";
+
+          if (status === 403) {
+            setError(message); // "Access denied: this attempt is not yours"
+          } else if (status === 401) {
+            setError("You are not authorized. Please login again.");
+          } else if (status === 404) {
+            setError("Quiz attempt not found.");
+          } else {
+            setError(message);
+          }
+        } else {
+          // network / unknown error
+          setError("Network error. Please try again.");
+        }
       } finally {
-        setLoading(false);
+        setPageLoading(false);
       }
     };
 
     fetchResult();
-  }, [attemptId]);
+  }, [attemptId, loading, isLogin, isGuest, isMaxTryReached]);
 
-  /* ================= STATES ================= */
+  /* ---------------- GUARDS (AFTER HOOKS) ---------------- */
 
+  // 1️⃣ Auth loading
   if (loading) {
+    return <Loading />;
+  }
+
+  // 2️⃣ Guest blocked
+  if (isMaxTryReached) {
+    return <MaxTryReached />;
+  }
+
+  // 3️⃣ Not logged in & not guest
+  if (!isLogin && !isGuest) {
+    return <NotLoginComponent />;
+  }
+
+  // 4️⃣ Page data loading
+  if (pageLoading) {
     return (
       <div className="min-h-[60dvh] flex items-center justify-center">
         <span className="loading loading-spinner loading-md" />

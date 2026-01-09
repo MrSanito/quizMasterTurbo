@@ -8,7 +8,7 @@ import axios from "axios";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
 
 import { useUser } from "../../(auth)/context/GetUserContext";
- import Loading from "../../Loading"
+import Loading from "@/components/Loading";
 import NotLoginComponent from "../../(auth)/components/NotLoginComponent";
 import MaxTryReached from "../../(auth)/components/MaxTryReached";
 
@@ -20,7 +20,7 @@ type Quiz = {
 };
 
 export default function QuizzesByCategoryPage() {
-  /* ---------------- HOOKS (ALWAYS FIRST) ---------------- */
+  /* ---------------- HOOKS ---------------- */
 
   const { categoryId } = useParams<{ categoryId: string }>();
   const router = useRouter();
@@ -33,20 +33,15 @@ export default function QuizzesByCategoryPage() {
   /* ---------------- DATA FETCH ---------------- */
 
   useEffect(() => {
-    // 🚫 Stop everything if auth blocks page
     if (loading || isMaxTryReached || (!isLogin && !isGuest) || !categoryId) {
       return;
     }
 
     const fetchQuizzes = async () => {
       try {
-        console.log("fetching quizzes for category 👉", categoryId);
-
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/categories/${categoryId}/quizzes`
         );
-
-        console.log("QUIZZES 👉", res.data.quizzes);
         setQuizzes(res.data.quizzes);
       } catch (err) {
         console.error("❌ Failed to fetch quizzes", err);
@@ -58,41 +53,28 @@ export default function QuizzesByCategoryPage() {
     fetchQuizzes();
   }, [categoryId, loading, isLogin, isGuest, isMaxTryReached]);
 
-  /* ---------------- AUTH GUARDS (SAME AS DASHBOARD) ---------------- */
+  /* ---------------- GUARDS ---------------- */
 
-  // 1️⃣ Auth loading
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return <Loading />;
+  if (isMaxTryReached) return <MaxTryReached />;
+  if (!isLogin && !isGuest) return <NotLoginComponent />;
 
-  // 2️⃣ Guest blocked
-  if (isMaxTryReached) {
-    return <MaxTryReached />;
-  }
-
-  // 3️⃣ Not logged in & not guest
-  if (!isLogin && !isGuest) {
-    return <NotLoginComponent />;
-  }
-
-  // 4️⃣ Page loading
   if (pageLoading) {
     return (
-      <div className="min-h-[80dvh] flex items-center justify-center text-white">
+      <div className="min-h-[80dvh] flex items-center justify-center text-white gap-2">
+        <Loading />
         Loading quizzes… 🧠⚡
       </div>
     );
   }
 
-  /* ---------------- EMPTY STATE ---------------- */
-
   if (quizzes.length === 0) {
     return (
       <div className="min-h-[80dvh] flex flex-col items-center justify-center text-white gap-4">
-        <p className="text-xl">No quizzes here yet 😴</p>
+        <p className="text-xl">No quizzes available 😴</p>
         <button
           onClick={() => router.back()}
-          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20"
+          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition"
         >
           Go back
         </button>
@@ -103,42 +85,49 @@ export default function QuizzesByCategoryPage() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="min-h-[80dvh] px-4 py-10 max-w-5xl mx-auto">
-      {/* 🏷️ Title */}
+    <div className="min-h-screen px-4 py-12 flex flex-col items-center">
+      {/* Title */}
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-3xl sm:text-4xl font-bold text-white mb-10 text-center"
       >
-        Pick a Quiz 🧠🔥
+        Choose a Quiz 🧠🔥
       </motion.h1>
 
-      {/* 🧩 Quiz Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {/* Quiz Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
         {quizzes.map((quiz, index) => (
           <motion.div
             key={quiz._id}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.04 }}
+            transition={{ delay: index * 0.08 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
           >
             <Link
-              href={`/quiz_new/${quiz._id}`}
-              className="block rounded-xl p-6 text-white shadow-xl
-                         bg-gradient-to-br from-emerald-500 to-teal-600"
+              href={`/quiz/${quiz._id}`}
+              className="group block h-full bg-gray-800 rounded-xl p-6
+                         shadow-lg hover:shadow-2xl
+                         hover:bg-gray-700 transition-all text-white"
             >
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm opacity-80">Quiz #{quiz.quizNumber}</p>
-                  <h2 className="text-xl font-semibold">{quiz.title}</h2>
-                  <p className="text-sm opacity-80 mt-1">
-                    {quiz.totalQuestions} questions
+              <div className="flex justify-between items-start h-full">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">
+                    Quiz #{quiz.quizNumber}
+                  </p>
+
+                  <h2 className="text-lg font-semibold group-hover:text-blue-400 transition">
+                    {quiz.title}
+                  </h2>
+
+                  <p className="text-sm text-gray-400">
+                    🎯 {quiz.totalQuestions} questions
                   </p>
                 </div>
 
-                <ArrowRightIcon className="w-6 h-6 opacity-80" />
+                <ArrowRightIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-400 transition" />
               </div>
             </Link>
           </motion.div>

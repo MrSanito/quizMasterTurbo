@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
-import Loading from "../Loading";
+import Loading from "@/components/Loading";
 
 // 🎯 Main Categories Page
 export default function CategoriesPage() {

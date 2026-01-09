@@ -8,7 +8,7 @@ import { useUser } from "@/app/(auth)/context/GetUserContext";
 import RegisterForm from "../../features/auth/components/RegisterForm";
 import ClientOnly from "../../features/auth/components/ClientOnly";
 
-import Loading from "@/app/Loading";
+import Loading from "@/components/Loading";
 
 const Register = () => {
   const router = useRouter();

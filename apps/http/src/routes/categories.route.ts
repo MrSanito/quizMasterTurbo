@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { fetchCategories ,fetchQuizzies} from "../controllers/categories.controller.ts";
+import { fetchCategories ,fetchQuizzies} from "../controllers/categories.controller.js";
 
 
 const router = Router();

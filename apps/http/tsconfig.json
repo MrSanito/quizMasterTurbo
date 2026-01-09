@@ -2,8 +2,8 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "rootDir": "src",
+    "outDir": "dist",
     // "target": "ES2020",
     // "module": "CommonJS",
     // "moduleResolution": "node",
@@ -47,8 +47,8 @@
     // Recommended Options
     "jsx": "react-jsx",
     "isolatedModules": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+    "allowImportingTsExtensions": false,
+    "noEmit": false,
     // "moduleResolution": "bundler",
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force"

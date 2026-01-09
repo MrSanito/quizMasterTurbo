@@ -3,7 +3,7 @@ import Quiz from "@/models/Quiz";
 import ClientQuizPlayer from "./ClientQuizPlayer";
 import { headers } from "next/headers";
 import Link from "next/link";
-import NotFound from "@/app/not-found";
+import NotFound from "@/components/Not-found";
 
 export default async function QuizPage({ params }) {
   const isBlocked = headers().get("x-quiz-blocked") === "true";

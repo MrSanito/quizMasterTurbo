@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
-import {prisma} from "@repo/db"
+import { prisma } from "@repo/db";
 import type { Prisma } from "@repo/db"; // ✅ FIXED import (package entry)
-
 
 /* ================= GET QUIZ ================= */
 
@@ -23,6 +22,7 @@ export const getQuiz = async (
   try {
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
+
       select: {
         id: true,
         quizNumber: true,
@@ -83,6 +83,7 @@ export const getQuiz = async (
       })),
     };
 
+    console.log(formattedQuiz);
     return res.status(200).json({
       success: true,
       formattedQuiz,
@@ -182,7 +183,36 @@ export const getQuizResultByAttemptId = async (
 ) => {
   try {
     const { attemptId } = req.params;
-    console.log(attemptId);
+
+    const { auth }: any = req.query;
+
+    console.log("ALL HEADERS 👉", req.query);
+    if (!auth) {
+      return res.status(400).json({
+        success: false,
+        message: "auth query missing",
+      });
+    }
+
+    let authContext;
+
+    try {
+      const authPayload = JSON.parse(auth);
+      console.log(authPayload);
+
+      if (authPayload.userId) {
+        authContext = { type: "user", userId: authPayload.userId };
+      } else if (authPayload.guestId) {
+        authContext = { type: "guest", guestId: authPayload.guestId };
+      } else {
+        throw new Error("Invalid auth payload");
+      }
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid auth format",
+      });
+    }
 
     if (!attemptId) {
       return res.status(400).json({
@@ -220,6 +250,21 @@ export const getQuizResultByAttemptId = async (
       return res.status(404).json({
         success: false,
         message: "Quiz attempt not found",
+      });
+    }
+
+    // 🛑 AUTHORIZATION CHECK (THE IMPORTANT PART)
+    const isUserMatch =
+      authContext.userId && attempt.userId === authContext.userId;
+
+    const isGuestMatch =
+      authContext.guestId && attempt.guestId === authContext.guestId;
+
+    if (!isUserMatch && !isGuestMatch) {
+      console.log("isUserMatch", isUserMatch, "isGuestMatch, ", isGuestMatch);
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: this attempt is not yours",
       });
     }
 

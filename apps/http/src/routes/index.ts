@@ -1,7 +1,7 @@
 import { Router } from "express";
- import authRoutes from "./auth.route.ts"
- import categoriesRoutes from "./categories.route.ts"
- import quizzesRoutes from "./quizzes.route.ts";
+ import authRoutes from "./auth.route.js"
+ import categoriesRoutes from "./categories.route.js"
+ import quizzesRoutes from "./quizzes.route.js";
 
 const router = Router();
 

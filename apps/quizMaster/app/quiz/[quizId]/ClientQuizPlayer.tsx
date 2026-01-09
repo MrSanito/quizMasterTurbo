@@ -170,7 +170,7 @@ export default function ClientQuizPlayer({ quiz }) {
       if (res.data?.success && res.data?.attemptId) {
         incrementGuestCount();
         router.replace(
-          `/quiz_new/${quiz.categoryId}/result/${res.data.attemptId}`
+          `/quiz/${quiz.categoryId}/result/${res.data.attemptId}`
         );
       } else {
         throw new Error("attemptId missing");

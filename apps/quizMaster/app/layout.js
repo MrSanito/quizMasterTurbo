@@ -1,8 +1,7 @@
-import { Geist, Geist_Mono } from "next/font/google";
+// import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/Navbar";
-import { ClerkProvider } from "@clerk/nextjs";
-import { UserProvider } from "./(auth)/context/GetUserContext";
+ import { UserProvider } from "./(auth)/context/GetUserContext";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -27,13 +26,11 @@ export default function RootLayout({ children }) {
         className={`
           antialiased bg-base-100 text-white min-h-screen`}
       >
-        {/* <ClerkProvider> */}
-          <UserProvider>
+           <UserProvider>
             <Navbar />
             <main className="container mx-auto px-4 py-8">{children}</main>
           </UserProvider>
-        {/* </ClerkProvider> */}
-      </body>
+       </body>
     </html>
   );
 }

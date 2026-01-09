@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import { useUser } from "@/app/(auth)/context/GetUserContext";
+ import { useUser } from "@/app/(auth)/context/GetUserContext";
 
 const Navbar = () => {
       const { user, loading, isLogin } = useUser();
@@ -53,6 +52,10 @@ const Navbar = () => {
             </>
           ) : (
             <>
+            <Link
+                href="/dashboard"
+                className="btn btn-ghost hover:text-primary"
+              >Guest Dashboard</Link>
               <Link
                 href="/register"
                 className="btn btn-ghost hover:text-primary"

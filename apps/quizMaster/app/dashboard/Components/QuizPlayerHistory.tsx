@@ -51,7 +51,7 @@ const QuizPlayerHistory = ({
         }
 
         setHistory(res.data.attempts);
-        console.log(res.data.attempts)
+        console.log(res.data.attempts);
       } catch (err) {
         console.error("❌ Failed to load quiz history", err);
         setError("Failed to load history");
@@ -120,7 +120,7 @@ const QuizPlayerHistory = ({
                 </div>
 
                 <Link
-                  href={`/quiz_new/${item.quiz.categoryId}/result/${item.id}`}
+                  href={`/quiz/${item.quiz.categoryId}/result/${item.id}`}
                   className="text-primary hover:opacity-80"
                 >
                   <ArrowRightIcon className="w-5 h-5" />

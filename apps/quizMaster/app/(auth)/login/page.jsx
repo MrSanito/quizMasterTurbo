@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import LoginForm from "@/app/features/auth/components/LoginForm";
-import Loading from "@/app/Loading";
+import Loading from "@/components/Loading";
 
 const Login = () => {
   const router = useRouter();

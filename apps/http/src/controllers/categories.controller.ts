@@ -48,6 +48,9 @@ export const fetchQuizzies = async (
   try {
     const quizzes = await prisma.quiz.findMany({
       where: { categoryId },
+      orderBy: {
+        quizNumber: "asc", // 🔥 SORT HERE
+      },
       select: {
         id: true,
         quizNumber: true,
@@ -60,6 +63,7 @@ export const fetchQuizzies = async (
       },
     });
 
+ 
     const formatted = quizzes.map((q) => ({
       _id: q.id,
       quizNumber: q.quizNumber,

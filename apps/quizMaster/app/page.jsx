@@ -5,7 +5,7 @@ import HeroSection from "@/components/Hero";
 import {useUser} from "@/app/(auth)/context/GetUserContext"
 import Hero from "daisyui/components/hero";
 import Image from "next/image";
-import Loading from "@/app/Loading.jsx"
+import Loading from "@/components/Loading"
 import HowItWorksSection from "@/components/HowItWorksSection";
 
 
