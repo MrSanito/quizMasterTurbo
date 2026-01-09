@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.json",
 
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDirs": [
-      "src",
-       "../../packages/prisma/src"
-      ],
+    "outDir": "./dist",
 
     /* Node backend – keep it boring & stable */
     "target": "ES2020",
@@ -25,5 +21,6 @@
     "noUncheckedIndexedAccess": true
   },
 
-  "include": ["src"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

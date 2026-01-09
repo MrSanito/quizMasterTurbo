@@ -15,8 +15,9 @@
   },
   "scripts": {
     "dev": "nodemon --require dotenv/config src/index.ts",
-    "build": "tsc",
-    "start": "npm run build && node dist/apps/http/src/index.js"
+    "build": "tsc --project tsconfig.json",
+    "postbuild": "node -e \"const fs=require('fs');const path=require('path');const distDir=path.join(__dirname,'dist');const nestedDir=path.join(distDir,'apps','http','src');if(fs.existsSync(nestedDir)){const files=fs.readdirSync(nestedDir);files.forEach(f=>{const src=path.join(nestedDir,f);const dest=path.join(distDir,f);if(fs.existsSync(dest)){if(fs.statSync(dest).isDirectory())fs.rmSync(dest,{recursive:true});else fs.unlinkSync(dest);}fs.renameSync(src,dest);});fs.rmSync(path.join(distDir,'apps'),{recursive:true});fs.rmSync(path.join(distDir,'packages'),{recursive:true});}\"",
+    "start": "npm run build && node dist/index.js"
   },
   "keywords": [],
   "author": "",
