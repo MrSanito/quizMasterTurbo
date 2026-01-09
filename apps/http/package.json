@@ -2,7 +2,7 @@
   "name": "http",
   "version": "1.0.0",
   "main": "index.js",
-   "compilerOptions": {
+  "compilerOptions": {
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
@@ -14,8 +14,8 @@
   },
   "scripts": {
     "dev": "nodemon --require dotenv/config src/index.ts",
-    "build": "tsc --project tsconfig.json",
-     "start": "node dist/index.js"
+    "build": "prisma generate --schema=../../packages/prisma/prisma/schema.prisma  && tsc",
+    "start": "node dist/apps/http/src/index.js"
   },
   "keywords": [],
   "author": "",
