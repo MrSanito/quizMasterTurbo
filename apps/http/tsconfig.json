@@ -1,70 +1,29 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
+
   "compilerOptions": {
-     "baseUrl": ".",
-    "paths": {
-      "@repo/db": ["../../packages/db/src"]
-    },
-    "references": [
-    { "path": "../../packages/db" }
-  ],
-
-    // File Layout
-    "rootDir": "src",
     "outDir": "dist",
-    // "target": "ES2020",
-    // "module": "CommonJS",
-    // "moduleResolution": "node",
-    // "module": "NodeNext",
-    // "moduleResolution": "NodeNext",
+    "rootDirs": [
+      "src",
+       "../../packages/prisma/src"
+      ],
 
-    "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    /* Node backend – keep it boring & stable */
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+
     "esModuleInterop": true,
     "skipLibCheck": true,
-
     "strict": true,
-    "verbatimModuleSyntax": false,
 
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "types": [],
-    // For nodejs:
-    // "lib": ["esnext"],
-    // "types": ["node"],
-    // and npm install -D @types/node
-
-    // Other Outputs
+    /* Build output */
     "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-
-    // Recommended Options
-    "jsx": "react-jsx",
-    "isolatedModules": true,
-    "allowImportingTsExtensions": false,
     "noEmit": false,
-    // "moduleResolution": "bundler",
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force"
+
+    /* Safety */
+    "noUncheckedIndexedAccess": true
   },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  },
+
   "include": ["src"]
 }

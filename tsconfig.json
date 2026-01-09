@@ -2,12 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/db": ["packages/db/src"]
+      "@repo/db": ["packages/prisma/src"]
     }
   },
-   "files": [],
-  "references": [
-    { "path": "packages/db" },
-    { "path": "apps/http" }
-  ]
+  "files": [],
+  "references": [{ "path": "packages/prisma/" }, { "path": "apps/http" }]
 }
