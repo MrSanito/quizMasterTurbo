@@ -63,13 +63,13 @@ export const getQuiz = async (
       categoryId: quiz.categoryId,
       timeLimit: quiz.timeLimit,
       totalPoints: quiz.Question.reduce((sum, q) => sum + q.points, 0),
-      questions: quiz.Question.map((q) => ({
+      questions: quiz.Question.map((q:any) => ({
         _id: q.id,
         questionText: q.questionText,
         points: q.points,
         negativePoints: q.negativePoints,
         options: shuffleArray(
-          q.Option.map((o) => ({
+          q.Option.map((o:any) => ({
             _id: o.id,
             text: o.text,
             isCorrect: o.isCorrect,

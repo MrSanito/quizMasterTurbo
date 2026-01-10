@@ -1,7 +1,17 @@
 {
   "name": "@repo/db",
+  "type": "module",
   "version": "0.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
+    "build": "tsc",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --skip-generate",
     "db:deploy": "prisma migrate deploy"
@@ -15,8 +25,5 @@
     "@prisma/client": "^7.2.0",
     "dotenv": "^17.2.3",
     "pg": "^8.16.3"
-  },
-  "exports": {
-    ".": "./src/index.ts"
   }
 }

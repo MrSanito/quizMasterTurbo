@@ -1,26 +1,18 @@
 {
   "extends": "../../tsconfig.json",
-
   "compilerOptions": {
-    "outDir": "./dist",
-
-    /* Node backend – keep it boring & stable */
     "target": "ES2020",
-    "module": "node16",
-    "moduleResolution": "node16",
 
-    "esModuleInterop": true,
-    "skipLibCheck": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+
+    "rootDir": "../../",
+    "outDir": "dist",
+
     "strict": true,
-
-    /* Build output */
-    "sourceMap": true,
-    "noEmit": false,
-
-    /* Safety */
-    "noUncheckedIndexedAccess": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
-
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
