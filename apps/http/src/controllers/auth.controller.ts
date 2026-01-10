@@ -66,6 +66,8 @@ export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
 
     res.cookie("hasSession", "true", {
       httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+
       sameSite: "lax",
       path: "/",
     });

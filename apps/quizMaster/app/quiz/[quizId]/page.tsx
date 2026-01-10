@@ -15,8 +15,11 @@ type QuizPageProps = {
   };
 };
 
-export default function QuizPage({ params }) {
-  const { quizId } = params;
+import { use } from "react";
+
+export default function QuizPage({ params }: { params: Promise<{ quizId: string }> }) {
+  const { quizId } = use(params);
+  const a =5;
   const { loading, isLogin, isGuest, isMaxTryReached } = useUser();
   const [quiz, setQuiz] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -28,6 +31,7 @@ export default function QuizPage({ params }) {
 
     const fetchQuiz = async () => {
       try {
+        console.log("trying fetching ")
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/${quizId}`,
           {
