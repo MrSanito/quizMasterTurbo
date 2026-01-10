@@ -12,18 +12,4 @@ services:
       - key: NODE_ENV
         value: production
 
-  # Frontend Service (Next.js)
-  - type: web
-    name: quizmaster-web
-    env: node
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm start --workspace=apps/quizMaster
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: quizmaster-backend
-          property: host
-      - key: DATABASE_URL
-        sync: false
+
