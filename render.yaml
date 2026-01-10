@@ -1,0 +1,29 @@
+services:
+  # Backend Service (Express)
+  - type: web
+    name: quizmaster-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start --workspace=apps/http
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: quizmaster-web
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start --workspace=apps/quizMaster
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: quizmaster-backend
+          property: url
+      - key: DATABASE_URL
+        sync: false
