@@ -14,14 +14,15 @@
   },
   "scripts": {
     "dev": "nodemon --require dotenv/config src/index.ts",
-    "build": "prisma generate --schema=../../packages/prisma/prisma/schema.prisma  && tsc",
-    "start": "node dist/apps/http/src/index.js"
+    "build": "npm run -w @repo/db build && npx prisma generate --schema=../../packages/db/prisma/schema.prisma && tsc",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@repo/db": "*",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -40,6 +41,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^5.0.0"
   }
 }

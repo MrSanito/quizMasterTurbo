@@ -6,8 +6,8 @@
 
     /* Node backend – keep it boring & stable */
     "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "node16",
+    "moduleResolution": "node16",
 
     "esModuleInterop": true,
     "skipLibCheck": true,

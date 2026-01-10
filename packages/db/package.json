@@ -1,10 +1,13 @@
 {
-  "name": "@repo/db",
+  "name": "@repo./db",
   "version": "1.0.0",
-  "main": "dist/lib/index.js",
-  "types": "dist/lib/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "build": "prisma generate && tsc",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev --skip-generate",
+    "db:deploy": "prisma migrate deploy",
+    "build": " tsc -b",
     "seed": "node /prisma/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +22,11 @@
     "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@types/pg": "^8.16.0",
     "prisma": "^7.2.0",
     "tsx": "^4.21.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

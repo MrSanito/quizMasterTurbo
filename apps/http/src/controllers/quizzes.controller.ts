@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "@repo/db";
-import type { Prisma } from "@repo/db"; // ✅ FIXED import (package entry)
+// import type { Prisma } from "@repo/db"; // ✅ FIXED import (package entry)
 
 /* ================= GET QUIZ ================= */
 
@@ -103,7 +103,7 @@ interface SubmitQuizBody {
   score: number;
   total: number;
   timeTaken: number;
-  questions: Prisma.InputJsonValue;
+  questions: JSON;
   userId?: string;
   guestId?: string;
 }
