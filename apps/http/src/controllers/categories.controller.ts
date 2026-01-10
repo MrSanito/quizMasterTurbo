@@ -5,13 +5,15 @@ import { prisma } from "@repo/db"; // ✅ correct import
 
 export const fetchCategories = async (req: Request, res: Response) => {
   try {
+    console.log("DATABASE_URL =>", process.env.DATABASE_URL);
+
     const categories = await prisma.category.findMany({
       select: {
         id: true,
         name: true,
         icon: true,
         _count: {
-          select: { quizzes: true },
+          select: { Quiz: true },
         },
       },
     });
@@ -20,7 +22,7 @@ export const fetchCategories = async (req: Request, res: Response) => {
       _id: cat.id,
       name: cat.name,
       icon: cat.icon,
-      quizzes: cat._count.quizzes,
+      quizzes: cat._count.Quiz,
     }));
 
     return res.status(200).json({
@@ -57,7 +59,7 @@ export const fetchQuizzies = async (
         title: true,
         _count: {
           select: {
-            questions: true,
+            Question: true,
           },
         },
       },

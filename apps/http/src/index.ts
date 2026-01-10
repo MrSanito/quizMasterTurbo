@@ -2,6 +2,7 @@
 import dotenv from "dotenv";
 import path from "path";
 dotenv.config();
+console.log(process.env.DATABASE_URL);
 
 import express from "express";
 import router from "./routes/index.js";
@@ -10,7 +11,6 @@ import cookieparser from "cookie-parser";
 
 // This points to the .env at the root of quizmasterturbo
 console.log("🔥 PID:", process.pid);
-
 
 const app = express();
 app.use(express.json()); // ❌ too late
@@ -24,12 +24,11 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     credentials: true,
-   })
+  })
 );
 
 app.use(cookieparser());
 
- 
 // all routes go through here
 app.use("/api/v1", router);
 

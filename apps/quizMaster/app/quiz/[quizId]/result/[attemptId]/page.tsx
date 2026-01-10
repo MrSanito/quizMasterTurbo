@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -22,7 +22,7 @@ type AttemptQuestionRaw = {
 type QuizQuestion = {
   id: string;
   questionText: string;
-  options: {
+  Option: {
     text: string;
     isCorrect: boolean;
   }[];
@@ -59,7 +59,7 @@ function normalizeAttempt(
       correctOptionText: aq.correctOptionText,
       timeTaken: aq.timeTaken,
       options:
-        quizQ?.options.map((opt) => ({
+        quizQ?.Option.map((opt) => ({
           text: opt.text,
           isCorrect: opt.text === aq.correctOptionText,
           isSelected: opt.text === aq.selectedOptionText,
@@ -71,7 +71,10 @@ function normalizeAttempt(
 /* ================= COMPONENT ================= */
 
 export default function ClientQuizResult() {
-  const { attemptId } = useParams<{ attemptId: string }>();
+  // ✅ FIX 1: unwrap params safely
+  const params = useParams();
+  const { attemptId } = params as { attemptId: string };
+
   const { loading, isLogin, isGuest, guest, user, isMaxTryReached } = useUser();
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -82,7 +85,6 @@ export default function ClientQuizResult() {
   /* ================= FETCH ================= */
 
   useEffect(() => {
-    // 🚫 Don't fetch if auth blocks the page
     if (loading || isMaxTryReached || (!isLogin && !isGuest) || !attemptId)
       return;
 
@@ -103,37 +105,32 @@ export default function ClientQuizResult() {
 
         const attempt = res.data?.attempt ?? res.data?.data?.attempt;
 
+        // ✅ FIX 2: match backend casing
+        const quizQuestions = attempt?.Quiz?.Question;
+
         if (
           !attempt ||
           !Array.isArray(attempt.questions) ||
-          !Array.isArray(attempt.quiz?.questions)
+          !Array.isArray(quizQuestions)
         ) {
           throw new Error("Invalid result response");
         }
 
-        setQuestions(
-          normalizeAttempt(attempt.questions, attempt.quiz.questions)
-        );
+        setQuestions(normalizeAttempt(attempt.questions, quizQuestions));
         setQuizId(attempt.quizId);
       } catch (err: any) {
         console.error("❌ Fetch result error:", err);
 
-        // ✅ BACKEND-AWARE ERROR HANDLING
         if (err.response) {
           const status = err.response.status;
           const message = err.response.data?.message || "Something went wrong";
 
-          if (status === 403) {
-            setError(message); // "Access denied: this attempt is not yours"
-          } else if (status === 401) {
+          if (status === 403) setError(message);
+          else if (status === 401)
             setError("You are not authorized. Please login again.");
-          } else if (status === 404) {
-            setError("Quiz attempt not found.");
-          } else {
-            setError(message);
-          }
+          else if (status === 404) setError("Quiz attempt not found.");
+          else setError(message);
         } else {
-          // network / unknown error
           setError("Network error. Please try again.");
         }
       } finally {
@@ -144,24 +141,12 @@ export default function ClientQuizResult() {
     fetchResult();
   }, [attemptId, loading, isLogin, isGuest, isMaxTryReached]);
 
-  /* ---------------- GUARDS (AFTER HOOKS) ---------------- */
+  /* ================= GUARDS ================= */
 
-  // 1️⃣ Auth loading
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return <Loading />;
+  if (isMaxTryReached) return <MaxTryReached />;
+  if (!isLogin && !isGuest) return <NotLoginComponent />;
 
-  // 2️⃣ Guest blocked
-  if (isMaxTryReached) {
-    return <MaxTryReached />;
-  }
-
-  // 3️⃣ Not logged in & not guest
-  if (!isLogin && !isGuest) {
-    return <NotLoginComponent />;
-  }
-
-  // 4️⃣ Page data loading
   if (pageLoading) {
     return (
       <div className="min-h-[60dvh] flex items-center justify-center">
@@ -239,7 +224,6 @@ export default function ClientQuizResult() {
                   {idx + 1}. {q.questionText}
                 </p>
 
-                {/* OPTIONS */}
                 <div className="flex flex-col items-center gap-2">
                   {q.options.map((opt, i) => {
                     let cls = "bg-base-300";

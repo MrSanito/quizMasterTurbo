@@ -1,6 +1,6 @@
+import { randomUUID } from "crypto";
 import { Request, Response } from "express";
 import { prisma } from "@repo/db";
-// import type { Prisma } from "@repo/db"; // ✅ FIXED import (package entry)
 
 /* ================= GET QUIZ ================= */
 
@@ -10,7 +10,6 @@ export const getQuiz = async (
 ) => {
   console.log("get quiz");
   const { quizId } = req.params;
-  console.log(req.params);
 
   if (!quizId) {
     return res.status(400).json({
@@ -22,20 +21,19 @@ export const getQuiz = async (
   try {
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
-
       select: {
         id: true,
         quizNumber: true,
         title: true,
         categoryId: true,
         timeLimit: true,
-        questions: {
+        Question: {
           select: {
             id: true,
             questionText: true,
             points: true,
             negativePoints: true,
-            options: {
+            Option: {
               select: {
                 id: true,
                 text: true,
@@ -64,17 +62,14 @@ export const getQuiz = async (
       title: quiz.title,
       categoryId: quiz.categoryId,
       timeLimit: quiz.timeLimit,
-      totalPoints: quiz.questions.reduce(
-        (sum: number, q: (typeof quiz.questions)[number]) => sum + q.points,
-        0
-      ),
-      questions: quiz.questions.map((q: (typeof quiz.questions)[number]) => ({
+      totalPoints: quiz.Question.reduce((sum, q) => sum + q.points, 0),
+      questions: quiz.Question.map((q) => ({
         _id: q.id,
         questionText: q.questionText,
         points: q.points,
         negativePoints: q.negativePoints,
         options: shuffleArray(
-          q.options.map((o: (typeof q.options)[number]) => ({
+          q.Option.map((o) => ({
             _id: o.id,
             text: o.text,
             isCorrect: o.isCorrect,
@@ -83,7 +78,6 @@ export const getQuiz = async (
       })),
     };
 
-    console.log(formattedQuiz);
     return res.status(200).json({
       success: true,
       formattedQuiz,
@@ -103,7 +97,7 @@ interface SubmitQuizBody {
   score: number;
   total: number;
   timeTaken: number;
-  questions: JSON;
+  questions: any[];
   userId?: string;
   guestId?: string;
 }
@@ -115,13 +109,6 @@ export const submitQuiz = async (
   try {
     const { quizId } = req.params;
     const { score, total, timeTaken, questions, userId, guestId } = req.body;
-
-    console.log("ATTEMPT DATA", {
-      quizId,
-      userId,
-      guestId,
-      score,
-    });
 
     if (
       typeof score !== "number" ||
@@ -144,6 +131,7 @@ export const submitQuiz = async (
 
     const attempt = await prisma.quizAttempt.create({
       data: {
+        id: randomUUID(),
         quizId,
         userId: userId ?? null,
         guestId: guestId ?? null,
@@ -183,10 +171,8 @@ export const getQuizResultByAttemptId = async (
 ) => {
   try {
     const { attemptId } = req.params;
-
     const { auth }: any = req.query;
 
-    console.log("ALL HEADERS 👉", req.query);
     if (!auth) {
       return res.status(400).json({
         success: false,
@@ -194,46 +180,38 @@ export const getQuizResultByAttemptId = async (
       });
     }
 
-    let authContext;
+    let authContext: any;
 
     try {
       const authPayload = JSON.parse(auth);
-      console.log(authPayload);
-
       if (authPayload.userId) {
         authContext = { type: "user", userId: authPayload.userId };
       } else if (authPayload.guestId) {
         authContext = { type: "guest", guestId: authPayload.guestId };
       } else {
-        throw new Error("Invalid auth payload");
+        throw new Error();
       }
     } catch {
+      console.log(res)
       return res.status(400).json({
         success: false,
         message: "Invalid auth format",
       });
     }
 
-    if (!attemptId) {
-      return res.status(400).json({
-        success: false,
-        message: "Attempt ID is required",
-      });
-    }
-
     const attempt = await prisma.quizAttempt.findUnique({
       where: { id: attemptId },
       include: {
-        quiz: {
+        Quiz: {
           select: {
             title: true,
             quizNumber: true,
             categoryId: true,
-            questions: {
+            Question: {
               select: {
                 id: true,
                 questionText: true,
-                options: {
+                Option: {
                   select: {
                     text: true,
                     isCorrect: true,
@@ -247,13 +225,12 @@ export const getQuizResultByAttemptId = async (
     });
 
     if (!attempt) {
-      return res.status(404).json({
+       return res.status(404).json({
         success: false,
         message: "Quiz attempt not found",
       });
     }
 
-    // 🛑 AUTHORIZATION CHECK (THE IMPORTANT PART)
     const isUserMatch =
       authContext.userId && attempt.userId === authContext.userId;
 
@@ -261,7 +238,6 @@ export const getQuizResultByAttemptId = async (
       authContext.guestId && attempt.guestId === authContext.guestId;
 
     if (!isUserMatch && !isGuestMatch) {
-      console.log("isUserMatch", isUserMatch, "isGuestMatch, ", isGuestMatch);
       return res.status(403).json({
         success: false,
         message: "Access denied: this attempt is not yours",
@@ -284,15 +260,11 @@ export const getQuizResultByAttemptId = async (
 /* ================= QUIZ HISTORY ================= */
 
 export const getQuizHistory = async (req: Request, res: Response) => {
-  console.log("aa gayi request on quizzes/history");
-
   try {
     const { viewerId, viewerType } = req.query as {
       viewerId?: string;
       viewerType?: "user" | "guest";
     };
-
-    console.log(viewerId, viewerType);
 
     if (!viewerId || !viewerType) {
       return res.status(400).json({
@@ -314,7 +286,7 @@ export const getQuizHistory = async (req: Request, res: Response) => {
         total: true,
         timeTaken: true,
         createdAt: true,
-        quiz: {
+        Quiz: {
           select: {
             id: true,
             title: true,

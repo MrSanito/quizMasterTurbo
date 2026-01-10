@@ -6,6 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
 
+/* ================= TYPES ================= */
+
 type QuizHistoryItem = {
   id: string;
   score: number;
@@ -20,38 +22,64 @@ type QuizHistoryItem = {
 };
 
 type QuizPlayerHistoryProps = {
-  viewerId: string;
-  viewerType: "user" | "guest";
+  viewerId?: string;
+  viewerType?: "user" | "guest";
 };
 
-const QuizPlayerHistory = ({
+/* ================= COMPONENT ================= */
+
+export default function QuizPlayerHistory({
   viewerId,
   viewerType,
-}: QuizPlayerHistoryProps) => {
+}: QuizPlayerHistoryProps) {
   const [history, setHistory] = useState<QuizHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // 🚫 HARD GUARD (THIS MATTERS)
+    if (!viewerId || !viewerType) {
+      setLoading(false);
+      return;
+    }
+
     const fetchHistory = async () => {
       try {
         const res = await axios.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/history`,
           {
-            params: {
-              viewerId,
-              viewerType,
-            },
+            params: { viewerId, viewerType },
             withCredentials: true,
           }
         );
 
-        if (!res.data?.success) {
-          throw new Error("Invalid response");
+        console.log("HISTORY RESPONSE 👉", res);
+
+        const payload = res.data;
+
+        if (!payload || !Array.isArray(payload.attempts)) {
+          console.error("BAD SHAPE 👉", payload);
+          throw new Error("Invalid history response");
         }
 
-        setHistory(res.data.attempts);
-        console.log(res.data.attempts);
+        const attempts = payload.attempts;
+
+
+        // ✅ Normalize Prisma casing (Quiz → quiz)
+        const normalized: QuizHistoryItem[] = attempts.map((a: any) => ({
+          id: a.id,
+          score: a.score,
+          total: a.total,
+          timeTaken: a.timeTaken,
+          createdAt: a.createdAt,
+          quiz: {
+            id: a.Quiz.id,
+            title: a.Quiz.title,
+            categoryId: a.Quiz.categoryId,
+          },
+        }));
+
+        setHistory(normalized);
       } catch (err) {
         console.error("❌ Failed to load quiz history", err);
         setError("Failed to load history");
@@ -63,7 +91,8 @@ const QuizPlayerHistory = ({
     fetchHistory();
   }, [viewerId, viewerType]);
 
-  /* ---------------- loading ---------------- */
+  /* ================= STATES ================= */
+
   if (loading) {
     return (
       <div className="mt-10 text-center text-neutral-400">
@@ -72,12 +101,10 @@ const QuizPlayerHistory = ({
     );
   }
 
-  /* ---------------- error ---------------- */
   if (error) {
     return <div className="mt-10 text-center text-error">{error}</div>;
   }
 
-  /* ---------------- empty ---------------- */
   if (history.length === 0) {
     return (
       <div className="mt-10 text-center text-neutral-400">
@@ -86,17 +113,18 @@ const QuizPlayerHistory = ({
     );
   }
 
+  /* ================= UI ================= */
+
   return (
     <div className="max-w-7xl mx-auto mt-12">
-      {/* Title */}
       <h2 className="text-xl sm:text-2xl font-bold mb-6">
         🧾 Your Quiz History
       </h2>
 
-      {/* History Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {history.map((item, index) => {
-          const percent = Math.round((item.score / item.total) * 100);
+          const percent =
+            item.total > 0 ? Math.round((item.score / item.total) * 100) : 0;
 
           return (
             <motion.div
@@ -110,9 +138,11 @@ const QuizPlayerHistory = ({
               <div className="flex justify-between items-start gap-3">
                 <div>
                   <h3 className="font-semibold text-lg">{item.quiz.title}</h3>
+
                   <p className="text-sm opacity-70 mt-1">
                     Score: {item.score} / {item.total} ({percent}%)
                   </p>
+
                   <p className="text-xs opacity-60 mt-1">
                     ⏱ {item.timeTaken}s •{" "}
                     {new Date(item.createdAt).toLocaleDateString()}
@@ -127,7 +157,6 @@ const QuizPlayerHistory = ({
                 </Link>
               </div>
 
-              {/* Progress bar */}
               <div className="mt-4 h-2 w-full bg-base-300 rounded">
                 <div
                   className={`h-2 rounded ${
@@ -146,6 +175,4 @@ const QuizPlayerHistory = ({
       </div>
     </div>
   );
-};
-
-export default QuizPlayerHistory;
+}
