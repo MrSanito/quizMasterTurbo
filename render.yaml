@@ -24,6 +24,6 @@ services:
         fromService:
           type: web
           name: quizmaster-backend
-          property: url
+          property: host
       - key: DATABASE_URL
         sync: false
