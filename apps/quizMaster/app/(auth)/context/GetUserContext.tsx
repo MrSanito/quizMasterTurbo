@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import axios from "axios";
-import { deleteCookie, getCookie } from "cookies-next";
+import { deleteCookie, getCookie, setCookie } from "cookies-next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -31,7 +31,7 @@ function generateGuestId() {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  console.log("i will run on every page")
+  console.log("i will run on every page");
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
@@ -47,11 +47,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const [hasSession, setHasSession] = useState(undefined);
 
-
   useEffect(() => {
-      console.log("Route changed: ----------------------------------------------------", pathname);
+    console.log(
+      "Route changed: ----------------------------------------------------",
+      pathname
+    );
+    setCookie("preference", "chocolate", { maxAge: 60 * 60 * 24 }); // Expires in 24 hours
+
+    console.log("getCookie:", getCookie("hasSession"));
+    console.log("chocolate ---------------", getCookie("preference"));
 
     console.log("document.cookie:", document.cookie);
+
     console.log("getCookie:", getCookie("hasSession"));
 
     const session = getCookie("hasSession");
@@ -76,7 +83,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const res = await api.post("/auth/verify_token");
-        console.log("requested on api/verify")
+        console.log("requested on api/verify");
 
         if (cancelled) return;
 
@@ -92,8 +99,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsLogin(false);
         }
-      } catch(err) {
-        console.log(err)
+      } catch (err) {
+        console.log(err);
         deleteCookie("hasSession");
         setUser(null);
         setIsLogin(false);

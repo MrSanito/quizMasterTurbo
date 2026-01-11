@@ -209,6 +209,7 @@ export const checkUsername = async (
 
 export const verifyUser = async (req: Request, res: Response) => {
   console.log("aa gayi bhai request");
+  
 
   const token = req.cookies?.token as string | undefined;
   console.log("token",token)
