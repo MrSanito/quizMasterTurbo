@@ -56,23 +56,24 @@ export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
 
     const hasSession = true;
 
-    res.cookie("token", token, {
-      httpOnly: true,
+    // res.cookie("token", token, {
+    //   httpOnly: true,
  
-      secure: true, // REQUIRED because Render is https
-      sameSite: "none", // REQUIRED for cross-origin
-      path: "/",
-       maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    //   secure: true, // REQUIRED because Render is https
+    //   sameSite: "none", // REQUIRED for cross-origin
+    //   path: "/",
+    //    maxAge: 7 * 24 * 60 * 60 * 1000,
+    // });
 
-    res.cookie("hasSession", "true", {
-      httpOnly: false, // OK, frontend can read
-      secure: true, // 🔥 MUST be true
-      sameSite: "none",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // res.cookie("hasSession", "true", {
+    //   httpOnly: false, // OK, frontend can read
+    //   secure: true, // 🔥 MUST be true
+    //   sameSite: "none",
+    //   path: "/",
+    //   maxAge: 7 * 24 * 60 * 60 * 1000,
+    // });
 
+    
 
     return res.status(200).json({
       success: true,
@@ -87,7 +88,7 @@ export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
         hasSession,
       },
     });
-  } catch (error) {
+   } catch (error) {
     console.log("error : ", error);
     return res.status(500).json({
       success: false,

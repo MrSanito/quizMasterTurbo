@@ -44,9 +44,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const PUBLIC_ROUTES = ["/abFout"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  const hasSession = getCookie("hasSession");
+  const [hasSession, setHasSession] = useState<string | undefined>(undefined);
+
 
   useEffect(() => {
+    console.log("document.cookie:", document.cookie);
+    console.log("getCookie:", getCookie("hasSession"));
+
+    const session = getCookie("hasSession");
+    console.log(session, "hasSession (client)");
+    setHasSession(session);
     let cancelled = false;
 
     const runAuthFlow = async () => {

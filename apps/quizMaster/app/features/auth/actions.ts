@@ -4,6 +4,7 @@ import axios from "axios";
 import { loginSchema, registerSchema } from "./schema";
 import { unstable_noStore as noStore } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 type ActionResponse = {
   success: boolean;
@@ -86,12 +87,13 @@ export async function loginAction(
 
   // 1️⃣ Extract form data
   const rawData = {
-     email: formData.get("email"),
+    email: formData.get("email"),
     password: formData.get("password"),
   };
 
   // 2️⃣ Zod validation
   const parsed = loginSchema.safeParse(rawData);
+  let shouldRedirect = false;
 
   if (!parsed.success) {
     const errors: Record<string, string> = {};
@@ -131,6 +133,7 @@ export async function loginAction(
     });
 
     const data = await res.json();
+    console.log("server response", data);
 
     // ❌ Backend rejected login
     if (!res.ok) {
@@ -151,25 +154,28 @@ export async function loginAction(
         token.substring(0, 20) + "..."
       );
 
-      const cookieStore =  await cookies();
+      const cookieStore = await cookies();
+      const isProd = process.env.NODE_ENV === "production";
 
       // Match Express server cookie settings exactly
       cookieStore.set("token", token, {
         httpOnly: true,
-        secure: false, // Match Express: false for localhost, true in production
-        sameSite: "lax", // Match Express
-        path: "/", // Match Express
-        maxAge: 7 * 24 * 60 * 60, // 7 days in seconds (Express uses milliseconds, but Next.js expects seconds)
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
       });
 
       cookieStore.set("hasSession", "true", {
         httpOnly: false,
-        sameSite: "lax",
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
       });
 
       console.log("✅ Cookie set successfully");
+      shouldRedirect = true; // Flag success instead of redirecting here
     } else {
       console.warn("⚠️ No token in response:", data);
     }
@@ -179,7 +185,7 @@ export async function loginAction(
       message: data?.message ?? "Login successfully",
     };
   } catch (err: any) {
-    console.log("❌ EXPRESS FAILED");
+    console.log("❌ EXPRESS FAILED", err);
 
     if (axios.isAxiosError(err)) {
       return {
@@ -189,10 +195,14 @@ export async function loginAction(
       };
     }
 
-    return {
-      success: false,
-      message: "Server not reachable",
-    };
+    // return {
+    //   success: false,
+    //   message: "Server not reachable Login failed",
+    // };
+  }
+  // 🔥 Run redirect AFTER the try/catch block
+  if (shouldRedirect) {
+    redirect("/dashboard");
   }
 }
 
@@ -214,7 +224,6 @@ export async function logOut() {
   const cookieStore = await cookies();
   cookieStore.delete("token"); // auth token
   cookieStore.delete("hasSession"); // hasSession
-  console.log("logout done")
+  console.log("logout done");
   return { success: true };
-
 }
