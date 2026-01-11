@@ -73,7 +73,7 @@ export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
     //   maxAge: 7 * 24 * 60 * 60 * 1000,
     // });
 
-    
+
 
     return res.status(200).json({
       success: true,
@@ -184,6 +184,7 @@ export const verifyUser = async (req: Request, res: Response) => {
   console.log("aa gayi bhai request");
 
   const token = req.cookies?.token as string | undefined;
+  console.log("token",token)
 
   if (!token) {
     return res.status(401).json({ valid: false });
@@ -202,12 +203,14 @@ export const verifyUser = async (req: Request, res: Response) => {
     }
 
     const email = (decoded as JwtPayload).email as string;
+    console.log("email is ", email)
 
     const currentUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!currentUser) {
+      console.log("no user found in db")
       return res.status(401).json({
         valid: false,
         success: false,

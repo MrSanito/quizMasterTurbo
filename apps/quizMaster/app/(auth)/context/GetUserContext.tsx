@@ -73,6 +73,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const res = await api.post("/auth/verify_token");
+        console.log("requested on api/verify")
 
         if (cancelled) return;
 
@@ -88,7 +89,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsLogin(false);
         }
-      } catch {
+      } catch(err) {
+        console.log(err)
         deleteCookie("hasSession");
         setUser(null);
         setIsLogin(false);
