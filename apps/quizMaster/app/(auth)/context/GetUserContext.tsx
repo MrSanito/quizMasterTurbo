@@ -44,7 +44,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const PUBLIC_ROUTES = ["/abFout"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  const [hasSession, setHasSession] = useState<string | undefined>(undefined);
+  const [hasSession, setHasSession] = useState(undefined);
 
 
   useEffect(() => {
