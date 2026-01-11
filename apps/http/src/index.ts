@@ -14,6 +14,8 @@ console.log("🔥 PID:", process.pid);
 
 const app = express();
 app.use(express.json()); // ❌ too late
+app.use(cookieparser());
+
 
 app.use((req, res, next) => {
   console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
@@ -30,7 +32,6 @@ app.use(
   })
 );
 
-app.use(cookieparser());
 
 // all routes go through here
 app.use("/api/v1", router);

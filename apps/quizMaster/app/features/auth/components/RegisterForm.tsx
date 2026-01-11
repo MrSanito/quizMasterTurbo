@@ -5,9 +5,13 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 
 import { registerAction, checkUsername } from "../actions";
 import { useDebounce } from "../../hook/useDebouncer";
+import { useRouter } from "next/navigation";
+
 
 const RegisterForm = () => {
   // const [state, formAction, isPending] = useActionState(registerAction, {});
+    const router = useRouter();
+  
 
   const [form, setForm] = useState({
     username: "",
@@ -67,6 +71,18 @@ const RegisterForm = () => {
 
     runCheck();
   }, [debouncedUsername]);
+
+  useEffect(() => {
+    if (!state.success) return;
+  
+    const timer = setTimeout(() => {
+      router.push("/dashboard");
+    }, 3000); // ⏳ 3 seconds
+  
+    // cleanup (important!)
+    return () => clearTimeout(timer);
+  }, [state.success, router]);
+  
 
   return (
     <form action={formAction} suppressHydrationWarning>

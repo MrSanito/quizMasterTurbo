@@ -13,8 +13,9 @@ interface AuthBody {
 
 /* ================= LOGIN ================= */
 
-export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
-  const { username, email, password } = req.body;
+export const login = async (req: Request, res: Response) => {
+  console.log(req.body)
+   const { username, email, password } = req.body;
 
   console.log("username :", username);
   console.log("email :", email);
@@ -56,22 +57,22 @@ export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
 
     const hasSession = true;
 
-    // res.cookie("token", token, {
-    //   httpOnly: true,
+    res.cookie("token", token, {
+      httpOnly: true,
  
-    //   secure: true, // REQUIRED because Render is https
-    //   sameSite: "none", // REQUIRED for cross-origin
-    //   path: "/",
-    //    maxAge: 7 * 24 * 60 * 60 * 1000,
-    // });
+      secure: true, // REQUIRED because Render is https
+      sameSite: "none", // REQUIRED for cross-origin
+      path: "/",
+       maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
-    // res.cookie("hasSession", "true", {
-    //   httpOnly: false, // OK, frontend can read
-    //   secure: true, // 🔥 MUST be true
-    //   sameSite: "none",
-    //   path: "/",
-    //   maxAge: 7 * 24 * 60 * 60 * 1000,
-    // });
+    res.cookie("hasSession", "true", {
+      httpOnly: false, // OK, frontend can read
+      secure: true, // 🔥 MUST be true
+      sameSite: "none",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
 
 
@@ -132,7 +133,33 @@ export const register = async (
 
     console.log("saved user", savedUser);
 
+       const token = jwt.sign(
+        { userId: savedUser.id, email: savedUser.email },
+        process.env.JWT_SECRET!,
+        { expiresIn: "7d" }
+      );
+      res.cookie("token", token, {
+        httpOnly: true,
+
+        secure: true, // REQUIRED because Render is https
+        sameSite: "none", // REQUIRED for cross-origin
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      res.cookie("hasSession", "true", {
+        httpOnly: false, // OK, frontend can read
+        secure: true, // 🔥 MUST be true
+        sameSite: "none",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+
+    
+
     return res.status(201).json({
+      success: true,
       data: {
         username,
         email,

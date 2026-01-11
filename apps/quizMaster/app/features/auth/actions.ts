@@ -1,9 +1,9 @@
-"use server";
+"use client";
 
 import axios from "axios";
 import { loginSchema, registerSchema } from "./schema";
 import { unstable_noStore as noStore } from "next/cache";
-import { cookies } from "next/headers";
+// import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 type ActionResponse = {
@@ -52,6 +52,8 @@ export async function registerAction(
 
     const res = await axios.post(`${API_URL}/auth/register`, parsed.data, {
       timeout: 3000,
+
+      withCredentials: true, // 🔥 VERY IMPORTANT
     });
 
     console.log(res.data);
@@ -86,6 +88,7 @@ export async function loginAction(
   noStore(); // Prevent caching issues with cookies
 
   // 1️⃣ Extract form data
+  console.log("I am running in the browser");
   const rawData = {
     email: formData.get("email"),
     password: formData.get("password"),
@@ -121,22 +124,23 @@ export async function loginAction(
         message: "API URL not configured",
       };
     }
+    const { email, password } = rawData;
 
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const res = await axios.post(
+      `${API_URL}/auth/login`,
+      {
+        email,
+        password,
       },
-      body: JSON.stringify(parsed.data),
-      // Note: credentials: "include" doesn't help in server-to-server requests
-      // but we'll manually set the cookie from the response token
-    });
-
-    const data = await res.json();
-    console.log("server response", data);
+      {
+        withCredentials: true, // 🔥 VERY IMPORTANT
+      }
+    );
+    console.log("response from login", res);
+    const data = res.data;
 
     // ❌ Backend rejected login
-    if (!res.ok) {
+    if (!data.success) {
       return {
         success: false,
         message: data?.message ?? "Login failed",
@@ -154,25 +158,25 @@ export async function loginAction(
         token.substring(0, 20) + "..."
       );
 
-      const cookieStore = await cookies();
-      const isProd = process.env.NODE_ENV === "production";
+      // const cookieStore = await cookies();
+      // const isProd = process.env.NODE_ENV === "production";
 
       // Match Express server cookie settings exactly
-      cookieStore.set("token", token, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60,
-      });
+      // cookieStore.set("token", token, {
+      //   httpOnly: true,
+      //   secure: isProd,
+      //   sameSite: isProd ? "none" : "lax",
+      //   path: "/",
+      //   maxAge: 7 * 24 * 60 * 60,
+      // });
 
-      cookieStore.set("hasSession", "true", {
-        httpOnly: false,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60,
-      });
+      // cookieStore.set("hasSession", "true", {
+      //   httpOnly: false,
+      //   secure: isProd,
+      //   sameSite: isProd ? "none" : "lax",
+      //   path: "/",
+      //   maxAge: 7 * 24 * 60 * 60,
+      // });
 
       console.log("✅ Cookie set successfully");
       shouldRedirect = true; // Flag success instead of redirecting here
@@ -220,10 +224,10 @@ export async function checkUsername(username: string) {
   return res.data;
 }
 
-export async function logOut() {
-  const cookieStore = await cookies();
-  cookieStore.delete("token"); // auth token
-  cookieStore.delete("hasSession"); // hasSession
-  console.log("logout done");
-  return { success: true };
-}
+// export async function logOut() {
+//   const cookieStore = await cookies();
+//   cookieStore.delete("token"); // auth token
+//   cookieStore.delete("hasSession"); // hasSession
+//   console.log("logout done");
+//   return { success: true };
+// }
