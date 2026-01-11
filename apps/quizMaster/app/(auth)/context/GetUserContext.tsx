@@ -31,6 +31,7 @@ function generateGuestId() {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  console.log("i will run on every page")
   const [user, setUser] = useState(null);
   const [isLogin, setIsLogin] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
@@ -48,6 +49,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
+      console.log("Route changed: ----------------------------------------------------", pathname);
+
     console.log("document.cookie:", document.cookie);
     console.log("getCookie:", getCookie("hasSession"));
 
