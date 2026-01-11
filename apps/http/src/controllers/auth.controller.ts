@@ -58,19 +58,21 @@ export const login = async (req: Request<{}, {}, AuthBody>, res: Response) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+ 
+      secure: true, // REQUIRED because Render is https
+      sameSite: "none", // REQUIRED for cross-origin
+      path: "/",
+       maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("hasSession", "true", {
+      httpOnly: false, // OK, frontend can read
+      secure: true, // 🔥 MUST be true
+      sameSite: "none",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.cookie("hasSession", "true", {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-
-      sameSite: "lax",
-      path: "/",
-    });
 
     return res.status(200).json({
       success: true,
