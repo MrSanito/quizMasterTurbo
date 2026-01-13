@@ -55,7 +55,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setCookie("preference", "chocolate", { maxAge: 60 * 60 * 24 }); // Expires in 24 hours
 
     console.log("getCookie:", getCookie("hasSession"));
-    console.log("chocolate ---------------", getCookie("preference"));
+    console.log("chocolate -------------", getCookie("preference"));
 
     console.log("document.cookie:", document.cookie);
 
