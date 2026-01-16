@@ -33,6 +33,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [isLogin, setIsLogin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false); // 🔑
 
   const [isGuest, setIsGuest] = useState(false);
   const [isMaxTryReached, setIsMaxTryReached] = useState(false);
@@ -43,7 +44,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const PUBLIC_ROUTES = ["/abFout"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  /* ================= AUTH (SOURCE OF TRUTH = BACKEND) ================= */
+  /* ================= AUTH CHECK ================= */
   useEffect(() => {
     let cancelled = false;
 
@@ -51,6 +52,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
 
       if (isPublicRoute) {
+        setAuthChecked(true);
         setLoading(false);
         return;
       }
@@ -63,11 +65,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (res.data?.success) {
           setUser(res.data.user);
           setIsLogin(true);
-          setIsGuest(false);
-          setIsMaxTryReached(false);
-          setGuest(null);
-          localStorage.removeItem("guestId");
-          localStorage.removeItem("guestQuizCount");
         } else {
           setUser(null);
           setIsLogin(false);
@@ -76,7 +73,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setIsLogin(false);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setAuthChecked(true); // ✅ auth decision made
+          setLoading(false);
+        }
       }
     };
 
@@ -87,9 +87,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, isPublicRoute]);
 
-  /* ================= GUEST MODE ================= */
+  /* ================= GUEST MODE (FALLBACK) ================= */
   useEffect(() => {
-    if (isLogin) return;
+    // ⛔ WAIT until auth is checked
+    if (!authChecked || isLogin) return;
 
     let guestId = localStorage.getItem("guestId");
 
@@ -111,7 +112,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setIsGuest(false);
       setIsMaxTryReached(true);
     }
-  }, [isLogin]);
+  }, [authChecked, isLogin]);
 
   const incrementGuestCount = () => {
     if (isLogin) return;
