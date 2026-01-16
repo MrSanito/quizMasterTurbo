@@ -8,17 +8,17 @@ import { deleteCookie, getCookie, setCookie } from "cookies-next";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const api = axios.create({
-  baseURL: `${API_URL}`,
+  baseURL: API_URL,
   withCredentials: true,
 });
 
 const UserContext = createContext({
-  user: null,
+  user: null as any,
   isLogin: false,
   isGuest: false,
   isMaxTryReached: false,
   loading: true,
-  guest: null,
+  guest: null as any,
   guestCount: 0,
   guestLeft: 3,
   incrementGuestCount: () => {},
@@ -31,39 +31,31 @@ function generateGuestId() {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  console.log("i will run on every page");
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
+
   const [isLogin, setIsLogin] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [isMaxTryReached, setIsMaxTryReached] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [guest, setGuest] = useState(null);
+  const [guest, setGuest] = useState<any>(null);
   const [guestCount, setGuestCount] = useState(0);
 
   const pathname = usePathname();
   const PUBLIC_ROUTES = ["/abFout"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  const [hasSession, setHasSession] = useState(undefined);
-
+  /* ================= READ COOKIE ONCE ================= */
   useEffect(() => {
-    console.log(
-      "Route changed: ----------------------------------------------------",
-      pathname
-    );
-    setCookie("preference", "chocolate", { maxAge: 60 * 60 * 24 }); // Expires in 24 hours
-
-    console.log("getCookie:", getCookie("hasSession"));
-    console.log("chocolate -------------", getCookie("preference"));
-
-    console.log("document.cookie:", document.cookie);
-
-    console.log("getCookie:", getCookie("hasSession"));
-
     const session = getCookie("hasSession");
-    console.log(session, "hasSession (client)");
-    setHasSession(session);
+    setHasSession(session === "true");
+  }, []);
+
+  /* ================= AUTH FLOW ================= */
+  useEffect(() => {
+    if (hasSession === null) return; // ⛔ wait until cookie is known
+
     let cancelled = false;
 
     const runAuthFlow = async () => {
@@ -83,7 +75,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const res = await api.post("/auth/verify_token");
-        console.log("requested on api/verify");
 
         if (cancelled) return;
 
@@ -100,7 +91,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setIsLogin(false);
         }
       } catch (err) {
-        console.log(err);
         deleteCookie("hasSession");
         setUser(null);
         setIsLogin(false);
@@ -116,6 +106,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, hasSession, isPublicRoute]);
 
+  /* ================= GUEST MODE ================= */
   useEffect(() => {
     if (isLogin) return;
 
@@ -132,7 +123,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setGuest({ id: guestId });
     setGuestCount(storedCount);
 
-    if (storedCount <= MAX_GUEST_TRIES) {
+    if (storedCount < MAX_GUEST_TRIES) {
       setIsGuest(true);
       setIsMaxTryReached(false);
     } else {
