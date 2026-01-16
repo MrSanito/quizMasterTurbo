@@ -13,8 +13,10 @@ const Dashboard = () => {
   const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
     useUser();
 
-  const viewerId = user?.id ?? guest?.id;
-  const viewerType = user ? "user" : "guest";
+ const viewerId =
+   !loading && isLogin ? user?.id : !loading && isGuest ? guest?.id : undefined;
+
+ const viewerType = isLogin ? "user" : "guest";
 
   console.log(viewerId, viewerType);
 

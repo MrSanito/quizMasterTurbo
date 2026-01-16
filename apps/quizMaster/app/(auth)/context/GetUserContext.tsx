@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import axios from "axios";
-import { deleteCookie, getCookie, setCookie } from "cookies-next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -32,13 +31,11 @@ function generateGuestId() {
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
-
   const [isLogin, setIsLogin] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [isMaxTryReached, setIsMaxTryReached] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [isGuest, setIsGuest] = useState(false);
+  const [isMaxTryReached, setIsMaxTryReached] = useState(false);
   const [guest, setGuest] = useState<any>(null);
   const [guestCount, setGuestCount] = useState(0);
 
@@ -46,29 +43,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const PUBLIC_ROUTES = ["/abFout"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  /* ================= READ COOKIE ONCE ================= */
+  /* ================= AUTH (SOURCE OF TRUTH = BACKEND) ================= */
   useEffect(() => {
-    const session = getCookie("hasSession");
-    setHasSession(session === "true");
-  }, []);
-
-  /* ================= AUTH FLOW ================= */
-  useEffect(() => {
-    if (hasSession === null) return; // ⛔ wait until cookie is known
-
     let cancelled = false;
 
-    const runAuthFlow = async () => {
+    const checkAuth = async () => {
       setLoading(true);
 
       if (isPublicRoute) {
-        setLoading(false);
-        return;
-      }
-
-      if (!hasSession) {
-        setUser(null);
-        setIsLogin(false);
         setLoading(false);
         return;
       }
@@ -90,8 +72,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setIsLogin(false);
         }
-      } catch (err) {
-        deleteCookie("hasSession");
+      } catch {
         setUser(null);
         setIsLogin(false);
       } finally {
@@ -99,12 +80,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    runAuthFlow();
+    checkAuth();
 
     return () => {
       cancelled = true;
     };
-  }, [pathname, hasSession, isPublicRoute]);
+  }, [pathname, isPublicRoute]);
 
   /* ================= GUEST MODE ================= */
   useEffect(() => {
