@@ -2,6 +2,7 @@
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import { UserProvider } from "./(auth)/context/GetUserContext";
+import { Analytics } from "@vercel/analytics/next";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
           <Navbar />
           <main className="container mx-auto px-4 py-8">{children}</main>
         </UserProvider>
+        <Analytics />
       </body>
     </html>
   );
