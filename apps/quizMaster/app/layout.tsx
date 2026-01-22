@@ -2,6 +2,9 @@
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import { UserProvider } from "./(auth)/context/GetUserContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -29,7 +32,18 @@ export default function RootLayout({ children }) {
       >
         <UserProvider>
           <Navbar />
-          <main className="container mx-auto px-4 py-8">{children}</main>
+          <main className="container mx-auto px-4 py-8">
+            {children}
+            <ToastContainer
+              position="bottom-right"
+              autoClose={2000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              pauseOnHover
+              theme="dark"
+            />
+          </main>
         </UserProvider>
       </body>
     </html>

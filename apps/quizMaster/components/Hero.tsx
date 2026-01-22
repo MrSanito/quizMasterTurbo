@@ -48,7 +48,7 @@ const HeroSection = () => {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Link href="/categories">
+            <Link href="/quiz/mode">
               <button className="btn btn-primary flex items-center gap-2">
                 <FaCirclePlay />
                 Start Quiz

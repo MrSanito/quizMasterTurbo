@@ -41,7 +41,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [guestCount, setGuestCount] = useState(0);
 
   const pathname = usePathname();
-  const PUBLIC_ROUTES = ["/abFout"];
+  const PUBLIC_ROUTES = ["/about"];
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
   /* ================= AUTH CHECK ================= */
