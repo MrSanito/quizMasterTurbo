@@ -55,8 +55,8 @@ const HeroSection = () => {
               </button>
             </Link>
 
-            <Link href="/signup">
-              <button className="btn btn-outline">Sign Up</button>
+            <Link href="/register">
+              <button className="btn btn-outline">Register</button>
             </Link>
           </div>
         </motion.div>

@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import { data } from "@/app/dashboard/data";
 import Card from "@/components/Card";
  import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";
+import Link from "next/link";
 
 const Dashboard = () => {
   const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
@@ -67,10 +68,13 @@ const Dashboard = () => {
               <FaTrophy />
               Leaderboard
             </button>
+              <Link href={`/quiz/mode`}>
             <button className="btn btn-primary w-full sm:w-auto">
+
               <FaCirclePlay />
               Start Quiz
             </button>
+              </Link>
           </div>
         </div>
 

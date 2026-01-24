@@ -1,0 +1,430 @@
+{
+  "_id": "cmk5thtrh00akp8tx8p0oha29",
+  "quizNumber": 12,
+  "title": "Biology – Environment & Ecology",
+  "categoryId": "cmk1ayu320049igtxszitm8ko",
+  "timeLimit": 5,
+  "totalPoints": 60,
+  "questions": [
+    {
+      "_id": "cmk5thtxj00alp8tx3shtqomm",
+      "questionText": "Study of environment?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thu5w00amp8tx3gq9unuf",
+          "text": "Biology",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thu5w00app8tx82r0c5tr",
+          "text": "Geology",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thu5w00anp8txkr2i8zl5",
+          "text": "Zoology",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thu5w00aop8txbfww5bc0",
+          "text": "Ecology",
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thuca00aqp8txlj80f67w",
+      "questionText": "Producers in ecosystem?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thuip00asp8txj43zg9du",
+          "text": "Bacteria",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thuip00atp8tx8modtena",
+          "text": "Fungi",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thuip00aup8txztkyivs5",
+          "text": "Animals",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thuip00arp8txu7uw3gnb",
+          "text": "Plants",
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thup200avp8txu9gg7mtr",
+      "questionText": "Consumers are?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thuvf00azp8txfszfwb74",
+          "text": "Producers",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thuvf00awp8txs08xyvl0",
+          "text": "Plants",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thuvf00axp8txcuqubeiz",
+          "text": "Decomposers",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thuvf00ayp8txypjqj78a",
+          "text": "Animals",
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thv1n00b0p8txt6q268h9",
+      "questionText": "Decomposers include?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thv7x00b4p8txbxpwnng9",
+          "text": "Bacteria & fungi",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thv7x00b3p8txbg4213at",
+          "text": "Insects",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thv7x00b2p8tx62co42xy",
+          "text": "Animals",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thv7x00b1p8tx66lepmmi",
+          "text": "Plants",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thve600b5p8txv35u3bm4",
+      "questionText": "Food chain starts with?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thvkj00b6p8tx4y8ze77y",
+          "text": "Animals",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thvkj00b7p8txellu2xt9",
+          "text": "Plants",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thvkj00b9p8txes6m1dme",
+          "text": "Herbivores",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thvkj00b8p8txlexbwlzh",
+          "text": "Carnivores",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thvqt00bap8txbsw14u09",
+      "questionText": "Energy transfer in food chain is?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thvwx00bep8txnzn2qmui",
+          "text": "10%",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thvwx00bcp8tx9c07vfss",
+          "text": "50%",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thvwx00bbp8txf39hwehf",
+          "text": "100%",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thvwx00bdp8txsfzn18ge",
+          "text": "90%",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thw5e00bfp8txrq3466ue",
+      "questionText": "Greenhouse gas?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thwbn00bhp8txiksp5hvh",
+          "text": "Nitrogen",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thwbn00bip8txkk8tn0qs",
+          "text": "Hydrogen",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thwbn00bjp8txwo9eh16j",
+          "text": "Oxygen",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thwbn00bgp8txsp2cf493",
+          "text": "Carbon dioxide",
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thwi100bkp8txtih596mn",
+      "questionText": "Deforestation causes?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thwo700blp8txa02lc40l",
+          "text": "All",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thwo700bop8tx47sg87rn",
+          "text": "Soil erosion",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thwo700bmp8txt9cn4o0c",
+          "text": "Climate change",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thwo700bnp8txjm4i1av6",
+          "text": "Floods",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thwuj00bpp8tx6eaz7row",
+      "questionText": "Ozone layer protects from?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thx0n00btp8tx7mwyio3c",
+          "text": "Infrared rays",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thx0n00bsp8txxrznkuhz",
+          "text": "Visible light",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thx0n00brp8txpoarczvw",
+          "text": "UV rays",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thx0n00bqp8txmirbxm5w",
+          "text": "Gamma rays",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thx6q00bup8txmv9medsv",
+      "questionText": "Pollution affecting air?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thxd700bvp8txdcoxkq04",
+          "text": "Plastic",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thxd700byp8tx4ez8niyr",
+          "text": "Noise",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thxd700bwp8txdggm4v25",
+          "text": "Smoke",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thxd700bxp8txej3d0eib",
+          "text": "Waste",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thxmu00bzp8tx4iy8sfvr",
+      "questionText": "Biodegradable waste?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thxtd00c3p8txdi3hla81",
+          "text": "Vegetable waste",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thxtd00c0p8tx5fy9d6bu",
+          "text": "Glass",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thxtd00c1p8txxxpep7uw",
+          "text": "Plastic",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thxtd00c2p8tx1j32urj8",
+          "text": "Metal",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thxzn00c4p8txh3pz73y7",
+      "questionText": "Non-biodegradable waste?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thy6200c5p8txbllkv5ub",
+          "text": "Paper",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thy6200c8p8txncenwcmg",
+          "text": "Plastic",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thy6200c6p8txp1mu2lwg",
+          "text": "Leaves",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thy6200c7p8txt6gpuqrd",
+          "text": "Food",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thydi00c9p8tx43psz7rz",
+      "questionText": "Conservation of environment means?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thyjn00ccp8txoieg5cmv",
+          "text": "Protection",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thyjn00cap8txo5o4avnb",
+          "text": "Exploitation",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thyjn00cbp8txvothv7xu",
+          "text": "Destruction",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thyjn00cdp8tx6m2b1f1g",
+          "text": "Usage",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thyqc00cep8tx84k81eng",
+      "questionText": "National parks protect?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thywp00cgp8txeouen2ek",
+          "text": "Cities",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thywq00cip8txbh4p49li",
+          "text": "Rivers only",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thywp00cfp8txs5tcfkph",
+          "text": "Factories",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thywq00chp8tx5zwwwmrm",
+          "text": "Wildlife",
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "_id": "cmk5thz2s00cjp8txje1eaj9r",
+      "questionText": "Reduce, Reuse, Recycle is related to?",
+      "points": 4,
+      "negativePoints": -1,
+      "options": [
+        {
+          "_id": "cmk5thz9800cnp8txc1094pbt",
+          "text": "Pollution",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thz9800cmp8txrfrf749h",
+          "text": "Waste management",
+          "isCorrect": true
+        },
+        {
+          "_id": "cmk5thz9800clp8txfq2u7vx5",
+          "text": "Energy",
+          "isCorrect": false
+        },
+        {
+          "_id": "cmk5thz9800ckp8txop5xgvqv",
+          "text": "Transport",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}

@@ -36,12 +36,20 @@ export default function RootLayout({ children }) {
             {children}
             <ToastContainer
               position="bottom-right"
-              autoClose={2000}
+              autoClose={5000}
               hideProgressBar={false}
               newestOnTop
               closeOnClick
               pauseOnHover
               theme="dark"
+              toastStyle={{
+                width: "260px", // 👈 fixed width = predictable
+                maxWidth: "260px",
+                whiteSpace: "nowrap", // 👈 single line
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                borderRadius: "14px",
+              }}
             />
           </main>
         </UserProvider>

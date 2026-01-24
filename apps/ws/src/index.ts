@@ -18,15 +18,19 @@ instrument(io, {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("✅ User connected:", socket.id);
 
   socket.on("message", (msg) => {
-    io.emit("message", msg); // send to everyone
+    console.log("📩 Message received:", msg);
+    io.emit("message", msg);
   });
 
   socket.on("disconnect", () => {
-    console.log("User left");
+    console.log("❌ User disconnected:", socket.id);
   });
 });
 
-server.listen(3003);
+
+server.listen(3003, () => {
+  console.log("🚀 Server running on http://localhost:3003");
+});
