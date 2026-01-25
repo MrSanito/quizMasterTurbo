@@ -352,7 +352,7 @@ export default function ClientQuizPlayer({ quiz }) {
                   <span className="text-left text-sm sm:text-base font-medium">
                     {option.text}
                   </span>
-
+ 
                   {isAnswered && option.isCorrect && (
                     <CheckCircle className="w-5 h-5 shrink-0" />
                   )}

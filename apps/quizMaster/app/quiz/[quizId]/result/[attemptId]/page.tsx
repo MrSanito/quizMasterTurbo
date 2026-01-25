@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -45,7 +45,7 @@ type NormalizedQuestion = {
 
 function normalizeAttempt(
   attemptQuestions: AttemptQuestionRaw[],
-  quizQuestions: QuizQuestion[]
+  quizQuestions: QuizQuestion[],
 ): NormalizedQuestion[] {
   const quizMap = new Map(quizQuestions.map((q) => [q.id, q]));
 
@@ -71,7 +71,6 @@ function normalizeAttempt(
 /* ================= COMPONENT ================= */
 
 export default function ClientQuizResult() {
-  // ✅ FIX 1: unwrap params safely
   const params = useParams();
   const { attemptId } = params as { attemptId: string };
 
@@ -100,12 +99,10 @@ export default function ClientQuizResult() {
             params: {
               auth: JSON.stringify(authPayload),
             },
-          }
+          },
         );
 
         const attempt = res.data?.attempt ?? res.data?.data?.attempt;
-
-        // ✅ FIX 2: match backend casing
         const quizQuestions = attempt?.Quiz?.Question;
 
         if (
@@ -119,12 +116,9 @@ export default function ClientQuizResult() {
         setQuestions(normalizeAttempt(attempt.questions, quizQuestions));
         setQuizId(attempt.quizId);
       } catch (err: any) {
-        console.error("❌ Fetch result error:", err);
-
         if (err.response) {
           const status = err.response.status;
           const message = err.response.data?.message || "Something went wrong";
-
           if (status === 403) setError(message);
           else if (status === 401)
             setError("You are not authorized. Please login again.");
@@ -182,67 +176,82 @@ export default function ClientQuizResult() {
   /* ================= UI ================= */
 
   return (
-    <div className="min-h-[80dvh] flex justify-center px-4 py-6">
-      <div className="max-w-3xl w-full space-y-4">
+    <div className="min-h-[80dvh] bg-base-200 px-4 py-10">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* SUMMARY */}
-        <div className="card bg-base-200 shadow-sm">
-          <div className="card-body p-4 text-center">
-            <h1 className="text-xl font-bold text-primary">
-              Quiz Completed 🎉
-            </h1>
+        <div className="rounded-2xl bg-base-100 border border-base-300 shadow p-6 text-center">
+          <h1 className="text-xl font-bold text-primary">Quiz Completed</h1>
 
-            <div className="text-4xl font-bold mt-2">{score}</div>
-            <p className="text-sm opacity-70">Final Score</p>
+          <div className="mt-2 text-5xl font-extrabold">{score}</div>
+          <p className="text-sm opacity-60">Final Score</p>
 
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              <Stat label="Correct" value={correct} color="bg-success" />
-              <Stat label="Wrong" value={wrong} color="bg-error" />
-              <Stat label="Skipped" value={skipped} color="bg-warning" />
-            </div>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Stat label="Correct" value={correct} tone="success" />
+            <Stat label="Wrong" value={wrong} tone="error" />
+            <Stat label="Skipped" value={skipped} tone="warning" />
+            <Stat label="Time" value={`${totalTime}s`} tone="info" />
+          </div>
 
-            <p className="mt-3 text-xs opacity-70">⏱ {totalTime}s total</p>
-
-            <div className="mt-4 flex justify-center gap-2">
-              <Link href={`/quiz/${quizId}`} className="btn btn-sm btn-primary">
-                Retry
-              </Link>
-              <Link href="/categories" className="btn btn-sm btn-ghost">
-                Categories
-              </Link>
-            </div>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link href={`/quiz/${quizId}`} className="btn btn-sm btn-primary">
+              Retry
+            </Link>
+            <Link href="/categories" className="btn btn-sm btn-ghost">
+              Categories
+            </Link>
           </div>
         </div>
 
         {/* REVIEW */}
-        <div className="card bg-base-200 shadow-sm">
-          <div className="card-body p-4 space-y-4">
-            <h2 className="text-sm font-bold opacity-80">Answer Review</h2>
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold uppercase opacity-70">
+            Answer Review
+          </h2>
 
-            {questions.map((q, idx) => (
-              <div key={q.questionId} className="space-y-2">
-                <p className="text-sm font-medium">
-                  {idx + 1}. {q.questionText}
-                </p>
+          {questions.map((q, idx) => (
+            <div
+              key={q.questionId}
+              className="rounded-xl bg-base-100 border border-base-300 p-5 space-y-3"
+            >
+              <p className="font-medium">
+                {idx + 1}. {q.questionText}
+              </p>
 
-                <div className="flex flex-col items-center gap-2">
-                  {q.options.map((opt, i) => {
-                    let cls = "bg-base-300";
-                    if (opt.isCorrect) cls = "bg-success text-white";
-                    else if (opt.isSelected) cls = "bg-error text-white";
+              <div className="grid gap-2">
+                {q.options.map((opt, i) => {
+                  const isCorrect = opt.isCorrect;
+                  const isSelected = opt.isSelected;
 
-                    return (
-                      <div
-                        key={i}
-                        className={`w-full max-w-md px-3 py-2 rounded text-sm ${cls}`}
-                      >
-                        {opt.text}
-                      </div>
-                    );
-                  })}
-                </div>
+                  let style = "border-base-300 bg-base-200 text-base-content";
+                  let icon = null;
+
+                  if (isCorrect) {
+                    style = "border-success bg-success/10";
+                    icon = "✔";
+                  } else if (isSelected) {
+                    style = "border-error bg-error/10";
+                    icon = "✖";
+                  }
+
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-between rounded-lg border px-4 py-2 text-sm ${style}`}
+                    >
+                      <span>{opt.text}</span>
+                      {icon && (
+                        <span className="text-sm font-bold opacity-70">
+                          {icon}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+
+              <div className="text-xs opacity-60">⏱ {q.timeTaken}s</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -254,16 +263,17 @@ export default function ClientQuizResult() {
 function Stat({
   label,
   value,
-  color,
+  tone,
 }: {
   label: string;
-  value: number;
-  color: string;
+  value: number | string;
+  tone: "success" | "error" | "warning" | "info";
 }) {
   return (
-    <div className={`rounded p-2 text-white text-center ${color}`}>
-      <div className="text-lg font-bold">{value}</div>
-      <div className="text-[10px] opacity-90">{label}</div>
+    <div
+      className={`px-4 py-2 rounded-full text-sm font-semibold bg-${tone}/10 text-${tone}`}
+    >
+      {label}: {value}
     </div>
   );
 }

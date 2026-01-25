@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 
@@ -120,36 +120,44 @@ const RoomLobbyPage = () => {
 
     return null;
   }, [loading, isLogin, isGuest, user, guest]);
+const socketRef = useRef<any>(null);
 
-  const socket = useMemo(() => {
-    return io("http://localhost:3003", {
-      transports: ["websocket"], // optional but cleaner
-    });
-  }, []);
+if (!socketRef.current) {
+  socketRef.current = io("http://localhost:3003", {
+    transports: ["websocket"],
+    autoConnect: false,
+  });
+}
+
+const socket = socketRef.current;
 
   const [socketId, setSocketId] = useState<false | string>(false);
   const { roomId } = useParams<{ roomId: string }>();
   const [players, setPlayers] = useState<any[]>([]);
 
   useEffect(() => {
-    console.log(player , roomId)
+    console.log(player, roomId);
+    if (socket.connected) return; // 👈 IMPORTANT
+
     if (!player || !roomId) return;
 
     socket.connect();
-    console.log(socket.id)
+    console.log(socket.id);
 
-    socket.on("connect", () => {
-      console.log("socket connected")
+    const onConnect = () => {
+      console.log("✅ socket connected", socket.id);
       setSocketId(socket.id);
 
       socket.emit("join-room", {
         roomId,
         player,
       });
-    });
+    };
+
+    socket.on("connect", onConnect);
 
     return () => {
-      socket.off("connect");
+      socket.off("connect", onConnect);
       socket.disconnect();
     };
   }, [player, roomId, socket]);
