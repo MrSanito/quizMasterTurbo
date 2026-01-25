@@ -187,12 +187,12 @@ export default function ClientQuizPlayer({ quiz }) {
   /* ---------------- START SCREEN ---------------- */
   if (!started) {
     return (
-      <div className="min-h-[80dvh] flex items-center justify-center p-6">
-        <div className="card bg-base-200 shadow-2xl max-w-lg w-full border border-base-300">
-          <div className="card-body gap-6">
+      <div className="min-h-[80dvh] flex items-center justify-center p-4 sm:p-6">
+        <div className="card bg-base-200 shadow-2xl w-full max-w-md sm:max-w-lg border border-base-300">
+          <div className="card-body gap-5 sm:gap-6">
             {/* Title */}
             <div>
-              <h1 className="text-3xl font-extrabold text-primary flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2">
                 🧠 {quiz.title}
               </h1>
               <p className="text-sm opacity-70 mt-1">
@@ -201,25 +201,35 @@ export default function ClientQuizPlayer({ quiz }) {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center bg-base-100 rounded-xl p-4 shadow">
-                <ListChecks className="w-6 h-6 text-info mb-1" />
-                <span className="text-lg font-bold">
-                  {quiz.questions.length}
-                </span>
-                <span className="text-xs opacity-70">Questions</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="flex flex-row sm:flex-col items-center bg-base-100 rounded-xl p-3 sm:p-4 shadow gap-3 sm:gap-1">
+                <ListChecks className="w-6 h-6 text-info shrink-0 sm:mb-1" />
+                <div className="text-left sm:text-center">
+                  <span className="text-base sm:text-lg font-bold block">
+                    {quiz.questions.length}
+                  </span>
+                  <span className="text-xs opacity-70">Questions</span>
+                </div>
               </div>
 
-              <div className="flex flex-col items-center bg-base-100 rounded-xl p-4 shadow">
-                <Clock className="w-6 h-6 text-warning mb-1" />
-                <span className="text-lg font-bold">20s</span>
-                <span className="text-xs opacity-70">Per Question</span>
+              <div className="flex flex-row sm:flex-col items-center bg-base-100 rounded-xl p-3 sm:p-4 shadow gap-3 sm:gap-1">
+                <Clock className="w-6 h-6 text-warning shrink-0 sm:mb-1" />
+                <div className="text-left sm:text-center">
+                  <span className="text-base sm:text-lg font-bold block">
+                    20s
+                  </span>
+                  <span className="text-xs opacity-70">Per Question</span>
+                </div>
               </div>
 
-              <div className="flex flex-col items-center bg-base-100 rounded-xl p-4 shadow">
-                <Trophy className="w-6 h-6 text-success mb-1" />
-                <span className="text-lg font-bold">+4 / -1</span>
-                <span className="text-xs opacity-70">Scoring</span>
+              <div className="flex flex-row sm:flex-col items-center bg-base-100 rounded-xl p-3 sm:p-4 shadow gap-3 sm:gap-1">
+                <Trophy className="w-6 h-6 text-success shrink-0 sm:mb-1" />
+                <div className="text-left sm:text-center">
+                  <span className="text-base sm:text-lg font-bold block">
+                    +4 / -1
+                  </span>
+                  <span className="text-xs opacity-70">Scoring</span>
+                </div>
               </div>
             </div>
 
@@ -229,7 +239,7 @@ export default function ClientQuizPlayer({ quiz }) {
                 setStarted(true);
                 setQuestionStartTime(Date.now());
               }}
-              className="btn btn-primary btn-lg gap-2 group"
+              className="btn btn-primary btn-lg gap-2 group w-full sm:w-auto"
             >
               <Play className="w-5 h-5 group-hover:translate-x-1 transition" />
               Start Quiz
@@ -245,61 +255,59 @@ export default function ClientQuizPlayer({ quiz }) {
 
   /* ---------------- QUIZ UI ---------------- */
   return (
-    <div className="min-h-[75dvh] flex items-center justify-center p-6 bg-base-200/40">
-      <div className="w-full max-w-2xl rounded-3xl bg-base-100 shadow-2xl border border-base-300">
-        <div className="flex flex-col gap-8 p-6 md:p-8">
-          {/* ================= TOP BAR ================= */}
-          <div className="flex items-start justify-between">
-            {/* Progress */}
-            <p className="text-sm opacity-60 font-medium">
+    <div className="min-h-[75dvh] flex items-center justify-center px-3 py-4 sm:p-5 bg-base-200/40 font-sans">
+      <div className="w-full max-w-sm sm:max-w-xl rounded-2xl bg-base-100 shadow-xl border border-base-300">
+        <div className="flex flex-col gap-5 sm:gap-6 p-4 sm:p-5 md:p-8">
+          {/* ================= TOP HEADER ================= */}
+          <div className="flex items-start justify-between w-full">
+            <p className="text-xs sm:text-sm opacity-60 font-medium mt-1">
               Question {currentQuestionIndex + 1} / {quiz.questions.length}
             </p>
 
-            {/* Right Stack */}
-            <div className="flex flex-col items-end gap-3">
-              {/* Score */}
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-base-200 shadow-sm font-semibold text-primary">
-                <Trophy className="w-4 h-4" />
-                <span>{score}</span>
-                <span className="text-xs opacity-60">pts</span>
-              </div>
-
-              {/* Auto */}
-              <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-base-200 shadow-sm cursor-pointer text-sm hover:scale-[1.03] transition">
-                <Zap className="w-4 h-4 text-warning" />
-                <span className="hidden sm:inline">Auto</span>
+            <div className="flex flex-col items-end gap-1.5">
+              <label className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-base-200/60 hover:bg-base-200 transition cursor-pointer">
+                <Zap
+                  className={`w-3.5 h-3.5 ${
+                    autoNext ? "text-warning" : "opacity-40"
+                  }`}
+                />
+                <span className="text-[11px] font-semibold opacity-70">
+                  Auto Next
+                </span>
                 <input
                   type="checkbox"
                   checked={autoNext}
                   onChange={(e) => setAutoNext(e.target.checked)}
-                  className="toggle toggle-primary toggle-sm"
+                  className="toggle toggle-xs toggle-primary"
                 />
               </label>
+
+              <div className="flex items-center gap-1 text-[11px] font-bold opacity-60 px-1">
+                <Trophy className="w-3 h-3" />
+                <span>{score} pts</span>
+              </div>
             </div>
           </div>
 
           {/* ================= TIMER ================= */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Clock className="w-4 h-4 text-info" />
-                <span>Time left</span>
+          <div className="space-y-2">
+            <div className="flex items-end gap-3">
+              <div className="flex items-center gap-1.5 mb-1 opacity-70">
+                <span className="text-xs font-medium">Time Left</span>
+                <Clock className="w-3.5 h-3.5" />
               </div>
-
-              <div
-                className={`px-4 py-1.5 rounded-full text-sm font-bold transition ${
-                  timeLeft <= 5
-                    ? "bg-error text-white animate-pulse"
-                    : "bg-base-200 text-primary"
+              <span
+                className={`text-3xl sm:text-4xl font-bold leading-none tabular-nums transition-colors ${
+                  timeLeft <= 5 ? "text-error animate-pulse" : ""
                 }`}
               >
-                {timeLeft}s
-              </div>
+                {timeLeft}
+              </span>
             </div>
 
-            <div className="w-full h-2 rounded-full bg-base-300 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-base-300 overflow-hidden">
               <div
-                className={`h-full transition-all duration-500 ${
+                className={`h-full transition-all duration-1000 ease-linear ${
                   timeLeft <= 5 ? "bg-error" : "bg-primary"
                 }`}
                 style={{ width: `${(timeLeft / 20) * 100}%` }}
@@ -308,24 +316,25 @@ export default function ClientQuizPlayer({ quiz }) {
           </div>
 
           {/* ================= QUESTION ================= */}
-          <h2 className="text-xl md:text-2xl font-semibold leading-snug text-center">
+          <h2 className="text-xl sm:text-2xl font-bold leading-snug">
             {currentQuestion.questionText}
           </h2>
 
           {/* ================= OPTIONS ================= */}
-          <div className="space-y-3">
+          <div className="space-y-2.5 mt-1">
             {currentQuestion.options.map((option, index) => {
               const isSelected = selectedOptionIndex === index;
 
-              let stateClass = "bg-base-100 border-base-300 hover:bg-base-200";
+              let stateClass =
+                "bg-base-100 border-base-300 hover:bg-base-200 hover:border-base-content/20 active:scale-[0.99]";
 
               if (isAnswered) {
                 if (option.isCorrect) {
-                  stateClass = "bg-success text-white border-success";
+                  stateClass = "bg-success/10 text-success border-success";
                 } else if (isSelected) {
-                  stateClass = "bg-error text-white border-error";
+                  stateClass = "bg-error/10 text-error border-error";
                 } else {
-                  stateClass = "bg-base-200 border-base-300 opacity-60";
+                  stateClass = "bg-base-100 border-base-200 opacity-50";
                 }
               }
 
@@ -334,15 +343,21 @@ export default function ClientQuizPlayer({ quiz }) {
                   key={index}
                   disabled={isAnswered || isSubmitting}
                   onClick={() => handleOptionSelect(index)}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border transition ${stateClass}`}
+                  className={`w-full flex items-center justify-between p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-200 group ${stateClass} ${
+                    isSelected && !isAnswered
+                      ? "border-primary bg-primary/5"
+                      : ""
+                  }`}
                 >
-                  <span className="text-left">{option.text}</span>
+                  <span className="text-left text-sm sm:text-base font-medium">
+                    {option.text}
+                  </span>
 
                   {isAnswered && option.isCorrect && (
-                    <CheckCircle className="w-5 h-5" />
+                    <CheckCircle className="w-5 h-5 shrink-0" />
                   )}
                   {isAnswered && isSelected && !option.isCorrect && (
-                    <XCircle className="w-5 h-5" />
+                    <XCircle className="w-5 h-5 shrink-0" />
                   )}
                 </button>
               );
@@ -351,11 +366,11 @@ export default function ClientQuizPlayer({ quiz }) {
 
           {/* ================= ACTIONS ================= */}
           {isAnswered && (
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-1 animate-in fade-in slide-in-from-bottom-2">
               {!autoNext && !isLastQuestion && (
                 <button
                   onClick={handleNextQuestion}
-                  className="btn btn-primary gap-2"
+                  className="btn btn-primary btn-md gap-2 px-6 rounded-full"
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />
@@ -365,10 +380,11 @@ export default function ClientQuizPlayer({ quiz }) {
               {isLastQuestion && (
                 <button
                   onClick={handleSubmitQuiz}
-                  className="btn btn-success gap-2"
+                  className="btn btn-success btn-md gap-2 px-6 rounded-full text-white"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Submitting..." : "Finish Quiz"}
+                  {isSubmitting ? "Submitting..." : "Finish"}
+                  {!isSubmitting && <Trophy className="w-4 h-4" />}
                 </button>
               )}
             </div>
