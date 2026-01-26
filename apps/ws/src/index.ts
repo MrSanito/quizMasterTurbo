@@ -21,7 +21,11 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://admin.socket.io",
+    origin: [
+      "https://admin.socket.io",
+      "http://localhost:3000",
+      "https://quiz-master-turbo-quiz-master.vercel.app",
+    ],
     credentials: true,
   },
 });
@@ -36,16 +40,13 @@ io.on("connection", (socket) => {
     socket.join(roomId);
 
     console.log(roomId, player);
-    
 
-    await redis.sadd(`room:${roomId}:players`, player.id, );
+    await redis.sadd(`room:${roomId}:players`, player.id);
     await redis.hset(`room:${roomId}:scores`, player.id, 0);
 
     const players = await redis.smembers(`room:${roomId}:players`);
 
     io.to(roomId).emit("room:players", players);
-
-
   });
 
   socket.on("message", (msg) => {
