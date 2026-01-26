@@ -1,5 +1,7 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
+  "extends": "../../tsconfig.json",
+
   "compilerOptions": {
     // File Layout
     "rootDir": "./src",
@@ -41,6 +43,7 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+  },
+  "references": [{ "path": "../../packages/redis" }],
 }

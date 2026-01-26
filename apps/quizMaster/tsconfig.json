@@ -37,7 +37,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/dev/types/**/*.ts"
-  ],
+, "scripts/generateAvatars.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -2,9 +2,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@repo/db": ["packages/db/src"]
+      "@repo/db": ["packages/db/src"],
+      "@repo/redis": ["packages/redis/src"]
     }
   },
   "files": [],
-  "references": [{ "path": "packages/db/" }, { "path": "apps/http" }]
+  "references": [{ "path": "packages/db/" }, { "path": "apps/http" },    { "path": "packages/redis" }
+]
 }

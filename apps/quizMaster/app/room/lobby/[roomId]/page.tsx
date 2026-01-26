@@ -123,7 +123,8 @@ const RoomLobbyPage = () => {
 const socketRef = useRef<any>(null);
 
 if (!socketRef.current) {
-  socketRef.current = io("http://localhost:3003", {
+    console.log("ws url",process.env.NEXT_PUBLIC_WS_BASE_URL);
+  socketRef.current = io(`${process.env.NEXT_PUBLIC_WS_BASE_URL}`, {
     transports: ["websocket"],
     autoConnect: false,
   });
@@ -155,6 +156,9 @@ const socket = socketRef.current;
     };
 
     socket.on("connect", onConnect);
+    socket.on("room:players", (anything) => { 
+      console.log("anything", anything)
+     });
 
     return () => {
       socket.off("connect", onConnect);
@@ -204,6 +208,7 @@ const socket = socketRef.current;
               <img
                 src={`https://api.dicebear.com/7.x/personas/svg?seed=${player.name}`}
                 alt={player.name}
+                
                 className="w-9 h-9 rounded-full bg-base-200"
               />
 
