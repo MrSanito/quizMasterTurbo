@@ -19,6 +19,10 @@ instrument(io, {
 
 io.on("connection", (socket) => {
   console.log("✅ User connected:", socket.id);
+  socket.on ("join-room", async ( {roomId, player}) => {
+        socket.join(roomId);
+console.log(roomId, player)
+  })
 
   socket.on("message", (msg) => {
     console.log("📩 Message received:", msg);
