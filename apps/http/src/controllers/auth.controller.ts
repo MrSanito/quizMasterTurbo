@@ -6,6 +6,8 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 /* ================= TYPES ================= */
 
 interface AuthBody {
+  firstName : string,
+  lastName: string,
   username?: string;
   email: string;
   password: string;
@@ -14,8 +16,8 @@ interface AuthBody {
 /* ================= LOGIN ================= */
 
 export const login = async (req: Request, res: Response) => {
-  console.log(req.body)
-   const { username, email, password } = req.body;
+  console.log(req.body);
+  const { username, email, password } = req.body;
 
   console.log("username :", username);
   console.log("email :", email);
@@ -37,7 +39,7 @@ export const login = async (req: Request, res: Response) => {
 
     const isPasswordCorrect = await bcrypt.compare(
       password,
-      existUser.password
+      existUser.password,
     );
 
     console.log("password match:", isPasswordCorrect);
@@ -52,18 +54,18 @@ export const login = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: existUser.id, email: existUser.email },
       process.env.JWT_SECRET!,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     const hasSession = true;
 
     res.cookie("token", token, {
       httpOnly: true,
- 
+
       secure: true, // REQUIRED because Render is https
       sameSite: "none", // REQUIRED for cross-origin
       path: "/",
-       maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.cookie("hasSession", "true", {
@@ -73,8 +75,6 @@ export const login = async (req: Request, res: Response) => {
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
-
 
     return res.status(200).json({
       success: true,
@@ -89,7 +89,7 @@ export const login = async (req: Request, res: Response) => {
         hasSession,
       },
     });
-   } catch (error) {
+  } catch (error) {
     console.log("error : ", error);
     return res.status(500).json({
       success: false,
@@ -102,10 +102,13 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (
   req: Request<{}, {}, AuthBody>,
-  res: Response
+  res: Response,
 ) => {
-  const { username, email, password } = req.body;
+  const { firstName, lastName,username, email, password } = req.body;
 
+  const name = firstName + " " + lastName;
+  console.log("firstName:", firstName);
+  console.log("lastName:", lastName);
   console.log("username:", username);
   console.log("email:", email);
 
@@ -125,6 +128,7 @@ export const register = async (
 
     const savedUser = await prisma.user.create({
       data: {
+        name,
         email,
         username: username!,
         password: hashedPassword,
@@ -133,30 +137,27 @@ export const register = async (
 
     console.log("saved user", savedUser);
 
-       const token = jwt.sign(
-        { userId: savedUser.id, email: savedUser.email },
-        process.env.JWT_SECRET!,
-        { expiresIn: "7d" }
-      );
-      res.cookie("token", token, {
-        httpOnly: true,
+    const token = jwt.sign(
+      { userId: savedUser.id, email: savedUser.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" },
+    );
+    res.cookie("token", token, {
+      httpOnly: true,
 
-        secure: true, // REQUIRED because Render is https
-        sameSite: "none", // REQUIRED for cross-origin
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      secure: true, // REQUIRED because Render is https
+      sameSite: "none", // REQUIRED for cross-origin
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
-      res.cookie("hasSession", "true", {
-        httpOnly: false, // OK, frontend can read
-        secure: true, // 🔥 MUST be true
-        sameSite: "none",
-        path: "/",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-
-
-    
+    res.cookie("hasSession", "true", {
+      httpOnly: false, // OK, frontend can read
+      secure: true, // 🔥 MUST be true
+      sameSite: "none",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(201).json({
       success: true,
@@ -180,7 +181,7 @@ export const register = async (
 
 export const checkUsername = async (
   req: Request<{}, {}, { username?: string }>,
-  res: Response
+  res: Response,
 ) => {
   console.log("request recieved on check username");
   const { username } = req.body;
@@ -209,10 +210,9 @@ export const checkUsername = async (
 
 export const verifyUser = async (req: Request, res: Response) => {
   console.log("aa gayi bhai request");
-  
 
   const token = req.cookies?.token as string | undefined;
-  console.log("token",token)
+  console.log("token", token);
 
   if (!token) {
     return res.status(401).json({ valid: false });
@@ -231,14 +231,14 @@ export const verifyUser = async (req: Request, res: Response) => {
     }
 
     const email = (decoded as JwtPayload).email as string;
-    console.log("email is ", email)
+    console.log("email is ", email);
 
     const currentUser = await prisma.user.findUnique({
       where: { email },
     });
-
+    console.log("current user detail", currentUser);
     if (!currentUser) {
-      console.log("no user found in db")
+      console.log("no user found in db");
       return res.status(401).json({
         valid: false,
         success: false,
@@ -251,8 +251,10 @@ export const verifyUser = async (req: Request, res: Response) => {
       valid: true,
       user: {
         id: currentUser.id,
-        name: currentUser.username,
+        name: currentUser.name ? currentUser.name : " ",
+        username: currentUser.username,
         email: currentUser.email,
+        avatar: currentUser.avatar,
       },
     });
   } catch (error) {
@@ -263,3 +265,5 @@ export const verifyUser = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const editUser = async (req: Request, res: Response) => {};

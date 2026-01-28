@@ -8,8 +8,25 @@ datasource db {
   url      = env("DATABASE_URL")
  }
 
+model User {
+  id                             String        @id @default(cuid())
+  username                       String        @unique
+  name String?
+  email                          String        @unique
+  password                       String
+  avatar                         String    @default("avatar1.svg")
+  createdAt                      DateTime      @default(now())
+  Friend_Friend_receiverIdToUser Friend[]      @relation("Friend_receiverIdToUser")
+  Friend_Friend_senderIdToUser   Friend[]      @relation("Friend_senderIdToUser")
+  QuizAttempt                    QuizAttempt[]
+  hostedRooms Room[]      @relation("RoomHost")
+  roomPlayers RoomPlayer[]
+  answers     PlayerAnswer[]
+  events      RoomEvent[]
+}
+
 model Category {
-  id        String   @id
+  id        String   @id @default(uuid())
   name      String   @unique
   createdAt DateTime @default(now())
   icon      String   @default("📦")
@@ -17,7 +34,7 @@ model Category {
 }
 
 model Friend {
-  id                           String       @id
+  id                           String       @id @default(uuid())
   senderId                     String
   receiverId                   String
   status                       FriendStatus @default(PENDING)
@@ -29,26 +46,26 @@ model Friend {
 }
 
 model Option {
-  id         String   @id
+  id         String   @id @default(uuid())
   questionId String
   text       String
   isCorrect  Boolean
-  Question   Question @relation(fields: [questionId], references: [id])
+  Question   Question @relation(fields: [questionId], references: [id] , onDelete: Cascade)
 }
 
 model Question {
-  id             String   @id
+  id             String   @id @default(uuid())  
   quizId         String
   questionText   String
   points         Int
   negativePoints Int
   createdAt      DateTime @default(now())
   Option         Option[]
-  Quiz           Quiz     @relation(fields: [quizId], references: [id])
+  Quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model Quiz {
-  id          String        @id
+  id          String        @id @default(uuid())
   quizNumber  Int
   title       String
   categoryId  String
@@ -61,7 +78,7 @@ model Quiz {
 }
 
 model QuizAttempt {
-  id        String   @id
+  id        String   @id @default(uuid())
   userId    String?
   quizId    String
   score     Int
@@ -70,27 +87,101 @@ model QuizAttempt {
   guestId   String?
   questions Json
   timeTaken Int
-  Quiz      Quiz     @relation(fields: [quizId], references: [id])
+  Quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   User      User?    @relation(fields: [userId], references: [id])
 
   @@index([quizId])
   @@index([userId])
 }
 
-model User {
-  id                             String        @id @default(cuid())
-  username                       String        @unique
-  email                          String        @unique
-  password                       String
-  avatar                         String?
-  createdAt                      DateTime      @default(now())
-  Friend_Friend_receiverIdToUser Friend[]      @relation("Friend_receiverIdToUser")
-  Friend_Friend_senderIdToUser   Friend[]      @relation("Friend_senderIdToUser")
-  QuizAttempt                    QuizAttempt[]
-}
 
 enum FriendStatus {
   PENDING
   ACCEPTED
   BLOCKED
+}
+
+enum RoomState {
+  CREATED
+  WAITING
+  PLAYING
+  FINISHED
+  ABANDONED
+}
+
+
+model Room {
+  id          String     @id @default(uuid())
+  hostId      String
+  state       RoomState  @default(CREATED)
+  maxPlayers  Int
+  createdAt   DateTime   @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  host        User       @relation("RoomHost", fields: [hostId], references: [id])
+  players     RoomPlayer[]
+  questions   RoomQuestion[]
+  answers     PlayerAnswer[]
+  events      RoomEvent[]
+}
+
+model RoomPlayer {
+  id               String   @id @default(uuid())
+  roomId           String
+  userId           String
+  usernameSnapshot String
+  score            Int      @default(0)
+  joinedAt         DateTime @default(now())
+  leftAt           DateTime?
+  isHost           Boolean  @default(false)
+
+  room   Room @relation(fields: [roomId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId]) // user can't join same room twice
+}
+
+model RoomQuestion {
+  id            String   @id @default(uuid())
+  roomId        String
+  questionId    String
+  questionOrder Int
+  startedAt     DateTime?
+  endedAt       DateTime?
+
+  room      Room     @relation(fields: [roomId], references: [id])
+  answers   PlayerAnswer[]
+}
+
+model PlayerAnswer {
+  id              String   @id @default(uuid())
+  roomId          String
+  roomQuestionId  String
+  userId          String
+  selectedOption  String
+  isCorrect       Boolean
+  answeredAt      DateTime @default(now())
+  responseTimeMs  Int
+
+  room          Room         @relation(fields: [roomId], references: [id])
+  roomQuestion  RoomQuestion @relation(fields: [roomQuestionId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
+
+  @@index([roomId])
+  @@index([userId])
+}
+
+model RoomEvent {
+  id        String   @id @default(uuid())
+  roomId    String
+  userId    String?
+  eventType String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([roomId])
 }

@@ -27,9 +27,10 @@ app.use(
     origin: [
       "http://localhost:3000",
       "https://quiz-master-turbo-quiz-master.vercel.app",
+      "https://quiz-master-turbo-quiz-master.vercel.app/",
     ],
     credentials: true,
-  })
+  }),
 );
 
 

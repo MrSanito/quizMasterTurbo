@@ -5,6 +5,7 @@ import { loginSchema, registerSchema } from "./schema";
 import { unstable_noStore as noStore } from "next/cache";
 // import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { convertServerPatchToFullTree } from "next/dist/client/components/segment-cache/navigation";
 
 type ActionResponse = {
   success: boolean;
@@ -21,13 +22,17 @@ export async function registerAction(
 
   // 1️⃣ Extract form data
   const rawData = {
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     username: formData.get("username"),
     email: formData.get("email"),
     password: formData.get("password"),
   };
+  console.log("rawdata" , rawData)
 
   // 2️⃣ Zod validation
   const parsed = registerSchema.safeParse(rawData);
+  console.log("parsed",parsed)
 
   if (!parsed.success) {
     const errors: Record<string, string> = {};
@@ -36,6 +41,7 @@ export async function registerAction(
       const key = issue.path[0] as string;
       errors[key] = issue.message;
     });
+    console.log("errors", errors)
 
     return {
       success: false,
@@ -231,3 +237,7 @@ export async function checkUsername(username: string) {
 //   console.log("logout done");
 //   return { success: true };
 // }
+
+export async function editUser () {
+  console.log("request received on server")
+}

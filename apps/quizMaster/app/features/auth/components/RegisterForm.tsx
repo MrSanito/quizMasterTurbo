@@ -14,6 +14,8 @@ const RegisterForm = () => {
   
 
   const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
     username: "",
     email: "",
     password: "",
@@ -49,10 +51,10 @@ const RegisterForm = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };;
 
-  const [state, formAction, isPending] = useActionState(
-    registerAction,
-    initialState
-  );
+    const [state, formAction, isPending] = useActionState(
+      registerAction,
+      initialState
+    );
 
   useEffect(() => {
     if (!debouncedUsername) {
@@ -86,6 +88,40 @@ const RegisterForm = () => {
 
   return (
     <form action={formAction} suppressHydrationWarning>
+      <div className="flex  md:flex-row  gap-4 w-full">
+        <fieldset className="fieldset flex-1 ">
+          <legend className="fieldset-legend text-xl">First Name</legend>
+          <input
+            type="text"
+            name="firstName"
+            className="input input-primary w-32"
+            placeholder="Joe"
+            value={form.firstName}
+            onChange={handleChange}
+          />
+        </fieldset>
+        <fieldset className="fieldset  flex-1 ">
+          <legend className="fieldset-legend text-xl">Last Name</legend>
+          <input
+            type="text"
+            name="lastName"
+            className="input input-primary w-32 "
+            placeholder="Doe"
+            value={form.lastName}
+            onChange={handleChange}
+          />
+        </fieldset>
+      </div>
+      {state.errors?.firstName && (
+        <>
+        <p className="text-red-500 text-sm">{state.errors.firstName}</p>
+         </>
+      )}
+      {state.errors?.lastName && (
+        <>
+        <p className="text-red-500 text-sm">{state.errors.lastName}</p>
+         </>
+      )}
       <fieldset className="fieldset">
         <legend className="fieldset-legend text-xl">Username</legend>
         <input
@@ -167,6 +203,7 @@ const RegisterForm = () => {
         <p className="text-red-600 text-sm mt-2">{state.message}</p>
       )}
     </form>
+    
   );
 };
 

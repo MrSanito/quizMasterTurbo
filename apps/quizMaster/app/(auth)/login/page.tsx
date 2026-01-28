@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import LoginForm from "@/app/features/auth/components/LoginForm";
 import Loading from "@/components/Loading";
+import Link from "next/link";
 
 const Login = () => {
   const router = useRouter();
@@ -35,6 +36,12 @@ const Login = () => {
     <div className="flex flex-col min-h-[80vh] justify-center items-center">
       <h3 className="text-3xl font-bold text-primary pb-6">Login Form</h3>
       <LoginForm />
+      <div className="">
+        Don't have an account? {" "}
+        <Link className="text-primary" href={`/register`}>
+          Register
+        </Link>
+      </div>
       {isMaxTryReached && (
         <div className="w-full max-w-md mx-auto mb-6 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-center shadow-sm">
           <p className="text-sm text-warning leading-relaxed">

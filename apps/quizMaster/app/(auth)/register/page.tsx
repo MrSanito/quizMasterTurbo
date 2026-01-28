@@ -9,7 +9,7 @@ import RegisterForm from "../../features/auth/components/RegisterForm";
 import ClientOnly from "../../features/auth/components/ClientOnly";
 
 import Loading from "@/components/Loading";
-
+import Link from "next/link";
 const Register = () => {
   const router = useRouter();
   const { loading, isLogin, isGuest, isMaxTryReached } = useUser();
@@ -42,6 +42,12 @@ const Register = () => {
       >
         <h3 className="text-3xl font-bold text-primary pb-6">Register Form </h3>
         <RegisterForm />
+        <div className="">
+          Already a User ?{" "}
+          <Link className="text-primary" href={`/login`}>
+            Login
+          </Link>
+        </div>
         {isMaxTryReached && (
           <div className="w-full max-w-md mx-auto mb-6 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-center shadow-sm">
             <p className="text-sm text-warning leading-relaxed">

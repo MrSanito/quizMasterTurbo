@@ -17,13 +17,16 @@ export const fetchCategories = async (req: Request, res: Response) => {
         },
       },
     });
+    console.log(categories);
 
-    const formattedCategories = categories.map((cat: typeof categories[number]) => ({
-      _id: cat.id,
-      name: cat.name,
-      icon: cat.icon,
-      quizzes: cat._count.Quiz,
-    }));
+    const formattedCategories = categories.map(
+      (cat: (typeof categories)[number]) => ({
+        _id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        quizzes: cat._count.Quiz,
+      }),
+    );
 
     return res.status(200).json({
       success: true,
@@ -43,7 +46,7 @@ export const fetchCategories = async (req: Request, res: Response) => {
 
 export const fetchQuizzies = async (
   req: Request<{ categoryId: string }>,
-  res: Response
+  res: Response,
 ) => {
   const { categoryId } = req.params;
 
@@ -65,8 +68,7 @@ export const fetchQuizzies = async (
       },
     });
 
- 
-    const formatted = quizzes.map((q:any) => ({
+    const formatted = quizzes.map((q: any) => ({
       _id: q.id,
       quizNumber: q.quizNumber,
       title: q.title,

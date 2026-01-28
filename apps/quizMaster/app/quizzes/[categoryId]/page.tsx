@@ -43,7 +43,8 @@ export default function QuizzesByCategoryPage() {
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/categories/${categoryId}/quizzes`
         );
         setQuizzes(res.data.quizzes);
-      } catch (err) {
+        console.log(quizzes)
+       } catch (err) {
         console.error("❌ Failed to fetch quizzes", err);
       } finally {
         setPageLoading(false);

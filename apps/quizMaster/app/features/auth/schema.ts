@@ -3,6 +3,16 @@ import { z } from "zod";
 /* ---------------- REGISTER ---------------- */
 
 export const registerSchema = z.object({
+  firstName: z
+    .string()
+    .trim() // Removes accidental leading/trailing spaces
+    .min(1, "First name is required") // Rejects empty strings
+    .regex(/^[^0-9]*$/, "First name cannot contain numbers"),
+  lastName: z
+    .string()
+    .trim()
+    .min(1, "Last name is required")
+    .regex(/^[^0-9]*$/, "Last name cannot contain numbers"),
   username: z
     .string()
     .min(3, "Username must be at least 3 characters")
@@ -24,5 +34,3 @@ export const loginSchema = z.object({
 
   password: z.string().min(8, "Invalid email or password"),
 });
-
-

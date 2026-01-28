@@ -41,7 +41,7 @@ io.on("connection", (socket) => {
 
     console.log(roomId, player);
 
-    await redis.sadd(`room:${roomId}:players`, player.id);
+    await redis.sadd(`room:${roomId}:players`, player.id, player.name);
     await redis.hset(`room:${roomId}:scores`, player.id, 0);
 
     const players = await redis.smembers(`room:${roomId}:players`);
