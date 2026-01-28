@@ -6,8 +6,7 @@ import {
   CardContent,
   TextField,
   Typography,
-  Grid,
-  Avatar,
+   Avatar,
   IconButton,
   Button,
   Stack,
@@ -21,6 +20,8 @@ import Loading from "@/components/Loading";
 import MaxTryReached from "@/app/(auth)/components/MaxTryReached";
 import { useDebounce } from "@/app/features/hook/useDebouncer";
 import { checkUsername, registerAction } from "@/app/features/auth/actions";
+import Grid from "@mui/material/Grid";
+
 
 const avatars = Array.from(
   { length: 10 },
@@ -166,8 +167,6 @@ const ProfileEditPage = () => {
                 Choose your avatar
               </Typography>
             </Stack>
-
-            {/* Avatar Picker */}
             <Grid
               container
               spacing={1.5}
@@ -175,7 +174,7 @@ const ProfileEditPage = () => {
               sx={{ mb: 3 }}
             >
               {avatars.map((avatar) => (
-                <Grid item key={avatar}>
+                <Grid key={avatar} size={3}>
                   <IconButton
                     onClick={() => setSelectedAvatar(avatar)}
                     sx={{
