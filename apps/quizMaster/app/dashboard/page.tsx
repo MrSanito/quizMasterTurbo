@@ -11,6 +11,15 @@ import Card from "@/components/Card";
 import Link from "next/link";
 import Image from "next/image";
 import Avatar1 from "@/public/avatars/avatar1.svg"
+import Avatar2 from "@/public/avatars/avatar2.svg"
+import Avatar3 from "@/public/avatars/avatar3.svg"
+import Avatar4 from "@/public/avatars/avatar4.svg"
+import Avatar5 from "@/public/avatars/avatar5.svg"
+import Avatar6 from "@/public/avatars/avatar6.svg"
+import Avatar7 from "@/public/avatars/avatar7.svg"
+import Avatar8 from "@/public/avatars/avatar8.svg"
+import Avatar9 from "@/public/avatars/avatar9.svg"
+import Avatar10 from "@/public/avatars/avatar10.svg"
 import { BiSolidEdit } from "react-icons/bi";
 
 
@@ -25,6 +34,7 @@ const Dashboard = () => {
 
   console.log(viewerId, viewerType);
 
+  console.log(user.avatar)
   // 1️⃣ Loading (highest priority)
   if (loading) {
     return <Loading />;
@@ -76,7 +86,7 @@ const Dashboard = () => {
                   <div className="relative">
                     <div className="w-11 h-11 rounded-full bg-white/60 p-[2px] shadow-inner">
                       <Image
-                        src={Avatar1}
+                        src={`avatars/${user.avatar}`}
                         alt="avatar"
                         width={44}
                         height={44}
