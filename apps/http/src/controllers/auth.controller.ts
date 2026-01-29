@@ -308,3 +308,23 @@ export const editUser = async (req: Request, res: Response) => {
    });
   }
 };
+
+export const logOutUser = async (req:Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true, // required on HTTPS (Vercel)
+    sameSite: "none", // required if cross-site
+    path: "/", // MUST match how it was set
+  });
+
+  res.clearCookie("hasSession", {
+    httpOnly: false,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  });
+
+  res.json({ success: true });
+
+  
+}

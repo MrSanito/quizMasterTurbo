@@ -25,30 +25,44 @@ import { BiSolidEdit } from "react-icons/bi";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logOut } from "../features/auth/logOutAction";
+import axios from "axios";
 
 const Dashboard = () => {
-  const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft, refreshAuth } =
-    useUser();
+  const {
+    user,
+    guest,
+    loading,
+    isLogin,
+    isGuest,
+    isMaxTryReached,
+    guestLeft,
+    refreshAuth,
+  } = useUser();
   const router = useRouter();
 
-    useEffect(() => {
-      if (!loading && !isLogin && !isGuest) {
-        router.replace("/login");
-      }
-    }, [loading, isLogin, isGuest, router]);
+  useEffect(() => {
+    if (!loading && !isLogin && !isGuest) {
+      router.replace("/login");
+    }
+  }, [loading, isLogin, isGuest, router]);
 
   const [logOutModal, setLogOutModal] = useState(false);
 
+  const api = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    withCredentials: true, // 🔥 REQUIRED
+  });
 
   const handleLogout = async () => {
-    const res = await logOut();
-
-    if (res?.success) {
-      await refreshAuth(); // 🔥 FORCE auth recheck
-      router.replace("/login");
+    try {
+      await api.post("/auth/logout"); // 🍪 cookie cleared by Express
+      await refreshAuth();
+      router.refresh(); // refetch auth state
+      router.replace("/login"); // go to login
+    } catch (err) {
+      console.error("Logout failed", err);
     }
   };
-
 
   const viewerId =
     !loading && isLogin
@@ -65,12 +79,10 @@ const Dashboard = () => {
     user?.avatar ? `/avatars/${user.avatar}` : "/avatars/avatar1.svg",
   );
 
-  
   // 1️⃣ Loading (highest priority)
   if (loading) {
     return <Loading />;
   }
-  
 
   // 2️⃣ Blocked guest
   if (isMaxTryReached) {
@@ -80,7 +92,7 @@ const Dashboard = () => {
   // 3️⃣ Not logged in at all
   if (!isLogin && !isGuest) {
     // return <NotLoginComponent />;
-    return null; 
+    return null;
   }
 
   // 4️⃣ Guest user (allowed but limited)
