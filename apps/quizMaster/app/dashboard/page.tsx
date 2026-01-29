@@ -90,7 +90,7 @@ const Dashboard = () => {
                     <span className="text-[11px] font-medium opacity-60 uppercase tracking-wide">
                       Welcome back
                     </span>
-                    <span className="text-base font-semibold">{user.name}</span>
+                    <span className="text-base font-semibold">{user.firstName + " " + user.lastName}</span>
                   </div>
                 </div>
                 <div className="flex flex-row w-32 h-10 justify-center items-center rounded-2xl bg-white text-black m-2">

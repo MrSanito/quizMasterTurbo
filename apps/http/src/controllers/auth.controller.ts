@@ -6,8 +6,8 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 /* ================= TYPES ================= */
 
 interface AuthBody {
-  firstName : string,
-  lastName: string,
+  firstName: string;
+  lastName: string;
   username?: string;
   email: string;
   password: string;
@@ -104,9 +104,8 @@ export const register = async (
   req: Request<{}, {}, AuthBody>,
   res: Response,
 ) => {
-  const { firstName, lastName,username, email, password } = req.body;
+  const { firstName, lastName, username, email, password } = req.body;
 
-  const name = firstName + " " + lastName;
   console.log("firstName:", firstName);
   console.log("lastName:", lastName);
   console.log("username:", username);
@@ -128,7 +127,8 @@ export const register = async (
 
     const savedUser = await prisma.user.create({
       data: {
-        name,
+        firstName,
+        lastName,
         email,
         username: username!,
         password: hashedPassword,
@@ -251,7 +251,8 @@ export const verifyUser = async (req: Request, res: Response) => {
       valid: true,
       user: {
         id: currentUser.id,
-        name: currentUser.name ? currentUser.name : " ",
+        firstName: currentUser.firstName,
+        lastName: currentUser.lastName,
         username: currentUser.username,
         email: currentUser.email,
         avatar: currentUser.avatar,
@@ -266,4 +267,44 @@ export const verifyUser = async (req: Request, res: Response) => {
   }
 };
 
-export const editUser = async (req: Request, res: Response) => {};
+export const editUser = async (req: Request, res: Response) => {
+  try {
+    console.log(req.body);
+    const { id, firstName, lastName, username, email, avatar } = req.body;
+
+    // 1. Check if ID exists before calling Prisma to avoid crashes
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required to update.",
+      });
+    }
+
+    const savedUser = await prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        firstName,
+        lastName,
+        email,
+        username,
+        avatar,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: savedUser,
+    });
+
+  } catch (error: any) {
+    console.log(error)
+   res.status(500).json({
+     success: false, // This must be false in a catch block
+     message: "Failed to update user",
+     error: error.message, // Return the error message, not the whole object
+   });
+  }
+};

@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useActionState, useRef, useEffect } from "react";
 
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { loginAction } from "../actions";
+import { loginAction, LoginActionState } from "../actions";
 
 import { useRouter } from "next/navigation";
 
@@ -26,7 +26,7 @@ const LoginForm = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  const initialState = {
+  const initialState : LoginActionState = {
     success: false,
     errors: {},
   };

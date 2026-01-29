@@ -127,7 +127,7 @@ const Navbar = () => {
               }}
             />
             <div>
-              <p className="font-semibold text-lg">{user?.name}</p>
+              <p className="font-semibold text-lg">{user?.firstName +" "+ user?.lastName}</p>
               <p className="text-sm opacity-60">Welcome back 👋</p>
             </div>
           </div>

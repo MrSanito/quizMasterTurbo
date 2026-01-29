@@ -1,23 +1,60 @@
 "use client";
 
 import axios from "axios";
-import { loginSchema, registerSchema } from "./schema";
+import { editSchema, loginSchema, registerSchema } from "./schema";
 import { unstable_noStore as noStore } from "next/cache";
 // import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { convertServerPatchToFullTree } from "next/dist/client/components/segment-cache/navigation";
 
-type ActionResponse = {
+export type RegisterActionState = {
   success: boolean;
   message?: string;
-  errors?: Record<string, string>;
-  data?: any;
+  errors?: {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    email?: string;
+    password?: string;
+    general?: string;
+  };
+  data?: {
+    firstName?: FormDataEntryValue | null;
+    lastName?: FormDataEntryValue | null;
+    username?: FormDataEntryValue | null;
+    email?: FormDataEntryValue | null;
+  };
+};
+
+// 🔹 LOGIN
+export type LoginActionState = {
+  success: boolean;
+  message?: string;
+  errors?: {
+    email?: string;
+    password?: string;
+    general?: string;
+  };
+};
+
+export type EditUserFormState = {
+  success: boolean;
+  errors?: {
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    general?: string;
+  };
+  message?: string;
+  data?: string;
 };
 
 export async function registerAction(
-  _prev: ActionResponse | null,
-  formData: FormData
-): Promise<ActionResponse> {
+  _prev: RegisterActionState | null,
+  formData: FormData,
+): Promise<RegisterActionState> {
   noStore(); // 🔥 THIS IS THE MAGIC LINE
 
   // 1️⃣ Extract form data
@@ -28,11 +65,11 @@ export async function registerAction(
     email: formData.get("email"),
     password: formData.get("password"),
   };
-  console.log("rawdata" , rawData)
+  console.log("rawdata", rawData);
 
   // 2️⃣ Zod validation
   const parsed = registerSchema.safeParse(rawData);
-  console.log("parsed",parsed)
+  console.log("parsed", parsed);
 
   if (!parsed.success) {
     const errors: Record<string, string> = {};
@@ -41,7 +78,7 @@ export async function registerAction(
       const key = issue.path[0] as string;
       errors[key] = issue.message;
     });
-    console.log("errors", errors)
+    console.log("errors", errors);
 
     return {
       success: false,
@@ -88,9 +125,9 @@ export async function registerAction(
 }
 
 export async function loginAction(
-  _prev: ActionResponse | null,
-  formData: FormData
-): Promise<ActionResponse> {
+  _prev: LoginActionState | null,
+  formData: FormData,
+): Promise<LoginActionState> {
   noStore(); // Prevent caching issues with cookies
 
   // 1️⃣ Extract form data
@@ -140,7 +177,7 @@ export async function loginAction(
       },
       {
         withCredentials: true, // 🔥 VERY IMPORTANT
-      }
+      },
     );
     console.log("response from login", res);
     const data = res.data;
@@ -161,7 +198,7 @@ export async function loginAction(
     if (token) {
       console.log(
         "🍪 Setting cookie with token:",
-        token.substring(0, 20) + "..."
+        token.substring(0, 20) + "...",
       );
 
       // const cookieStore = await cookies();
@@ -223,7 +260,7 @@ export async function checkUsername(username: string) {
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/check_username`,
     {
       username: username,
-    }
+    },
   );
 
   console.log("response data", res.data);
@@ -237,7 +274,55 @@ export async function checkUsername(username: string) {
 //   console.log("logout done");
 //   return { success: true };
 // }
+export async function editUser(
+  prevState: EditUserFormState,
+  formData: FormData,
+): Promise<EditUserFormState> {
+  const rawData = {
+    id: formData.get("id") as string,
+    username: formData.get("username") as string,
+    firstName: formData.get("firstName") as string,
+    lastName: formData.get("lastName") as string,
+    email: formData.get("email") as string,
+    avatar: formData.get("avatar") as string,
+  };
 
-export async function editUser () {
-  console.log("request received on server")
+  const parsed = editSchema.safeParse(rawData);
+
+  if (!parsed.success) {
+    const errors: EditUserFormState["errors"] = {};
+    parsed.error.issues.forEach((issue) => {
+      const key = issue.path[0] as keyof EditUserFormState["errors"];
+      errors[key] = issue.message;
+    });
+    return { success: false, errors };
+  }
+
+  try {
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/edit`,
+      parsed.data,
+    );
+
+    const data = res.data;
+
+    if (!data.success) {
+      return {
+        success: false,
+        message: data?.message ?? "Edit failed",
+      };
+    }
+
+    // ✅ SUCCESS MESSAGE SENT TO UI
+    return {
+      success: true,
+      message: "Profile updated successfully 🎉",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message ?? "editing failed",
+      errors: { general: "Something went wrong." },
+    };
+  }
 }

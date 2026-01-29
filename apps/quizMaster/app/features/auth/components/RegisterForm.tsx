@@ -3,7 +3,7 @@
 import React, { useState, useActionState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
-import { registerAction, checkUsername } from "../actions";
+import { registerAction, checkUsername, RegisterActionState } from "../actions";
 import { useDebounce } from "../../hook/useDebouncer";
 import { useRouter } from "next/navigation";
 
@@ -25,7 +25,7 @@ const RegisterForm = () => {
   const debouncedUsername = useDebounce(form.username, 2000);
 
   const [showPassword, setShowPassword] = useState(false);
-  const initialState = {
+  const initialState: RegisterActionState = {
     success: false,
     errors: {},
   };

@@ -6,29 +6,34 @@ import {
   CardContent,
   TextField,
   Typography,
-   Avatar,
+  Avatar,
   IconButton,
   Button,
   Stack,
   InputAdornment,
 } from "@mui/material";
-
+import { useRouter } from "next/navigation";
+ 
 import { FaUser, FaAt, FaEnvelope, FaSave } from "react-icons/fa";
 import NotLoginComponent from "@/app/(auth)/components/NotLoginComponent";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
 import MaxTryReached from "@/app/(auth)/components/MaxTryReached";
 import { useDebounce } from "@/app/features/hook/useDebouncer";
-import { checkUsername, registerAction } from "@/app/features/auth/actions";
+import {
+  checkUsername,
+  editUser,
+  EditUserFormState,
+} from "@/app/features/auth/actions";
 import Grid from "@mui/material/Grid";
+ 
 
-
-const avatars = Array.from(
-  { length: 10 },
-  (_, i) => `/avatars/avatar${i + 1}.svg`,
-);
+const avatars = Array.from({ length: 10 }, (_, i) => `avatar${i + 1}.svg`);
 
 const ProfileEditPage = () => {
+  const router = useRouter();
+
+
   const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
     useUser();
 
@@ -46,32 +51,38 @@ const ProfileEditPage = () => {
 
   const [selectedAvatar, setSelectedAvatar] = useState(avatars[0]);
   const [form, setForm] = useState({
+    id: "",
     username: "",
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
   });
   const [usernameStatus, setUsernameStatus] = useState(null);
   const debouncedUsername = useDebounce(form.username, 2000);
+  const skipFirstUsernameCheck = React.useRef(true);
 
-  const initialState = {
+  const initialState: EditUserFormState = {
     success: false,
+    message: "",
     errors: {},
   };
 
-  const [state, formAction, isPending] = useActionState(
-    registerAction,
-    initialState,
-  );
+  const [state, formAction, isPending] = useActionState(editUser, initialState);
 
   // ✅ Fill form when user loads
   useEffect(() => {
     if (user) {
+      skipFirstUsernameCheck.current = true; // mark this update as system update
+
       setForm({
+        id: user.id || "",
         username: user.username || "",
-        name: user.name || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
         email: user.email || "",
       });
       setSelectedAvatar(user.avatar || avatars[0]);
+      console.log("selected avatar ---------------------", selectedAvatar);
     }
   }, [user]);
   const handleUsername = (e) => {
@@ -90,9 +101,25 @@ const ProfileEditPage = () => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
+    useEffect(() => {
+      if (state.success) {
+        // show message for 1.5s then navigate
+        const timer = setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
+
+        return () => clearTimeout(timer);
+      }
+    }, [state.success]);
+
   useEffect(() => {
     if (!debouncedUsername) {
       setUsernameStatus(null);
+      return;
+    }
+    if (skipFirstUsernameCheck.current) {
+      skipFirstUsernameCheck.current = false;
       return;
     }
 
@@ -155,7 +182,7 @@ const ProfileEditPage = () => {
             {/* Avatar Preview */}
             <Stack alignItems="center" spacing={1} sx={{ mb: 3 }}>
               <Avatar
-                src={selectedAvatar}
+                src={`/avatars/${selectedAvatar}`}
                 sx={{
                   width: 95,
                   height: 95,
@@ -186,7 +213,10 @@ const ProfileEditPage = () => {
                       p: 0.5,
                     }}
                   >
-                    <Avatar src={avatar} sx={{ width: 50, height: 50 }} />
+                    <Avatar
+                      src={`/avatars/${avatar}`}
+                      sx={{ width: 50, height: 50 }}
+                    />
                   </IconButton>
                 </Grid>
               ))}
@@ -213,7 +243,7 @@ const ProfileEditPage = () => {
                 <input
                   type="text"
                   name="username"
-                  className="input input-primary w-64"
+                  className="input input-primary w-full"
                   placeholder="username"
                   value={form.username}
                   onChange={handleUsername}
@@ -235,37 +265,78 @@ const ProfileEditPage = () => {
                   <p className="text-red-500 text-sm">{`${form.username} Username already taken ❌`}</p>
                 )}
               </fieldset>
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend text-xl">Name</legend>
-                <FaUser color="white" size={16} />
+              <div className="flex  md:flex-row  gap-4 w-full">
+                <div>
 
-                <input
-                  type="text"
-                  name="Name"
-                  className="input input-primary w-64"
-                  placeholder="Name"
-                  value={form.name}
-                  onChange={handleChange}
-                />
-              </fieldset>
+                <fieldset className="fieldset flex-1 ">
+                  <legend className="fieldset-legend text-xl">
+                    First Name
+                  </legend>
+                  <input
+                    type="text"
+                    name="firstName"
+                    className="input input-primary w-full"
+                    placeholder="Joe"
+                    value={form.firstName}
+                    onChange={handleChange}
+                    />
+                </fieldset>
+                {state.errors && state.errors.firstName && (
+                  <p className="text-red-500 text-sm">
+                    {state.errors.firstName}
+                  </p>
+                )}
+                </div>
+
+                <div>
+                  <fieldset className="fieldset  flex-1 ">
+                    <legend className="fieldset-legend text-xl">
+                      Last Name
+                    </legend>
+                    <input
+                      type="text"
+                      name="lastName"
+                      className="input input-primary w-full "
+                      placeholder="Doe"
+                      value={form.lastName}
+                      onChange={handleChange}
+                    />
+                  </fieldset>
+                  {state.errors && state.errors.lastName && (
+                    <p className="text-red-500 text-sm">
+                      {state.errors.lastName}
+                    </p>
+                  )}
+                </div>
+              </div>
               <fieldset className="fieldset">
                 <legend className="fieldset-legend text-xl">Email</legend>
                 <FaUser color="white" size={16} />
 
                 <input
                   type="text"
-                  name="name"
-                  className="input input-primary w-64"
-                  placeholder="Name"
+                  name="email"
+                  className="input input-primary w-full"
+                  placeholder="email"
                   value={form.email}
                   onChange={handleChange}
                 />
               </fieldset>
             </Stack>
+            <input type="hidden" name="avatar" value={selectedAvatar} />
+            <input type="hidden" name="id" value={form.id} />
 
             {/* Save Button */}
-            <button type="submit" className="btn btn-primary">
-              {isPending ? "Saving..." : "Saved"}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                isPending ||
+                usernameStatus === "checking" ||
+                usernameStatus === "taken"
+              }
+            >
+              {isPending ? "Saving..." : "Save Changes"}
             </button>
             {/* SUCCESS */}
             {state.success && (
@@ -281,6 +352,6 @@ const ProfileEditPage = () => {
       </Card>
     </Box>
   );
-};;
+};
 
 export default ProfileEditPage;
