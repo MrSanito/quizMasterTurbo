@@ -5,8 +5,7 @@ import { editSchema, loginSchema, registerSchema } from "./schema";
 import { unstable_noStore as noStore } from "next/cache";
 // import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { convertServerPatchToFullTree } from "next/dist/client/components/segment-cache/navigation";
-
+  
 export type RegisterActionState = {
   success: boolean;
   message?: string;
@@ -267,13 +266,9 @@ export async function checkUsername(username: string) {
   return res.data;
 }
 
-// export async function logOut() {
-//   const cookieStore = await cookies();
-//   cookieStore.delete("token"); // auth token
-//   cookieStore.delete("hasSession"); // hasSession
-//   console.log("logout done");
-//   return { success: true };
-// }
+
+
+
 export async function editUser(
   prevState: EditUserFormState,
   formData: FormData,

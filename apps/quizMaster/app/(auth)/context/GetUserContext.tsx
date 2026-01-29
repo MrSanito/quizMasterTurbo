@@ -21,6 +21,8 @@ const UserContext = createContext({
   guestCount: 0,
   guestLeft: 3,
   incrementGuestCount: () => {},
+  refreshAuth: null as any
+  
 });
 
 const MAX_GUEST_TRIES = 3;
@@ -45,17 +47,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
   /* ================= AUTH CHECK ================= */
-  useEffect(() => {
-    let cancelled = false;
+     let cancelled = false;
 
     const checkAuth = async () => {
       setLoading(true);
 
-      if (isPublicRoute) {
-        setAuthChecked(true);
-        setLoading(false);
-        return;
-      }
 
       try {
         const res = await api.post("/auth/verify_token");
@@ -65,6 +61,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (res.data?.success) {
           setUser(res.data.user);
           setIsLogin(true);
+           setIsGuest(false);
+          setIsMaxTryReached(false);
         } else {
           setUser(null);
           setIsLogin(false);
@@ -80,13 +78,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    checkAuth();
+ useEffect(() => {
+  if (isPublicRoute) {
+    setAuthChecked(true);
+    setLoading(false);
+    return;
+  }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname, isPublicRoute]);
+  checkAuth();
+}, [pathname, isPublicRoute]);
 
+ 
   /* ================= GUEST MODE (FALLBACK) ================= */
   useEffect(() => {
     // ⛔ WAIT until auth is checked
@@ -139,6 +141,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         guestCount,
         guestLeft: Math.max(0, MAX_GUEST_TRIES - guestCount),
         incrementGuestCount,
+        refreshAuth: checkAuth, // 🔥 NEW
       }}
     >
       {children}

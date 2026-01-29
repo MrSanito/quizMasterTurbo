@@ -2,45 +2,75 @@
 
 import { FaCirclePlay, FaTrophy } from "react-icons/fa6";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
- import NotLoginComponent from "../(auth)/components/NotLoginComponent";
- import MaxTryReached from "../(auth)/components/MaxTryReached";
+import NotLoginComponent from "../(auth)/components/NotLoginComponent";
+import MaxTryReached from "../(auth)/components/MaxTryReached";
 import Loading from "@/components/Loading";
 import { data } from "@/app/dashboard/data";
 import Card from "@/components/Card";
- import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";
+import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Avatar1 from "@/public/avatars/avatar1.svg"
-import Avatar2 from "@/public/avatars/avatar2.svg"
-import Avatar3 from "@/public/avatars/avatar3.svg"
-import Avatar4 from "@/public/avatars/avatar4.svg"
-import Avatar5 from "@/public/avatars/avatar5.svg"
-import Avatar6 from "@/public/avatars/avatar6.svg"
-import Avatar7 from "@/public/avatars/avatar7.svg"
-import Avatar8 from "@/public/avatars/avatar8.svg"
-import Avatar9 from "@/public/avatars/avatar9.svg"
-import Avatar10 from "@/public/avatars/avatar10.svg"
+import Avatar1 from "@/public/avatars/avatar1.svg";
+import Avatar2 from "@/public/avatars/avatar2.svg";
+import Avatar3 from "@/public/avatars/avatar3.svg";
+import Avatar4 from "@/public/avatars/avatar4.svg";
+import Avatar5 from "@/public/avatars/avatar5.svg";
+import Avatar6 from "@/public/avatars/avatar6.svg";
+import Avatar7 from "@/public/avatars/avatar7.svg";
+import Avatar8 from "@/public/avatars/avatar8.svg";
+import Avatar9 from "@/public/avatars/avatar9.svg";
+import Avatar10 from "@/public/avatars/avatar10.svg";
 import { BiSolidEdit } from "react-icons/bi";
-
+import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
+import { logOut } from "../features/auth/logOutAction";
 
 const Dashboard = () => {
-  const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
+  const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft, refreshAuth } =
     useUser();
+  const router = useRouter();
 
- const viewerId =
-   !loading && isLogin ? user?.id : !loading && isGuest ? guest?.id : undefined;
+    useEffect(() => {
+      if (!loading && !isLogin && !isGuest) {
+        router.replace("/login");
+      }
+    }, [loading, isLogin, isGuest, router]);
 
- const viewerType = isLogin ? "user" : "guest";
+  const [logOutModal, setLogOutModal] = useState(false);
+
+
+  const handleLogout = async () => {
+    const res = await logOut();
+
+    if (res?.success) {
+      await refreshAuth(); // 🔥 FORCE auth recheck
+      router.replace("/login");
+    }
+  };
+
+
+  const viewerId =
+    !loading && isLogin
+      ? user?.id
+      : !loading && isGuest
+        ? guest?.id
+        : undefined;
+
+  const viewerType = isLogin ? "user" : "guest";
 
   console.log(viewerId, viewerType);
 
   console.log(
     user?.avatar ? `/avatars/${user.avatar}` : "/avatars/avatar1.svg",
   );
+
+  
   // 1️⃣ Loading (highest priority)
   if (loading) {
     return <Loading />;
   }
+  
 
   // 2️⃣ Blocked guest
   if (isMaxTryReached) {
@@ -49,7 +79,8 @@ const Dashboard = () => {
 
   // 3️⃣ Not logged in at all
   if (!isLogin && !isGuest) {
-    return <NotLoginComponent />;
+    // return <NotLoginComponent />;
+    return null; 
   }
 
   // 4️⃣ Guest user (allowed but limited)
@@ -65,64 +96,92 @@ const Dashboard = () => {
 
   // 5️⃣ Logged-in user dashboard ✅
   if (isLogin && user) {
+    const dummyUser = {
+      name: "Jane Doe",
+      avatarUrl:
+        "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp",
+      greeting: "Welcome back,",
+    };
     return (
       <div className="min-h-screen bg-base-200 px-4 py-6">
-        {/* Header */}
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="relative w-full overflow-hidden rounded-2xl  shadow-sm">
-            {/* subtle gradient background glow */}
-            <div className="absolute inset-0  pointer-events-none" />
-
-            <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 p-8">
-              {/* LEFT — Title Zone */}
-              <div className="space-y-1">
-                <h1 className="text-3xl font-semibold tracking-tight">
-                  Dashboard
-                </h1>
-                <p className="text-sm ">Here’s what’s happening today.</p>
+        <div>
+          <div className="w-full p-4">
+            {/* Card Container */}
+            <div className="flex flex-col md:flex-row items-center justify-between bg-[#151b23] rounded-2xl p-6 shadow-md border border-gray-800">
+              {/* Left Side: Avatar & Info */}
+              <div className="flex items-center gap-4 mb-4 md:mb-0">
+                <div className="avatar">
+                  <div className="w-14 h-14 rounded-full ring-2 ring-offset-2 ring-offset-[#151b23] ring-blue-400">
+                    <img
+                      src={
+                        user?.avatar
+                          ? `/avatars/${user.avatar}`
+                          : "/avatars/avatar1.svg"
+                      }
+                      alt="profile"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-400 text-sm font-medium">
+                    {dummyUser.greeting}
+                  </span>
+                  <h2 className="text-white text-xl md:text-2xl font-bold tracking-tight">
+                    {user.firstName + " " + user.lastName}
+                  </h2>
+                </div>
               </div>
-              <div className="">
-                {/* CENTER — Identity Pill */}
-                <div className="flex items-center gap-4 rounded-2xl bg-base-100/70 backdrop-blur-sm px-4 py-2 border border-base-300 shadow-sm transition-all hover:shadow-md">
-                  {/* Avatar Container */}
-                  <div className="relative">
-                    <div className="w-11 h-11 rounded-full bg-white/60 p-[2px] shadow-inner">
-                      <Image
-                        src={
-                          user?.avatar
-                            ? `/avatars/${user.avatar}`
-                            : "/avatars/avatar1.svg"
-                        }
-                        alt="avatar"
-                        width={44}
-                        height={44}
-                        className="rounded-full object-cover"
-                      />
-                    </div>
-                  </div>
 
-                  {/* Text */}
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-[11px] font-medium opacity-60 uppercase tracking-wide">
-                      Welcome back
-                    </span>
-                    <span className="text-base font-semibold">
-                      {user.firstName + " " + user.lastName}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-row w-32 h-10 justify-center items-center rounded-2xl bg-white text-black m-2">
-                  <Link href={`dashboard/profile/edit`}>
-                    <div className="flex flex-row justify-center items-center gap-2 ">
-                      <BiSolidEdit />
-                      <p>Edit Profile</p>
-                    </div>
-                  </Link>
-                </div>
+              {/* Right Side: Buttons */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => router.push("/dashboard/profile/edit")}
+                  className="btn bg-white hover:bg-gray-200 text-black border-none min-h-[2.5rem] h-[2.5rem] px-6 rounded-lg capitalize font-bold"
+                >
+                  Edit Profile
+                </button>
+
+                <button
+                  onClick={() => setLogOutModal(true)}
+                  className="btn btn-outline btn-error min-h-[2.5rem] h-[2.5rem] px-6 rounded-lg capitalize"
+                >
+                  Logout
+                </button>
               </div>
             </div>
           </div>
         </div>
+
+        {/* 🔥 Logout Modal */}
+        {logOutModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-[#151b23] border border-gray-800 rounded-2xl p-6 w-[90%] max-w-md shadow-lg">
+              <h3 className="text-white text-lg font-bold mb-2">
+                Confirm Logout
+              </h3>
+              <p className="text-gray-400 text-sm mb-6">
+                Are you sure you want to log out? Your current session will end.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setLogOutModal(false)}
+                  className="btn bg-gray-700 hover:bg-gray-600 text-white border-none px-5 rounded-lg"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  type="submit"
+                  className="btn btn-outline btn-error px-5 rounded-lg"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-8 max-w-7xl mx-auto">

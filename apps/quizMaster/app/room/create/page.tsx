@@ -70,7 +70,7 @@ const CreatePage = () => {
             <legend className="fieldset-legend text-xl">Username</legend>
             <input
               className="input input-primary w-64"
-              value={user?.name || ""}
+              value={user?.username || ""}
               disabled
             />
           </fieldset>

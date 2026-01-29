@@ -52,13 +52,9 @@ const LoginForm = () => {
 useEffect(() => {
   if (!state.success) return;
 
-  const timer = setTimeout(() => {
-    router.push("/dashboard");
-  }, 3000); // ⏳ 3 seconds
-
-  // cleanup (important!)
-  return () => clearTimeout(timer);
-}, [state.success, router]);
+  router.refresh(); // 🔥 clear server cache
+  router.replace("/dashboard"); // navigate
+ }, [state.success, router]);
 
 
 

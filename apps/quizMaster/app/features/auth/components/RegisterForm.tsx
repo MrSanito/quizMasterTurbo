@@ -99,6 +99,11 @@ const RegisterForm = () => {
             value={form.firstName}
             onChange={handleChange}
           />
+          {state.errors?.firstName && (
+            <>
+              <p className="text-red-500 text-sm">{state.errors.firstName}</p>
+            </>
+          )}
         </fieldset>
         <fieldset className="fieldset  flex-1 ">
           <legend className="fieldset-legend text-xl">Last Name</legend>
@@ -110,18 +115,15 @@ const RegisterForm = () => {
             value={form.lastName}
             onChange={handleChange}
           />
+
+          {state.errors?.lastName && (
+            <>
+              <p className="text-red-500 text-sm">{state.errors.lastName}</p>
+            </>
+          )}
         </fieldset>
       </div>
-      {state.errors?.firstName && (
-        <>
-        <p className="text-red-500 text-sm">{state.errors.firstName}</p>
-         </>
-      )}
-      {state.errors?.lastName && (
-        <>
-        <p className="text-red-500 text-sm">{state.errors.lastName}</p>
-         </>
-      )}
+
       <fieldset className="fieldset">
         <legend className="fieldset-legend text-xl">Username</legend>
         <input
@@ -203,7 +205,6 @@ const RegisterForm = () => {
         <p className="text-red-600 text-sm mt-2">{state.message}</p>
       )}
     </form>
-    
   );
 };
 

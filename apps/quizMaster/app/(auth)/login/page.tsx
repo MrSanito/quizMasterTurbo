@@ -18,6 +18,9 @@ const Login = () => {
       router.replace("/dashboard");
     }
   }, [loading, isLogin, router]);
+ 
+  // While redirecting or checking state, render nothing
+  if (isLogin) return null;
 
   //  ⏳ Still loading auth state
   if (loading) {
@@ -37,7 +40,7 @@ const Login = () => {
       <h3 className="text-3xl font-bold text-primary pb-6">Login Form</h3>
       <LoginForm />
       <div className="">
-        Don't have an account? {" "}
+        Don't have an account?{" "}
         <Link className="text-primary" href={`/register`}>
           Register
         </Link>
@@ -52,6 +55,6 @@ const Login = () => {
       )}
     </div>
   );
-};
+};;
 
 export default Login;
