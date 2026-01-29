@@ -34,7 +34,9 @@ const Dashboard = () => {
 
   console.log(viewerId, viewerType);
 
-  console.log(user.avatar)
+  console.log(
+    user?.avatar ? `/avatars/${user.avatar}` : "/avatars/avatar1.svg",
+  );
   // 1️⃣ Loading (highest priority)
   if (loading) {
     return <Loading />;
@@ -86,7 +88,11 @@ const Dashboard = () => {
                   <div className="relative">
                     <div className="w-11 h-11 rounded-full bg-white/60 p-[2px] shadow-inner">
                       <Image
-                        src={`avatars/${user.avatar}`}
+                        src={
+                          user?.avatar
+                            ? `/avatars/${user.avatar}`
+                            : "/avatars/avatar1.svg"
+                        }
                         alt="avatar"
                         width={44}
                         height={44}
@@ -100,19 +106,17 @@ const Dashboard = () => {
                     <span className="text-[11px] font-medium opacity-60 uppercase tracking-wide">
                       Welcome back
                     </span>
-                    <span className="text-base font-semibold">{user.firstName + " " + user.lastName}</span>
+                    <span className="text-base font-semibold">
+                      {user.firstName + " " + user.lastName}
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-row w-32 h-10 justify-center items-center rounded-2xl bg-white text-black m-2">
                   <Link href={`dashboard/profile/edit`}>
-                  <div className="flex flex-row justify-center items-center gap-2 ">
-
-                  <BiSolidEdit />
-                  <p>
-
-                  Edit Profile
-                  </p>
-                  </div>
+                    <div className="flex flex-row justify-center items-center gap-2 ">
+                      <BiSolidEdit />
+                      <p>Edit Profile</p>
+                    </div>
                   </Link>
                 </div>
               </div>
