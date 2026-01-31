@@ -9,6 +9,7 @@ import { useUser } from "../(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
 import NotLoginComponent from "../(auth)/components/NotLoginComponent";
 import MaxTryReached from "../(auth)/components/MaxTryReached";
+import api from "../lib/api";
 
 type Category = {
   _id: string;
@@ -30,8 +31,8 @@ export default function CategoriesPage() {
 
     const fetchCategories = async () => {
       try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/categories`
+        const res = await api.get(
+          `/categories`
         );
 
         setCategories(res.data.categories ?? res.data);

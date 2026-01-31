@@ -13,11 +13,17 @@ export const createRoom = (req: Request, res: Response) => {
      roomId ,
      message: "Success at Creating room",
    });}
+
+
+
 export const getRoom = (req: Request, res: Response) => { 
     return res.status(200).json({
      success: true,
      message: "Success at Getting room",
    });}
+
+
+   
 export const getRoomResult = (req: Request, res: Response) => { 
     return res.status(200).json({
      success: true,

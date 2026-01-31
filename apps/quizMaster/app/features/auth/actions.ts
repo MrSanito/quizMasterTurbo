@@ -5,7 +5,8 @@ import { editSchema, loginSchema, registerSchema } from "./schema";
 import { unstable_noStore as noStore } from "next/cache";
 // import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-  
+import api, { isAxiosError } from "@/app/lib/api";
+
 export type RegisterActionState = {
   success: boolean;
   message?: string;
@@ -92,7 +93,7 @@ export async function registerAction(
     console.log("process env", process.env.NEXT_PUBLIC_API_BASE_URL);
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    const res = await axios.post(`${API_URL}/auth/register`, parsed.data, {
+    const res = await api.post(`/auth/register`, parsed.data, {
       timeout: 3000,
 
       withCredentials: true, // 🔥 VERY IMPORTANT
@@ -108,7 +109,7 @@ export async function registerAction(
   } catch (err: any) {
     console.log("❌ EXPRESS FAILED");
 
-    if (axios.isAxiosError(err)) {
+    if (isAxiosError(err)) {
       return {
         success: false,
         message:
@@ -168,8 +169,8 @@ export async function loginAction(
     }
     const { email, password } = rawData;
 
-    const res = await axios.post(
-      `${API_URL}/auth/login`,
+    const res = await api.post(
+      `/auth/login`,
       {
         email,
         password,
@@ -233,7 +234,7 @@ export async function loginAction(
   } catch (err: any) {
     console.log("❌ EXPRESS FAILED", err);
 
-    if (axios.isAxiosError(err)) {
+    if (isAxiosError(err)) {
       return {
         success: false,
         message:
@@ -255,19 +256,13 @@ export async function loginAction(
 export async function checkUsername(username: string) {
   if (!username) return null;
   console.log("api link url", process.env.NEXT_PUBLIC_API_BASE_URL);
-  const res = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/check_username`,
-    {
-      username: username,
-    },
-  );
+  const res = await api.post(`/auth/check_username`, {
+    username: username,
+  });
 
   console.log("response data", res.data);
   return res.data;
 }
-
-
-
 
 export async function editUser(
   prevState: EditUserFormState,
@@ -294,10 +289,7 @@ export async function editUser(
   }
 
   try {
-    const res = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/edit`,
-      parsed.data,
-    );
+    const res = await api.post(`/auth/edit`, parsed.data);
 
     const data = res.data;
 

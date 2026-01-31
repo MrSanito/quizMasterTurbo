@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import { Clock, ChevronRight, Zap, CheckCircle, ListChecks, Trophy, Play,XCircle  } from "lucide-react";
+import api from "@/app/lib/api";
 
 
 export default function ClientQuizPlayer({ quiz }) {
@@ -157,8 +158,8 @@ export default function ClientQuizPlayer({ quiz }) {
 
       const authPayload = isLogin ? { userId: user.id } : { guestId: guest.id };
 
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/${quiz._id}/submit`,
+      const res = await api.post(
+        `/quizzes/${quiz._id}/submit`,
         {
           score,
           total: quiz.totalPoints,

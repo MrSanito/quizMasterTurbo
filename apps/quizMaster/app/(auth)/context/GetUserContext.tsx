@@ -2,14 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import axios from "axios";
+ import api from "../../lib/api.js"
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
-});
 
 const UserContext = createContext({
   user: null as any,

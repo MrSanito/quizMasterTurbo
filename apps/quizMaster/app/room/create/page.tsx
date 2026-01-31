@@ -6,6 +6,7 @@ import Loading from "@/components/Loading";
 import { Loader2, Share2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const generateRoomId = () => {
   return "QM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -26,6 +27,7 @@ const CreatePage = () => {
     setStep("loading");
 
     setTimeout(() => {
+
       setStep("share");
       toast.success("Room created successfully 🎉");
     }, 2000);

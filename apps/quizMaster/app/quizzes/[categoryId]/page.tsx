@@ -11,6 +11,7 @@ import { useUser } from "../../(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
 import NotLoginComponent from "../../(auth)/components/NotLoginComponent";
 import MaxTryReached from "../../(auth)/components/MaxTryReached";
+import api from "@/app/lib/api";
 
 type Quiz = {
   _id: string;
@@ -39,8 +40,8 @@ export default function QuizzesByCategoryPage() {
 
     const fetchQuizzes = async () => {
       try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/categories/${categoryId}/quizzes`
+        const res = await api.get(
+          `/categories/${categoryId}/quizzes`
         );
         setQuizzes(res.data.quizzes);
         console.log(quizzes)

@@ -37,3 +37,9 @@ export async function submitAnswer({ roomId, userId, answer, timeTaken }: any) {
 
   return await redis.hgetall(`room:${roomId}:scores`);
 }
+
+
+export async function nextQuestion ({roomId, userId, answer, timeTaken}:any){
+    return "hello bhidu kaise ho tum log"
+
+}

@@ -8,6 +8,7 @@ import { useUser } from "../../../../(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
 import NotLoginComponent from "../../../../(auth)/components/NotLoginComponent";
 import MaxTryReached from "../../../../(auth)/components/MaxTryReached";
+import api from "@/app/lib/api";
 
 /* ================= TYPES ================= */
 
@@ -93,7 +94,7 @@ export default function ClientQuizResult() {
           ? { userId: user.id }
           : { guestId: guest.id };
 
-        const res = await axios.get(
+        const res = await api.get(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/result/${attemptId}`,
           {
             params: {

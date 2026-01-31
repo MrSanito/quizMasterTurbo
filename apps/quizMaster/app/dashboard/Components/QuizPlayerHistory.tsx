@@ -5,6 +5,7 @@ import axios from "axios";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
+import api from "@/app/lib/api";
 
 /* ================= TYPES ================= */
 
@@ -45,8 +46,8 @@ export default function QuizPlayerHistory({
 
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/history`,
+        const res = await api.get(
+          `/quizzes/history`,
           {
             params: { viewerId, viewerType },
             withCredentials: true,

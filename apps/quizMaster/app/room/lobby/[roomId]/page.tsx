@@ -149,7 +149,7 @@ const socket = socketRef.current;
       console.log("✅ socket connected", socket.id);
       setSocketId(socket.id);
 
-      socket.emit("join-room", {
+      socket.emit("room:join", {
         roomId,
         player,
       });

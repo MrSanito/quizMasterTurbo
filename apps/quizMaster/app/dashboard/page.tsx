@@ -24,8 +24,8 @@ import Avatar10 from "@/public/avatars/avatar10.svg";
 import { BiSolidEdit } from "react-icons/bi";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
-import { logOut } from "../features/auth/logOutAction";
-import axios from "axios";
+ import axios from "axios";
+import api from "../lib/api";
 
 const Dashboard = () => {
   const {
@@ -48,10 +48,11 @@ const Dashboard = () => {
 
   const [logOutModal, setLogOutModal] = useState(false);
 
-  const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    withCredentials: true, // 🔥 REQUIRED
-  });
+  // const api = axios.create({
+  //   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  //   withCredentials: true, // 🔥 REQUIRED
+  // });
+
 
   const handleLogout = async () => {
     try {
