@@ -112,7 +112,7 @@ enum RoomState {
 
 
 model Room {
-  id          String     @id @default(uuid())
+   id          String     @id @default(uuid())
   hostId      String
   state       RoomState  @default(CREATED)
   maxPlayers  Int

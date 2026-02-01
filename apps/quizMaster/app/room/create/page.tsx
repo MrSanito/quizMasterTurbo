@@ -7,34 +7,122 @@ import { Loader2, Share2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import api from "@/app/lib/api";
+// import { FormControl, InputLabel, NativeSelect } from "@mui/material";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+
 
 const generateRoomId = () => {
   return "QM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 };
 
 const CreatePage = () => {
-  const { user, loading } = useUser();
+  const { user, guest, isGuest, isLogin, loading, isMaxTryReached } = useUser();
 
   const [roomId, setRoomId] = useState("");
   const [roomName, setRoomName] = useState("");
-  const [step, setStep] = useState<"form" | "loading" | "share">("form");
+  const [step, setStep] = useState<"form" | "loading" | "share" | "failed">(
+    "form",
+  );
+  const [userId, setuserId] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [quiz, setQuiz] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedQuiz, setSelectedQuiz] = useState("");
+  const handleChangeCategory = (event: { target: { value: string } }) => {
+    const value = event.target.value;
+    setSelectedCategory(value);
+    setSelectedQuiz(""); // reset quiz
+  };
+  const handleChangeQuiz = (event: { target: { value: string } }) => {
+    const value = event.target.value;
+    setSelectedQuiz(value);
+  };
 
   useEffect(() => {
     setRoomId(generateRoomId());
   }, []);
 
-  const handleCreateRoom = () => {
-    setStep("loading");
+  const handleCreateRoom = async () => {
+    if (!user?.id) {
+      toast.error("User not ready. Try again.");
+      return;
+    }
+    try {
+      setStep("loading");
 
-    setTimeout(() => {
+      const res = await api.post("/room/createRoom", {
+        hostId: user.id,
+        roomName,
+        categoryId: selectedCategory,
+        quizId: selectedQuiz,
+      });
 
+      if (!res.data.success) {
+        setStep("failed");
+        return;
+      }
+
+      // setRoomId(res.data.id); // use DB room id, not random one
       setStep("share");
       toast.success("Room created successfully 🎉");
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+      setStep("failed");
+      toast.error("Failed to create room");
+    }
+
+    // setTimeout(() => {
+
+    //   setStep("share");
+    //   toast.success("Room created successfully 🎉");
+    // }, 2000);
   };
 
+  useEffect(() => {
+    if (loading || isMaxTryReached || (!isLogin && !isGuest)) return;
+
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get(`/categories`);
+
+        setCategories(res.data.categories ?? res.data);
+        console.log(categories);
+      } catch (err) {
+        console.error("❌ Failed to fetch categories", err);
+      } finally {
+      }
+    };
+
+    fetchCategories();
+  }, [loading, isLogin, isGuest, isMaxTryReached]);
+
+  useEffect(() => {
+    if (!selectedCategory) {
+      setQuiz([]); // clear quizzes
+      setSelectedQuiz(""); // reset quiz selection
+      return;
+    }
+
+    const fetchQuizzes = async () => {
+      try {
+        const res = await api.get(`/categories/${selectedCategory}/quizzes`);
+        console.log(res.data.quizzes);
+        setQuiz(res.data.quizzes);
+        console.log(quiz);
+      } catch (err) {
+        console.error("❌ Failed to fetch quizzes", err);
+      } finally {
+      }
+    };
+
+    fetchQuizzes();
+
+    console.log("ooo ballle ball de shawa shawa");
+  }, [selectedCategory]);
+
   const handleCopyLink = async () => {
-    const link = `${window.location.origin}/lobby/${roomId}`;
+    const link = `${window.location.origin}/${roomId}/lobby/`;
 
     try {
       await navigator.clipboard.writeText(link);
@@ -96,10 +184,43 @@ const CreatePage = () => {
             />
           </fieldset>
 
+          <div className="flex flex-col gap-1 w-64">
+            <label className="fieldset-legend text-xl">Category</label>
+            <select
+              className="select select-primary w-64"
+              value={selectedCategory}
+              onChange={handleChangeCategory}
+            >
+              <option value="">Select Category</option>
+              {categories.map((element) => (
+                <option key={element._id} value={String(element._id)}>
+                  {element.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1 w-64">
+            <label className="fieldset-legend text-xl">Quiz</label>
+            <select
+              className="select select-primary w-64"
+              value={selectedQuiz}
+              onChange={handleChangeQuiz}
+              disabled={!selectedCategory}
+            >
+              <option value="">Select Quiz</option>
+              {quiz.map((element) => (
+                <option key={element._id} value={String(element._id)}>
+                  {element.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             className="btn btn-primary w-64"
             onClick={handleCreateRoom}
-            disabled={!roomName}
+            disabled={!roomName || !selectedCategory || !selectedQuiz}
           >
             Create Room
           </button>
@@ -112,12 +233,14 @@ const CreatePage = () => {
         </div>
       )}
 
+      {step === "failed" && <div>fail ho gaya re bitua</div>}
+
       {step === "share" && (
         <div className="flex flex-col items-center gap-4">
           <h3 className="text-lg font-bold">Room Ready 🎉</h3>
 
           <QRCodeCanvas
-            value={`${window.location.origin}/room/lobby/${roomId}`}
+            value={`${window.location.origin}/room/${roomId}/lobby`}
             size={180}
           />
 
@@ -130,7 +253,7 @@ const CreatePage = () => {
             <Share2 size={16} /> Copy Invite Link
           </button>
 
-          <a href={`/room/lobby/${roomId}`} className="btn btn-primary w-64">
+          <a href={`/room/${roomId}/lobby`} className="btn btn-primary w-64">
             Go to Lobby →
           </a>
         </div>
