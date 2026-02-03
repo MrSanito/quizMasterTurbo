@@ -46,10 +46,21 @@ export const createRoom = async (req: Request, res: Response) => {
   }
 };
 
-export const getRoom = (req: Request, res: Response) => {
+export const getRoom = async (req: Request, res: Response) => {
+  const roomId = Array.isArray(req.params.roomId)
+    ? req.params.roomId[0]
+    : req.params.roomId;
+
+  const room = await prisma.room.findUnique({
+    where: { roomName: roomId },
+    // select: { id: true, hostId: true, state: true },
+  });
+  console.log("room data", room);
   return res.status(200).json({
     success: true,
+
     message: "Success at Getting room",
+    room,
   });
 };
 
@@ -71,9 +82,9 @@ export const updateLobby = async (req: Request, res: Response) => {
   try {
     const room = await prisma.room.findUnique({
       where: { roomName: roomId },
-      select: { id: true,hostId: true, state: true },
+      select: { id: true, hostId: true, state: true },
     });
-    console.log("room", room)
+    console.log("room", room);
 
     if (!room) {
       return res.status(404).json({

@@ -6,6 +6,7 @@ export interface Player {
 export interface JoinRoomPayload {
   roomId: string;
   player: Player;
+  avatar: string;
 }
 
 export interface AnswerPayload {

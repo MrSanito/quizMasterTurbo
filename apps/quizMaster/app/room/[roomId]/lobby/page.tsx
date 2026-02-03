@@ -7,6 +7,16 @@ import { useUser } from "@/app/(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
 import api from "@/app/lib/api";
 
+import Avatar1 from "@/public/avatars/avatar1.svg";
+import Avatar2 from "@/public/avatars/avatar2.svg";
+import Avatar3 from "@/public/avatars/avatar3.svg";
+import Avatar4 from "@/public/avatars/avatar4.svg";
+import Avatar5 from "@/public/avatars/avatar5.svg";
+import Avatar6 from "@/public/avatars/avatar6.svg";
+import Avatar7 from "@/public/avatars/avatar7.svg";
+import Avatar8 from "@/public/avatars/avatar8.svg";
+import Avatar9 from "@/public/avatars/avatar9.svg";
+import Avatar10 from "@/public/avatars/avatar10.svg";
 /* ---------------- Types ---------------- */
 
 type ConnectionStatusProps = {
@@ -112,11 +122,19 @@ const RoomLobbyPage = () => {
   const [screen, setScreen] = useState<"Loading" | "Success" | "Failed">(
     "Loading",
   );
+    const [roomDetail, setRoomDetail] = useState({});
+
 
   const isBlocked = !loading && (!isLogin || isGuest);
   const canConnect = !loading && isLogin && !isGuest && roomId;
 
-  const player = user ? { id: user.id, name: user.name, } : null;
+  const player = user
+    ? {
+        id: user.id,
+        name: user.firstName + " " + user.lastName,
+        avatar: user.avatar,
+      }
+    : null;
 
   /* 🔌 Create socket once */
   useEffect(() => {
@@ -143,10 +161,31 @@ const RoomLobbyPage = () => {
     };
 
     const onPlayers = (data: any) => {
-      console.log(data)
-      if (Array.isArray(data)) setPlayers(data);
-      else if (Array.isArray(data.players)) setPlayers(data.players);
-      else setPlayers(Object.values(data || {}));
+      console.log(data);
+      let list: any[] = [];
+
+      if (!data) return;
+
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (Array.isArray(data.players)) {
+        list = data.players;
+      } else {
+        // 🚨 THIS IS YOUR CASE
+        list = Object.entries(data).map(([id, value]: any) => {
+          const parsed = JSON.parse(value); // 💥 unwrap string
+          return {
+            id,
+            name: parsed.username,
+            avatar: parsed.avatar, // 👈 ADD THIS
+
+            socketId: parsed.socketId,
+            score: parsed.score,
+          };
+        });
+      }
+
+      setPlayers(list);
     };
 
     socket.on("connect", onConnect);
@@ -168,14 +207,21 @@ const RoomLobbyPage = () => {
         });
         console.log("response from the server", res.data);
 
+        const roomDataFromAPI = await api.get(`/room/${roomId}/`);
+        const roomData = roomDataFromAPI.data.room;
+console.log("roomDetail from api", roomData);
+
+setRoomDetail(roomData);
+
+console.log("rooomDetail from state",roomDetail)
         setScreen("Success");
       } catch (err: any) {
-          if (err.response?.status === 403) {
-            console.log("Not host — skipping lobby state update");
-        setScreen("Success");
+        if (err.response?.status === 403) {
+          console.log("Not host — skipping lobby state update");
+          setScreen("Success");
 
-            return; // silently ignore
-          }
+          return; // silently ignore
+        }
         console.error("❌ Failed to fetch categories", err);
         setScreen("Failed");
       } finally {
@@ -215,21 +261,36 @@ const RoomLobbyPage = () => {
                 key={p.id}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg bg-base-100 border-l-4 border-l-indigo-400"
               >
-                <img
-                  src={`https://api.dicebear.com/7.x/personas/svg?seed=${p.name}`}
-                  className="w-9 h-9 rounded-full bg-base-200"
-                />
+                <div className="w-10 h-10 rounded-full ring-2 ring-offset-2 ring-offset-[#151b23] ring-blue-400">
+                  <img
+                    src={
+                      p?.avatar
+                        ? `/avatars/${p.avatar}`
+                        : "/avatars/avatar4.svg"
+                    }
+                    alt="profile"
+                  />
+                </div>
                 <span className="text-sm font-medium flex-1">{p.name}</span>
-                {p.isHost && (
+                {roomDetail.hostId === p.id && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-base-300 opacity-80">
                     Host
                   </span>
                 )}
-                {p.socketId}
               </li>
             ))}
           </ul>
         </div>
+        {players.map((p) =>
+          roomDetail.hostId === p.id ? (
+            <span
+              key={p.id}
+              className="text-[10px] px-2 py-0.5 rounded-full bg-base-300 opacity-80"
+            >
+              SubmitButton Banega
+            </span>
+          ) : null,
+        )}
       </div>
     );
 };

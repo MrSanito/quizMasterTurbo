@@ -6,6 +6,7 @@ export async function joinRoom(roomId: string, player: any, socketId: string) {
     player.id,
     JSON.stringify({
       username: player.name,
+      avatar: player.avatar,
       socketId,
       score: 0,
     }),
