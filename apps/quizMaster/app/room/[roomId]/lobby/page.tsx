@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { io } from "socket.io-client";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
+import api from "@/app/lib/api";
 
 /* ---------------- Types ---------------- */
 
@@ -102,17 +103,20 @@ const LoginRequired = () => (
 /* ---------------- Lobby Page ---------------- */
 
 const RoomLobbyPage = () => {
-  const { user, loading, isLogin, isGuest } = useUser();
+  const { user, loading, isLogin, isGuest, isMaxTryReached } = useUser();
   const { roomId } = useParams<{ roomId: string }>();
 
   const socketRef = useRef<any>(null);
   const [socketId, setSocketId] = useState<false | string>(false);
   const [players, setPlayers] = useState<any[]>([]);
+  const [screen, setScreen] = useState<"Loading" | "Success" | "Failed">(
+    "Loading",
+  );
 
   const isBlocked = !loading && (!isLogin || isGuest);
   const canConnect = !loading && isLogin && !isGuest && roomId;
 
-  const player = user ? { id: user.id, name: user.name, isGuest: false } : null;
+  const player = user ? { id: user.id, name: user.name, } : null;
 
   /* 🔌 Create socket once */
   useEffect(() => {
@@ -139,6 +143,7 @@ const RoomLobbyPage = () => {
     };
 
     const onPlayers = (data: any) => {
+      console.log(data)
       if (Array.isArray(data)) setPlayers(data);
       else if (Array.isArray(data.players)) setPlayers(data.players);
       else setPlayers(Object.values(data || {}));
@@ -153,48 +158,80 @@ const RoomLobbyPage = () => {
     };
   }, [canConnect, roomId]);
 
+  useEffect(() => {
+    if (loading || isMaxTryReached || !isLogin || !roomId) return;
+
+    const updateStatusToLobby = async () => {
+      try {
+        const res = await api.post(`/room/${roomId}/lobby`, {
+          hostId: user.id,
+        });
+        console.log("response from the server", res.data);
+
+        setScreen("Success");
+      } catch (err: any) {
+          if (err.response?.status === 403) {
+            console.log("Not host — skipping lobby state update");
+        setScreen("Success");
+
+            return; // silently ignore
+          }
+        console.error("❌ Failed to fetch categories", err);
+        setScreen("Failed");
+      } finally {
+      }
+    };
+
+    updateStatusToLobby();
+  }, [loading, isLogin, isGuest, isMaxTryReached, roomId, user?.id]);
+
   /* ---------------- UI ---------------- */
 
   if (loading) return <Loading />;
   if (isBlocked) return <LoginRequired />;
 
-  return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center gap-6 bg-base-100">
-      <h2 className="text-2xl font-bold">Quiz Lobby</h2>
-      <p className="text-xs opacity-60 font-mono">Room ID: {roomId}</p>
+  if (screen === "Loading") return <Loading />;
+  if (screen === "Failed") return <div>Failed Screen Refresh</div>;
+  if (screen === "Success")
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center gap-6 bg-base-100">
+        <h2 className="text-2xl font-bold">Quiz Lobby</h2>
+        <p className="text-xs opacity-60 font-mono">Room ID: {roomId}</p>
 
-      <ConnectionStatus
-        roomId={socketId || ""}
-        color={socketId ? "green" : "red"}
-        socketId={socketId}
-      />
+        <ConnectionStatus
+          roomId={socketId || ""}
+          color={socketId ? "green" : "red"}
+          socketId={socketId}
+        />
 
-      <div className="bg-base-200 p-5 rounded-xl w-80 shadow-sm">
-        <p className="text-sm font-semibold mb-3">Players ({players.length})</p>
+        <div className="bg-base-200 p-5 rounded-xl w-80 shadow-sm">
+          <p className="text-sm font-semibold mb-3">
+            Players ({players.length})
+          </p>
 
-        <ul className="flex flex-col gap-2">
-          {players.map((p) => (
-             <li
-              key={p.id}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-base-100 border-l-4 border-l-indigo-400"
-            >
-              <img
-                src={`https://api.dicebear.com/7.x/personas/svg?seed=${p.name}`}
-                className="w-9 h-9 rounded-full bg-base-200"
-              />
-              <span className="text-sm font-medium flex-1">{p.name}</span>
-              {p.isHost && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-base-300 opacity-80">
-                  Host
-                </span>
-              )}
-              {p.socketId}
-            </li>
-          ))}
-        </ul>
+          <ul className="flex flex-col gap-2">
+            {players.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg bg-base-100 border-l-4 border-l-indigo-400"
+              >
+                <img
+                  src={`https://api.dicebear.com/7.x/personas/svg?seed=${p.name}`}
+                  className="w-9 h-9 rounded-full bg-base-200"
+                />
+                <span className="text-sm font-medium flex-1">{p.name}</span>
+                {p.isHost && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-base-300 opacity-80">
+                    Host
+                  </span>
+                )}
+                {p.socketId}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
-  );
+    );
 };
 
 export default RoomLobbyPage;

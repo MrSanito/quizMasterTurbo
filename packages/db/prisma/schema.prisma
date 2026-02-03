@@ -76,6 +76,8 @@ model Quiz {
   Question    Question[]
   Category    Category      @relation(fields: [categoryId], references: [id])
   QuizAttempt QuizAttempt[]
+  Room Room[]
+
 }
 
 model QuizAttempt {
@@ -112,6 +114,10 @@ enum RoomState {
 
 
 model Room {
+  roomName String @unique  
+  quizId String
+quiz   Quiz @relation(fields: [quizId], references: [id])
+
    id          String     @id @default(uuid())
   hostId      String
   state       RoomState  @default(CREATED)
@@ -125,10 +131,15 @@ model Room {
   questions   RoomQuestion[]
   answers     PlayerAnswer[]
   events      RoomEvent[]
+    @@index([quizId])
+  @@index([hostId])
+
 }
 
 model RoomPlayer {
   id               String   @id @default(uuid())
+  pointsEarned Int @default(0)
+
   roomId           String
   userId           String
   usernameSnapshot String
@@ -141,6 +152,8 @@ model RoomPlayer {
   user   User @relation(fields: [userId], references: [id])
 
   @@unique([roomId, userId]) // user can't join same room twice
+   @@index([roomId])
+  @@index([userId])
 }
 
 model RoomQuestion {
@@ -153,6 +166,8 @@ model RoomQuestion {
 
   room      Room     @relation(fields: [roomId], references: [id])
   answers   PlayerAnswer[]
+   @@index([roomId])
+  @@index([questionId])
 }
 
 model PlayerAnswer {
@@ -160,17 +175,22 @@ model PlayerAnswer {
   roomId          String
   roomQuestionId  String
   userId          String
-  selectedOption  String
+selectedOptionId String
   isCorrect       Boolean
   answeredAt      DateTime @default(now())
   responseTimeMs  Int
+  
 
   room          Room         @relation(fields: [roomId], references: [id])
   roomQuestion  RoomQuestion @relation(fields: [roomQuestionId], references: [id])
   user          User         @relation(fields: [userId], references: [id])
 
+  @@unique([roomQuestionId, userId])
+
   @@index([roomId])
   @@index([userId])
+    @@index([roomQuestionId])
+
 }
 
 model RoomEvent {

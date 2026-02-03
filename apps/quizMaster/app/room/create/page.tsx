@@ -12,15 +12,14 @@ import api from "@/app/lib/api";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 
 
-const generateRoomId = () => {
+const generateRoomName = () => {
   return "QM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 };
 
 const CreatePage = () => {
   const { user, guest, isGuest, isLogin, loading, isMaxTryReached } = useUser();
 
-  const [roomId, setRoomId] = useState("");
-  const [roomName, setRoomName] = useState("");
+   const [roomName, setRoomName] = useState("");
   const [step, setStep] = useState<"form" | "loading" | "share" | "failed">(
     "form",
   );
@@ -40,7 +39,7 @@ const CreatePage = () => {
   };
 
   useEffect(() => {
-    setRoomId(generateRoomId());
+    setRoomName(generateRoomName());
   }, []);
 
   const handleCreateRoom = async () => {
@@ -56,6 +55,7 @@ const CreatePage = () => {
         roomName,
         categoryId: selectedCategory,
         quizId: selectedQuiz,
+        
       });
 
       if (!res.data.success) {
@@ -122,7 +122,7 @@ const CreatePage = () => {
   }, [selectedCategory]);
 
   const handleCopyLink = async () => {
-    const link = `${window.location.origin}/${roomId}/lobby/`;
+    const link = `${window.location.origin}/${roomName}/lobby/`;
 
     try {
       await navigator.clipboard.writeText(link);
@@ -156,7 +156,7 @@ const CreatePage = () => {
         <>
           <h3 className="text-lg font-bold">Create Room</h3>
 
-          <fieldset className="fieldset">
+          <fieldset className="fieldset " hidden>
             <legend className="fieldset-legend text-xl">Username</legend>
             <input
               className="input input-primary w-64"
@@ -165,14 +165,7 @@ const CreatePage = () => {
             />
           </fieldset>
 
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend text-xl">Room ID</legend>
-            <input
-              className="input input-primary w-64"
-              value={roomId}
-              disabled
-            />
-          </fieldset>
+          
 
           <fieldset className="fieldset">
             <legend className="fieldset-legend text-xl">Room Name</legend>
@@ -180,8 +173,7 @@ const CreatePage = () => {
               className="input input-primary w-64"
               placeholder="Quiz Night 🔥"
               value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-            />
+disabled            />
           </fieldset>
 
           <div className="flex flex-col gap-1 w-64">
@@ -240,11 +232,11 @@ const CreatePage = () => {
           <h3 className="text-lg font-bold">Room Ready 🎉</h3>
 
           <QRCodeCanvas
-            value={`${window.location.origin}/room/${roomId}/lobby`}
+            value={`${window.location.origin}/room/${roomName}/lobby`}
             size={180}
           />
 
-          <p className="font-mono text-sm">{roomId}</p>
+          <p className="font-mono text-sm">{roomName}</p>
 
           <button
             className="btn btn-outline flex gap-2"
@@ -253,7 +245,7 @@ const CreatePage = () => {
             <Share2 size={16} /> Copy Invite Link
           </button>
 
-          <a href={`/room/${roomId}/lobby`} className="btn btn-primary w-64">
+          <a href={`/room/${roomName}/lobby`} className="btn btn-primary w-64">
             Go to Lobby →
           </a>
         </div>
