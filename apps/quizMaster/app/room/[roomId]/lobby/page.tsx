@@ -122,11 +122,14 @@ const RoomLobbyPage = () => {
   const [screen, setScreen] = useState<"Loading" | "Success" | "Failed">(
     "Loading",
   );
-    const [roomDetail, setRoomDetail] = useState({});
-
+  const [roomDetail, setRoomDetail] = useState({});
 
   const isBlocked = !loading && (!isLogin || isGuest);
   const canConnect = !loading && isLogin && !isGuest && roomId;
+
+  const startGameHandler = async( ) => {
+    console.log("ill make request to the server and make room status playing")
+  }
 
   const player = user
     ? {
@@ -209,15 +212,23 @@ const RoomLobbyPage = () => {
 
         const roomDataFromAPI = await api.get(`/room/${roomId}/`);
         const roomData = roomDataFromAPI.data.room;
-console.log("roomDetail from api", roomData);
+        console.log("roomDetail from api", roomData);
 
-setRoomDetail(roomData);
+        setRoomDetail(roomData);
 
-console.log("rooomDetail from state",roomDetail)
+        console.log("rooomDetail from state", roomDetail);
         setScreen("Success");
+        return;
       } catch (err: any) {
         if (err.response?.status === 403) {
           console.log("Not host — skipping lobby state update");
+          const roomDataFromAPI = await api.get(`/room/${roomId}/`);
+          const roomData = roomDataFromAPI.data.room;
+          console.log("roomDetail from api", roomData);
+
+          setRoomDetail(roomData);
+
+          console.log("rooomDetail from state", roomDetail);
           setScreen("Success");
 
           return; // silently ignore
@@ -281,15 +292,18 @@ console.log("rooomDetail from state",roomDetail)
             ))}
           </ul>
         </div>
-        {players.map((p) =>
-          roomDetail.hostId === p.id ? (
-            <span
-              key={p.id}
-              className="text-[10px] px-2 py-0.5 rounded-full bg-base-300 opacity-80"
-            >
-              SubmitButton Banega
-            </span>
-          ) : null,
+
+        {roomDetail.hostId === user.id ? (
+          <button
+            className="
+   btn btn-primary
+  "
+  onClick={startGameHandler}
+          >
+            🚀 Start Game
+          </button>
+        ) : (
+          <div>Wait Let Admin Start The Game</div>
         )}
       </div>
     );
