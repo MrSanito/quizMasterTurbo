@@ -113,6 +113,8 @@ const LoginRequired = () => (
 /* ---------------- Lobby Page ---------------- */
 
 const RoomLobbyPage = () => {
+
+  
   const { user, loading, isLogin, isGuest, isMaxTryReached } = useUser();
   const { roomId } = useParams<{ roomId: string }>();
 
@@ -122,7 +124,7 @@ const RoomLobbyPage = () => {
   const [screen, setScreen] = useState<"Loading" | "Success" | "Failed">(
     "Loading",
   );
-  const [roomDetail, setRoomDetail] = useState({});
+  const [roomDetail, setRoomDetail] = useState <any>([]);
 
   const isBlocked = !loading && (!isLogin || isGuest);
   const canConnect = !loading && isLogin && !isGuest && roomId;
