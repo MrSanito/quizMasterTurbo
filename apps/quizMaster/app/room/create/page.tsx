@@ -122,7 +122,7 @@ const CreatePage = () => {
   }, [selectedCategory]);
 
   const handleCopyLink = async () => {
-    const link = `${window.location.origin}/${roomName}/lobby/`;
+    const link = `${window.location.origin}/room/${roomName}/lobby/`;
 
     try {
       await navigator.clipboard.writeText(link);

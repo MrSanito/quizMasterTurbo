@@ -8,5 +8,5 @@ export function registerConnection(io: any, socket: any) {
   lobbyEvents(io, socket);
   gameEvents(io, socket);
 
-  socket.on("disconnect", () => handleDisconnect(socket));
+  socket.on("disconnect", () => handleDisconnect(io,socket));
 }

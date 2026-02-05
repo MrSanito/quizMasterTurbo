@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
@@ -113,10 +114,10 @@ const LoginRequired = () => (
 /* ---------------- Lobby Page ---------------- */
 
 const RoomLobbyPage = () => {
-
-  
+  const router = useRouter();
   const { user, loading, isLogin, isGuest, isMaxTryReached } = useUser();
   const { roomId } = useParams<{ roomId: string }>();
+  const [startingStatus, setStartingStatus] = useState<boolean>(false);
 
   const socketRef = useRef<any>(null);
   const [socketId, setSocketId] = useState<false | string>(false);
@@ -124,14 +125,20 @@ const RoomLobbyPage = () => {
   const [screen, setScreen] = useState<"Loading" | "Success" | "Failed">(
     "Loading",
   );
-  const [roomDetail, setRoomDetail] = useState <any>([]);
+  const [roomDetail, setRoomDetail] = useState<any>([]);
 
   const isBlocked = !loading && (!isLogin || isGuest);
   const canConnect = !loading && isLogin && !isGuest && roomId;
 
-  const startGameHandler = async( ) => {
-    console.log("ill make request to the server and make room status playing")
-  }
+  const startGameHandler = () => {
+    const socket = socketRef.current;
+    if (!socket) return;
+    setStartingStatus(true);
+
+    socket.emit("room:letsstart", { roomId, hostId: user.id }); // 🔥 THIS IS THE FIX
+
+    console.log("Room start signal sent via WS");
+  };
 
   const player = user
     ? {
@@ -192,13 +199,54 @@ const RoomLobbyPage = () => {
 
       setPlayers(list);
     };
+    const onLeftPlayers = (data: any) => {
+      console.log(data);
+      let list: any[] = [];
+
+      if (!data) return;
+
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (Array.isArray(data.players)) {
+        list = data.players;
+      } else {
+        // 🚨 THIS IS YOUR CASE
+        list = Object.entries(data).map(([id, value]: any) => {
+          const parsed = JSON.parse(value); // 💥 unwrap string
+          return {
+            id,
+            name: parsed.username,
+            avatar: parsed.avatar, // 👈 ADD THIS
+
+            socketId: parsed.socketId,
+            score: parsed.score,
+          };
+        });
+      }
+
+      setPlayers(list);
+    };
+    const onLetStart = (data: any) => {
+      console.log(data);
+      console.log("response from web socket server ");
+      router.push(`/room/${roomId}/game`);
+    };
 
     socket.on("connect", onConnect);
     socket.on("room:players", onPlayers);
+    socket.on("room:startingRoom", onLetStart);
 
     return () => {
+        if (!socket) return;
+
+        socket.emit("room:leave", { roomId, playerId: player.id });
       socket.off("connect", onConnect);
+
       socket.off("room:players", onPlayers);
+       socket.off("room:startingRoom", onLetStart);
+
+       // 🔌 Actually close connection
+       socket.disconnect();
     };
   }, [canConnect, roomId]);
 
@@ -298,11 +346,11 @@ const RoomLobbyPage = () => {
         {roomDetail.hostId === user.id ? (
           <button
             className="
-   btn btn-primary
-  "
-  onClick={startGameHandler}
+    btn btn-primary
+    "
+            onClick={startGameHandler}
           >
-            🚀 Start Game
+            {startingStatus ? "Starting ..." : "🚀 Start Game"}
           </button>
         ) : (
           <div>Wait Let Admin Start The Game</div>
