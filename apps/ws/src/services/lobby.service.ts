@@ -1,8 +1,10 @@
 import { redis } from "./redis.service.js";
 
-export async function joinRoom(roomId: string, player: any, socketId: string) {
+export async function joinLobby(roomId: string, player: any, socketId: string) {
+  const key = `room:${roomId}:players`;
+  console.log(`📝 [LobbyService] Writing player ${player.id} to Redis Key: ${key}`);
   await redis.hset(
-    `room:${roomId}:players`,
+    key,
     player.id,
     JSON.stringify({
       username: player.name,
@@ -14,7 +16,8 @@ export async function joinRoom(roomId: string, player: any, socketId: string) {
 
   return await redis.hgetall(`room:${roomId}:players`);
 }
-export async function leaveRoom(roomId: string, playerId: any, socketId: string) {
+export async function leaveLobby(roomId: string, playerId: any, socketId: string) {
+  console.log("deleted the player and sending data")
 const deleted = await redis.hdel(`room:${roomId}:players`, playerId);
 console.log(deleted)
 

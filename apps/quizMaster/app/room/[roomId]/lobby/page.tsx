@@ -130,14 +130,37 @@ const RoomLobbyPage = () => {
   const isBlocked = !loading && (!isLogin || isGuest);
   const canConnect = !loading && isLogin && !isGuest && roomId;
 
-  const startGameHandler = () => {
+  const startGameHandler = async () => {
     const socket = socketRef.current;
-    if (!socket) return;
+    if (!socket) {
+        console.error("❌ Socket not initialized");
+        return;
+    }
+    console.log("🚀 User clicked Start Game for room:", roomId);
     setStartingStatus(true);
 
-    socket.emit("room:letsstart", { roomId, hostId: user.id }); // 🔥 THIS IS THE FIX
-
-    console.log("Room start signal sent via WS");
+    try {
+      // 1. Call API to initialize game in Redis/DB
+      console.log("➡️ Calling API: /room/" + roomId + "/start");
+      const res = await api.post(`/room/${roomId}/start`);
+      console.log("✅ API Response:", res.data);
+      
+      if (res.data.success) {
+        // 2. Notify Server to start game for everyone
+        console.log("➡️ Emitting 'lobby:letsstart' to WS for room:", roomId);
+        if (socket.connected) {
+             socket.emit("lobby:letsstart", { roomId, hostId: user.id });
+             console.log("✅ Emit sent!");
+        } else {
+             console.error("❌ Socket disconnected! Cannot emit start command.");
+             socket.connect(); // Try to reconnect
+        }
+      }
+    } catch (error: any) {
+      console.error("❌ Failed to start game:", error);
+      alert("Failed to start game: " + (error.response?.data?.message || error.message));
+      setStartingStatus(false);
+    }
   };
 
   const player = user
@@ -160,19 +183,22 @@ const RoomLobbyPage = () => {
 
   /* 🚀 Connect & listen */
   useEffect(() => {
-    if (!canConnect || !player) return;
+    if (!roomId || !player) return;
 
     const socket = socketRef.current;
-    if (!socket) return;
 
     socket.connect();
 
     const onConnect = () => {
+      console.log("connecting to ws");
+
       setSocketId(socket.id);
-      socket.emit("room:join", { roomId, player });
+      socket.emit("lobby:join", { roomId, player });
+      socket.emit("set_location", "lobby");
     };
 
     const onPlayers = (data: any) => {
+      console.log("player aa gaya server se");
       console.log(data);
       let list: any[] = [];
 
@@ -233,22 +259,17 @@ const RoomLobbyPage = () => {
     };
 
     socket.on("connect", onConnect);
-    socket.on("room:players", onPlayers);
-    socket.on("room:startingRoom", onLetStart);
+    socket.on("lobby:players", onPlayers);
+    socket.on("lobby:startingRoom", onLetStart);
 
     return () => {
-        if (!socket) return;
+      socket.off("lobby:players", onPlayers);
+      socket.off("lobby:startingRoom", onLetStart);
 
-        socket.emit("room:leave", { roomId, playerId: player.id });
-      socket.off("connect", onConnect);
-
-      socket.off("room:players", onPlayers);
-       socket.off("room:startingRoom", onLetStart);
-
-       // 🔌 Actually close connection
-       socket.disconnect();
+      // 🔌 Actually close connection
+      socket.disconnect();
     };
-  }, [canConnect, roomId]);
+  }, [roomId, player?.id]);
 
   useEffect(() => {
     if (loading || isMaxTryReached || !isLogin || !roomId) return;
@@ -263,6 +284,13 @@ const RoomLobbyPage = () => {
         const roomDataFromAPI = await api.get(`/room/${roomId}/`);
         const roomData = roomDataFromAPI.data.room;
         console.log("roomDetail from api", roomData);
+
+        // 🔥 CHECK STATUS: If game already started/finished, redirect to Game Page
+        if (roomData.state === "PLAYING" || roomData.state === "FINISHED" || roomData.state === "COUNTDOWN") {
+             console.log("⚠️ Game already running/finished. Redirecting to Game Page...");
+             router.replace(`/room/${roomId}/game`);
+             return;
+        }
 
         setRoomDetail(roomData);
 

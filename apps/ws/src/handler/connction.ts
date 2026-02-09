@@ -7,6 +7,10 @@ export function registerConnection(io: any, socket: any) {
 
   lobbyEvents(io, socket);
   gameEvents(io, socket);
+  socket.on("set_location", (loc :any) => {
+    socket.data.location = loc; // Attach custom data to the socket
+    console.log("location has been set")
+  });
 
   socket.on("disconnect", () => handleDisconnect(io,socket));
 }

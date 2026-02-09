@@ -1,9 +1,11 @@
 import { redis } from "../services/redis.service.js";
 import type { JoinRoomPayload } from "../types/socket.types.js";
-import { joinRoom, leaveRoom } from "../services/room.service.js";
+import { joinLobby, leaveLobby } from "../services/lobby.service.js";
+import { startGameLoop } from "../services/game.service.js";
 
 export function lobbyEvents(io: any, socket: any) {
-  socket.on("room:join", async ({ roomId, player }: JoinRoomPayload) => {
+  socket.on("lobby:join", async ({ roomId, player }: JoinRoomPayload) => {
+    console.log("join request come");
     // 🔥 SAVE DATA ON SOCKET
     socket.data.roomId = roomId;
     socket.data.playerId = player.id;
@@ -12,28 +14,33 @@ export function lobbyEvents(io: any, socket: any) {
     socket.join(roomId);
     console.log("joined the room");
 
-    const players = await joinRoom(roomId, player, socket.id);
+    const players = await joinLobby(roomId, player, socket.id);
     console.log("all players", players);
 
-    io.to(roomId).emit("room:players", players);
+    io.to(roomId).emit("lobby:players", players);
   });
-  socket.on("room:leave", async ({ roomId, player } : JoinRoomPayload) => {
-    console.log("player", player)
+  socket.on("lobby:leave", async ({ roomId, player }: JoinRoomPayload) => {
+    console.log("player", player);
     socket.leave(roomId);
-    console.log("Left the room")
+    console.log("Left the room");
 
-    const players = await leaveRoom(roomId, player, socket.id);
-    console.log("all players", players)
+    const players = await leaveLobby(roomId, player, socket.id);
+    console.log("all players", players);
 
-    io.to(roomId).emit("room:players", players);
+    io.to(roomId).emit("lobby:players", players);
   });
 
-  socket.on("room:letsstart", ({roomId} : any) => {
+  socket.on("lobby:letsstart", async ({ roomId }: any) => {
+    console.log(`🚀 Host triggered start for room ${roomId}`);
+    
+    // 1. Notify everyone to redirect
     const response = {
-      success: true, 
-      message : "i am from ws and room will be started"
-      
-    }
-    io.to(roomId).emit("room:startingRoom", response)
-  })
+      success: true,
+      message: "i am from ws and room will be started",
+    };
+    io.to(roomId).emit("lobby:startingRoom", response);
+    
+    // 2. Start the Game Loop (Countdown -> Questions)
+    await startGameLoop(roomId, io);
+  });
 }
