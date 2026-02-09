@@ -142,6 +142,7 @@ const RoomLobbyPage = () => {
     try {
       // 1. Call API to initialize game in Redis/DB
       console.log("➡️ Calling API: /room/" + roomId + "/start");
+      console.log(api)
       const res = await api.post(`/room/${roomId}/start`);
       console.log("✅ API Response:", res.data);
       
