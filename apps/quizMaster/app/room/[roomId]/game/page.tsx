@@ -64,106 +64,102 @@ const ResultScreen = ({
   myScore: number;
 }) => {
   return (
-    <div className="max-w-md w-full mx-auto p-4 flex flex-col gap-6 text-center animate-in zoom-in duration-300">
+    <div className="max-w-xl w-full mx-auto p-4 flex flex-col gap-8 animate-in zoom-in duration-300">
       
       {/* Result Card */}
-      <div className="card bg-base-100 shadow-xl overflow-hidden">
-        <div className="bg-success text-success-content p-6">
-             <h3 className="uppercase tracking-widest text-xs font-bold opacity-80 mb-2">Correct Answer</h3>
-             <p className="text-3xl font-black">{correctAnswer}</p>
+      <div className="card bg-base-100 shadow-lg border border-base-200">
+        <div className="p-8 text-center">
+             <h3 className="uppercase tracking-widest text-xs font-bold opacity-40 mb-3">Correct Answer</h3>
+             <p className="text-2xl md:text-3xl font-bold text-success">{correctAnswer}</p>
         </div>
-        <div className="card-body p-6 bg-base-100">
-             <div className="flex flex-col gap-1">
-                 <span className="text-sm opacity-60">Your Current Score</span>
-                 <span className="text-5xl font-black text-primary">{myScore}</span>
+        <div className="card-body p-8 pt-0 text-center border-t border-base-100">
+             <div className="flex flex-col gap-2 mt-4">
+                 <span className="text-xs font-bold opacity-40 uppercase tracking-widest">Your Score</span>
+                 <span className="text-5xl font-black text-primary tracking-tighter">{myScore}</span>
              </div>
         </div>
       </div>
 
-      <div className="divider opacity-50 text-xs">TOP 5 PLAYERS</div>
-
-      {/* Leaderboard List */}
-      <ul className="flex flex-col gap-2">
-        {leaderboard.map((u, i) => (
-          <li
-            key={u.userId}
-            className={`
-                flex items-center justify-between p-3 rounded-xl border-2 transition-all
-                ${i === 0 ? "bg-amber-50 border-amber-400 shadow-amber-200 shadow-md scale-105" : "bg-base-100 border-base-200"}
-            `}
-          >
-            <div className="flex items-center gap-3">
-                 <div className={`
-                    w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-                    ${i === 0 ? 'bg-amber-400 text-white' : 'bg-base-300 opacity-50'}
-                 `}>
-                    #{i + 1}
-                 </div>
-                 <div className="flex flex-col items-start leading-none">
-                     <span className="font-bold text-sm">{u.userId.slice(0, 10)}</span>
-                     {i === 0 && <span className="text-[10px] text-amber-600 font-bold">👑 LEADER</span>}
-                 </div>
-            </div>
-            <span className="font-mono font-bold text-lg opacity-80">{u.score}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="flex flex-col gap-4">
+          <div className="divider text-xs font-semibold opacity-30 uppercase tracking-widest">Top Players</div>
+          <ul className="flex flex-col gap-2">
+            {leaderboard.map((u, i) => (
+              <li
+                key={u.userId}
+                className={`
+                    flex items-center justify-between p-3 rounded-lg border transition-all
+                    ${i === 0 
+                        ? "bg-base-100 border-primary/20 shadow-sm" 
+                        : "bg-transparent border-transparent hover:bg-base-100"
+                    }
+                `}
+              >
+                <div className="flex items-center gap-4">
+                     <span className={`
+                        w-6 text-center font-bold text-sm opacity-40
+                     `}>
+                        {i + 1}
+                     </span>
+                     <div className="flex flex-col">
+                         <span className={`font-medium ${i === 0 ? 'text-primary font-bold' : 'text-base-content'}`}>
+                            {u.name || "Unknown Player"}
+                         </span>
+                     </div>
+                </div>
+                <span className={`font-mono font-bold ${i === 0 ? 'text-primary' : 'opacity-60'}`}>
+                    {u.score}
+                </span>
+              </li>
+            ))}
+          </ul>
+      </div>
     </div>
   );
 };
 
 const FinalScreen = ({ leaderboard }: { leaderboard: LeaderboardItem[] }) => (
-   <div className="flex flex-col items-center justify-center min-h-[90vh] gap-8 p-4 bg-[url('/confetti-bg.svg')] bg-cover animate-in fade-in duration-1000">
-    <div className="text-center space-y-2">
-         <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-secondary drop-shadow-xl">
-          GAME OVER
+   <div className="flex flex-col items-center justify-center min-h-[90vh] gap-8 p-6 animate-in fade-in duration-1000">
+    <div className="text-center space-y-4">
+         <h1 className="text-5xl md:text-7xl font-black text-base-content tracking-tight">
+          Game Over
         </h1>
-        <p className="text-xl opacity-60 font-medium">The results are in!</p>
+        <p className="text-xl opacity-40 font-light">Final Statistics</p>
     </div>
     
-    <div className="card w-full max-w-xl bg-base-100/90 backdrop-blur shadow-2xl border-4 border-base-300">
-      <div className="card-body">
-        <h2 className="card-title justify-center mb-6 text-2xl font-bold uppercase tracking-wider">🏆 Final Standings</h2>
-        
-        <div className="flex flex-col gap-4">
+    <div className="card w-full max-w-lg bg-base-100 shadow-xl border border-base-200">
+      <div className="card-body p-0">
+        <div className="flex flex-col divide-y divide-base-100">
            {leaderboard.map((u, i) => (
              <div 
                 key={u.userId} 
-                className={`flex items-center justify-between p-4 rounded-2xl border-2 ${
-                    i === 0 ? 'bg-yellow-50 border-yellow-400 relative overflow-hidden' : 'bg-base-100 border-base-200'
+                className={`flex items-center justify-between p-5 ${
+                    i === 0 ? 'bg-base-50' : ''
                 }`}
              >
-                {/* Gold Shine Effect */}
-                {i === 0 && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 translate-x-[-150%] animate-shimmer" />}
-                
-                <div className="flex items-center gap-4 z-10">
+                <div className="flex items-center gap-4">
                      <div className={`
-                        w-12 h-12 rounded-full flex items-center justify-center text-xl font-black shadow-inner
-                        ${i === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-white ring-4 ring-yellow-200' : ''}
-                        ${i === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' : ''}
-                        ${i === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-500 text-white' : ''}
-                        ${i > 2 ? 'bg-base-200 text-opacity-50' : ''}
+                        w-8 h-8 rounded flex items-center justify-center text-sm font-bold
+                        ${i === 0 ? 'bg-primary text-primary-content' : 'bg-base-200 opacity-50'}
                      `}>
                         {i + 1}
                      </div>
                      <div className="flex flex-col">
-                        <span className="font-bold text-lg">{u.userId.slice(0, 12)}</span>
-                        {i === 0 && <span className="text-xs font-bold text-yellow-600">WINNER</span>}
+                        <span className={`font-bold text-lg ${i===0 ? 'text-primary' : ''}`}>
+                            {u.name || "Unknown Player"}
+                        </span>
                      </div>
                 </div>
-                <div className="text-right z-10">
-                    <span className="block text-2xl font-black">{u.score}</span>
-                    <span className="text-xs opacity-50 font-bold uppercase">Points</span>
+                <div className="text-right">
+                    <span className={`block text-xl font-bold ${i===0 ? 'text-primary' : 'opacity-60'}`}>{u.score}</span>
                 </div>
              </div>
            ))}
         </div>
-        
-        <div className="card-actions justify-center mt-8">
-            <a href="/dashboard" className="btn btn-primary btn-wide btn-lg shadow-xl shadow-primary/30 hover:scale-105 transition-transform">
-                Return to Dashboard
-            </a>
-        </div>
+      </div>
+      <div className="p-6 bg-base-50/50 flex justify-center border-t border-base-100">
+        <a href="/dashboard" className="btn btn-primary btn-outline btn-wide">
+            Return to Dashboard
+        </a>
       </div>
     </div>
    </div>
@@ -211,13 +207,21 @@ const GamePage = () => {
         console.log("🔌 Connected to Game Socket");
         socket.emit("game:join", { 
             roomId, 
-            player: { id: user.id, name: user.firstName, avatar: user.avatar } 
+            player: { 
+                id: user.id, 
+                name: user.firstName + " " + user.lastName || user.username || "Guest", 
+                avatar: user.avatar 
+            } 
         });
     });
 
     // SYNC: Restores state on reconnect
     socket.on("game:sync", (data: any) => {
         console.log("🔄 Sync:", data);
+        if (data.leaderboard) {
+            console.log("📊 Sync Leaderboard Data:", data.leaderboard);
+            setLeaderboard(data.leaderboard);
+        }
         setGameState(data.gameState);
         setMyScore(data.myScore);
         
@@ -260,14 +264,14 @@ const GamePage = () => {
     });
 
     // LIVE SCORE UPDATE
-    socket.on("game:scoreUpdate", (data: { userId: string, score: number }) => {
+    socket.on("game:scoreUpdate", (data: { userId: string, score: number, name?: string }) => {
         setLeaderboard(prev => {
             const exists = prev.find(p => p.userId === data.userId);
             let newList;
             if (exists) {
-                newList = prev.map(p => p.userId === data.userId ? { ...p, score: data.score } : p);
+                newList = prev.map(p => p.userId === data.userId ? { ...p, score: data.score, name: data.name || p.name } : p);
             } else {
-                newList = [...prev, { userId: data.userId, score: data.score }];
+                newList = [...prev, { userId: data.userId, score: data.score, name: data.name }];
             }
             return newList.sort((a,b) => b.score - a.score); // Keep sorted
         });
@@ -422,27 +426,39 @@ const GamePage = () => {
         </div>
 
         {/* RIGHT: Live Scoreboard (Cricket Style) */}
-        <div className="hidden md:flex flex-col w-80 bg-base-100 rounded-xl shadow-lg border border-base-300 h-fit sticky top-24">
-            <div className="p-4 border-b border-base-200 bg-base-200/50 rounded-t-xl">
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-warning" /> 
-                    Live Standings
+        <div className="hidden md:flex flex-col w-80 bg-base-100 rounded-xl shadow-lg border border-base-200 h-fit sticky top-24 overflow-hidden">
+            <div className="p-4 bg-primary text-primary-content flex items-center justify-between shadow-sm">
+                <h3 className="font-black text-lg flex items-center gap-2 tracking-tight">
+                    <Trophy className="w-5 h-5 text-yellow-500 fill-current" /> 
+                    LEADERBOARD
                 </h3>
+                <span className="text-xs font-bold opacity-60 bg-white/20 px-2 py-1 rounded">LIVE</span>
             </div>
-            <div className="p-2 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
-                {leaderboard.length === 0 && <p className="text-center p-4 opacity-50 text-sm">Waiting for scores...</p>}
+            <div className="flex flex-col divide-y divide-base-200 max-h-[70vh] overflow-y-auto">
+                {leaderboard.length === 0 && <div className="p-8 text-center opacity-40 font-medium text-sm">Waiting for players...</div>}
                 
                 {leaderboard.map((p, i) => (
-                    <div key={p.userId} className={`flex items-center justify-between p-3 rounded-lg border ${p.userId === user.id ? 'bg-primary/10 border-primary' : 'bg-base-100 border-base-200'}`}>
-                        <div className="flex items-center gap-3">
-                            <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${i < 3 ? 'bg-warning text-warning-content' : 'bg-base-300'}`}>
+                    <div key={p.userId} className={`
+                        flex items-center justify-between p-3 hover:bg-base-50 transition-colors
+                        ${p.userId === user.id ? 'bg-blue-50/80 border-l-4 border-l-blue-500' : 'border-l-4 border-l-transparent'}
+                    `}>
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className={`
+                                w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
+                                ${i === 0 ? 'bg-yellow-100 text-yellow-700' : 
+                                  i === 1 ? 'bg-gray-100 text-gray-700' :
+                                  i === 2 ? 'bg-orange-100 text-orange-700' :
+                                  'bg-base-200 text-base-content/60'}
+                            `}>
                                 {i + 1}
-                            </span>
-                            <div className="flex flex-col">
-                                <span className="font-bold text-sm truncate w-32">{p.name || p.userId.slice(0, 8)}</span>
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className={`font-bold text-sm truncate w-28 ${p.userId === user.id ? 'text-blue-700' : ''}`}>
+                                    {p.name || "Unknown Player"}
+                                </span>
                             </div>
                         </div>
-                        <span className="font-mono font-bold">{p.score}</span>
+                        <span className="font-mono font-bold text-sm text-primary">{p.score}</span>
                     </div>
                 ))}
             </div>

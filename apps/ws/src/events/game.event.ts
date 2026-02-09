@@ -17,7 +17,7 @@ export function gameEvents(io: any, socket: any) {
     socket.data.playerId = player.id;
 
     // Sync state (get current question if playing)
-    const state = await joinGame(roomId, player.id);
+    const state = await joinGame(roomId, player.id, { name: player.name, avatar: player.avatar || "avatar1.svg" });
     
     // Emit private sync event
     socket.emit("game:sync", state);

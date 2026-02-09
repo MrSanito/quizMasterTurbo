@@ -3,6 +3,7 @@ import { Router } from "express";
  import categoriesRoutes from "./categories.route.js"
  import quizzesRoutes from "./quizzes.route.js";
  import roomRoutes from "./room.route.js";
+ import gameRoutes from "./game.route.js";
 
 const router = Router();
 
@@ -11,5 +12,6 @@ router.use("/auth", authRoutes);
 router.use("/categories/", categoriesRoutes);
 router.use("/quizzes/", quizzesRoutes);
 router.use("/room/", roomRoutes);
+router.use("/game/", gameRoutes);
 
 export default router;

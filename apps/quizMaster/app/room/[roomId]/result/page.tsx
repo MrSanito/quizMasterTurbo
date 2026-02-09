@@ -16,7 +16,7 @@ export default function RoomResultPage() {
   useEffect(() => {
     const fetchResult = async () => {
       try {
-        const res = await api.get(`/room/${roomId}/result`);
+        const res = await api.get(`/game/${roomId}/result`);
         if (res.data.success) {
           setResultData(res.data.results);
         }

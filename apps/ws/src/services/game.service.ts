@@ -5,7 +5,7 @@ import { Server } from "socket.io";
 const QUESTION_TIME = 15; // seconds
 const BREAK_TIME = 5; // seconds
 
-export async function joinGame(roomId: string, userId: string) {
+export async function joinGame(roomId: string, userId: string, player?: { name: string, avatar: string }) {
   const roomKey = `room:${roomId}`;
 
   // 1. Check Game State
@@ -14,27 +14,54 @@ export async function joinGame(roomId: string, userId: string) {
     return { error: "Room not active" };
   }
 
-  // 2. Get Score (Use Hexists to distinguish 0 from null/missing)
+// 2. Get Score (Use Hexists to distinguish 0 from null/missing)
   console.log(`🔍 Checking participant: ${roomKey}:scores for ${userId}`);
   const isParticipant = await redisClient.hexists(`${roomKey}:scores`, userId);
-  console.log(`🔍 Is User ${userId} a participant? ${isParticipant}`);
   
+  // � AUTO-JOIN / HEAL: If user is not participant but connects, add them!
   if (!isParticipant) {
-    // Debug: Print all scores to see who IS there
-    const allScores = await redisClient.hgetall(`${roomKey}:scores`);
-    console.log("🔍 Current Participants:", allScores);
-    return { error: "User is not a participant in this game" };
+     console.log(`⚠️ User ${userId} missing in scores. Auto-adding...`);
+     await redisClient.hset(`${roomKey}:scores`, userId, "0");
+  }
+
+  // � UPDATE PLAYER DATA: Always update/ensure player data exists
+  if (player) {
+      await redisClient.hset(`${roomKey}:players`, userId, JSON.stringify({
+          username: player.name,
+          avatar: player.avatar,
+          score: 0 // existing score is handled separately
+      }));
+      console.log(`✅ [GameService] Updated player data for ${userId}`);
   }
 
   const score = await redisClient.hget(`${roomKey}:scores`, userId);
 
   // 3. Construct Payload
-  // Fetch existing state
-  // Also fetch my player details to ensure client has them? (Client usually has its own user context, but good for sync)
   
+  // Fetch Leaderboard for Sync
+  const scores = await redisClient.hgetall(`${roomKey}:scores`);
+  const playersData = await redisClient.hgetall(`${roomKey}:players`);
+
+  const leaderboard = Object.entries(scores)
+      .map(([uid, sc]) => {
+          const pStr = playersData[uid];
+          const p = pStr ? JSON.parse(pStr as string) : {};
+          return {
+              userId: uid,
+              score: parseInt(sc || "0"),
+              name: p.username || p.name || uid,
+              avatar: p.avatar
+          };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+  console.log(`📊 [GameService] Constructed Leaderboard for ${userId}:`, leaderboard);
+
   let payload: any = {
     gameState: stateData.status,
     myScore: parseInt(score || "0"),
+    leaderboard // 🔥 Send initial leaderboard
   };
 
   if (stateData.status === "PLAYING") {
@@ -81,11 +108,22 @@ export async function joinGame(roomId: string, userId: string) {
 
 // --- THE GAME LOOP ---
 
+// --- THE GAME LOOP ---
+
 export async function startGameLoop(roomId: string, io: Server) {
     const roomKey = `room:${roomId}`;
     
     console.log(`\n\n🎬 ============ STARTING GAME LOOP ============`);
     console.log(`🎬 Room ID: ${roomId}`);
+    
+    // 🔥 CONCURRENCY CHECK: Prevent multiple loops
+    const lockKey = `${roomKey}:loop_lock`;
+    const acquired = await redisClient.set(lockKey, "1", "EX", 3600, "NX"); // 1 hour lock
+    
+    if (!acquired) {
+         console.warn(`⚠️ [GameService] Loop locked for ${roomId}. Skipping duplicate start.`);
+         return;
+    }
     
     // 0. CHECK IF QUESTIONS EXIST
     const questionCount = await redisClient.llen(`${roomKey}:questions`);
@@ -94,6 +132,7 @@ export async function startGameLoop(roomId: string, io: Server) {
     if (questionCount === 0) {
         console.error(`❌ [GameService] No questions found for room ${roomId}. Aborting loop.`);
         io.to(roomId).emit("error", { message: "Game Error: No questions loaded." });
+        await redisClient.del(lockKey); // Release lock if failing
         return;
     }
 
@@ -116,6 +155,7 @@ export async function startGameLoop(roomId: string, io: Server) {
         } catch (e) {
             console.error("❌ Error in Game Loop:", e);
             clearInterval(interval);
+            await redisClient.del(lockKey); // Release lock
         }
     }, 1000);
 }
@@ -124,6 +164,14 @@ export async function startGameLoop(roomId: string, io: Server) {
 async function nextQuestion(roomId: string, io: Server, index: number) {
     console.log(`➡️ [nextQuestion] Called for Room: ${roomId}, Index: ${index}`);
     const roomKey = `room:${roomId}`;
+    const lockKey = `${roomKey}:loop_lock`;
+
+    // Verify lock still exists (game wasn't aborted/finished externally)
+    const isLocked = await redisClient.exists(lockKey);
+    if (!isLocked) {
+        console.warn(`🛑 [GameService] Loop lock missing for ${roomId}. Stopping loop.`);
+        return;
+    }
 
     // 1. Get Questions
     let questions;
@@ -161,6 +209,8 @@ async function nextQuestion(roomId: string, io: Server, index: number) {
             currentQuestionIndex: index,
             questionStartTime: Date.now()
         });
+        await redisClient.expire(`${roomKey}:state`, 3600); // 🛡️ TTL
+        
         console.log(`✅ [GameService] Updated State to PLAYING`);
     } catch(err) {
         console.error("❌ Failed to update Redis state", err);
@@ -201,6 +251,7 @@ async function endQuestion(roomId: string, io: Server, index: number, question: 
     
     // 1. Update State (WAITING/BREAK)
     await redisClient.hset(`${roomKey}:state`, { status: "BREAK" });
+    await redisClient.expire(`${roomKey}:state`, 3600); // 🛡️ TTL
 
     // 2. Calculate Leaderboard (Top 5)
     // Fetch Scores
@@ -243,6 +294,7 @@ async function finishGame(roomId: string, io: Server) {
 
     // 1. Update State
     await redisClient.hset(`${roomKey}:state`, { status: "FINISHED" });
+    await redisClient.expire(`${roomKey}:state`, 3600); // 🛡️ TTL
 
     // 2. Final Leaderboard
     const scores = await redisClient.hgetall(`${roomKey}:scores`);
@@ -266,6 +318,14 @@ async function finishGame(roomId: string, io: Server) {
 
     // 4. Trigger HTTP API to save (Optional, or wait for host)
     console.log(`🏁 Game ${roomId} finished!`);
+    
+    // We do NOT clear the lock here because the HTTP API `finalizeRoom` needs to be called by frontend?
+    // OR we clear it here to allow restart?
+    // Typically `finalizeRoom` is called by the frontend or automatically.
+    // Let's clear lock here to be safe after 5 seconds
+    setTimeout(async () => {
+         await redisClient.del(`${roomKey}:loop_lock`);
+    }, 5000);
 }
 
 
@@ -274,10 +334,14 @@ async function finishGame(roomId: string, io: Server) {
 export async function submitAnswer(io: Server, data: { roomId: string; userId: string; answer: string; timeTaken: number }) {
     const { roomId, userId, answer } = data;
     const roomKey = `room:${roomId}`;
+    const lockKey = `${roomKey}:loop_lock`;
 
     // 1. Get Current State
     const state = await redisClient.hgetall(`${roomKey}:state`);
-    if (state.status !== "PLAYING") {
+    // Also check lock to ensure game is running
+    const isLocked = await redisClient.exists(lockKey);
+
+    if (state.status !== "PLAYING" || !isLocked) {
         throw new Error("Game is not in playing state");
     }
 
@@ -314,14 +378,27 @@ export async function submitAnswer(io: Server, data: { roomId: string; userId: s
 
     // 5. Update Score
     await redisClient.hincrby(`${roomKey}:scores`, userId, points);
+    await redisClient.expire(`${roomKey}:scores`, 3600); // 🛡️ TTL
+
     await redisClient.hset(`${roomKey}:answers:${index}`, userId, answer);
+    await redisClient.expire(`${roomKey}:answers:${index}`, 3600); // 🛡️ TTL
+
+    // Fetch player details for name
+    const playerStr = await redisClient.hget(`${roomKey}:players`, userId);
+    console.log(`🔍 [GameService] Fetching player ${userId} from Redis:`, playerStr);
+    
+    const pData = playerStr ? JSON.parse(playerStr as string) : {};
+    console.log(`🔍 [GameService] Parsed pData:`, pData);
+
+    const name = pData.username || pData.name || userId;
 
     const newScore = await redisClient.hget(`${roomKey}:scores`, userId);
-    
+
     // 🔥 Emit Live Score Update
     io.to(roomId).emit("game:scoreUpdate", {
         userId,
-        score: parseInt((newScore as string) || "0")
+        score: parseInt((newScore as string) || "0"),
+        name
     });
 
     // 6. Return Result (for private emit)

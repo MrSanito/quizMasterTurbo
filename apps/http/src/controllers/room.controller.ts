@@ -295,12 +295,15 @@ console.log("room Id",roomId)
       currentQuestionIndex: -1,
       startTime: Date.now(),
     });
+    await redisClient.expire(`${roomKey}:state`, 3600); // 🛡️ TTL
+
     // Push Questions
     const questions = room.quiz.Question.map((q) => JSON.stringify(q));
     if (questions.length > 0) {
       console.log(`📝 [RoomController] Pushing ${questions.length} questions to Redis for ${roomId}`);
       await redisClient.del(`${roomKey}:questions`);
       await redisClient.rpush(`${roomKey}:questions`, ...questions);
+      await redisClient.expire(`${roomKey}:questions`, 3600); // 🛡️ TTL
       
       // 🔥 CLEANUP: Remove old answers
       const oldAnswerKeys = await redisClient.keys(`${roomKey}:answers:*`);
@@ -343,6 +346,7 @@ console.log("room Id",roomId)
 
     if (Object.keys(playerScores).length > 0) {
       await redisClient.hset(`${roomKey}:scores`, playerScores);
+      await redisClient.expire(`${roomKey}:scores`, 3600); // 🛡️ TTL
     }
     // 3. Update DB State
     await prisma.room.update({
@@ -449,6 +453,9 @@ export const finalizeRoom = async (req: Request, res: Response) => {
     for(const k of answerKeys) {
         await redisClient.expire(k, 3600);
     }
+    
+    // 🔥 UNLOCK (Allow restart after delay or immediately)
+    await redisClient.del(`${roomKey}:loop_lock`);
 
     return res.status(200).json({ success: true, message: "Game finalized" });
   } catch (error) {
