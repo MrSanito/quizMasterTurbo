@@ -13,12 +13,12 @@ export const createRoom = async (req: Request, res: Response) => {
         maxPlayers: 10,
         state: "CREATED",
 
-        // 🔗 RELATIONS
+        //  RELATIONS
         host: {
-          connect: { id: hostId }, // connects Room → User
+          connect: { id: hostId }, // connects Room -> User
         },
         quiz: {
-          connect: { id: quizId }, // connects Room → Quiz
+          connect: { id: quizId }, // connects Room -> Quiz
         },
 
         // name: roomNa me,
@@ -128,6 +128,7 @@ export const getRoomResult = async (req: Request, res: Response) => {
       return res.status(200).json({
           success: true,
           roomName: room.roomName,
+          state: room.state,
           results: detailedResults
       });
 
@@ -159,7 +160,7 @@ export const updateLobby = async (req: Request, res: Response) => {
       });
     }
 
-    // 🔒 Only host can move to lobby
+    //  Only host can move to lobby
     if (room.hostId !== hostId) {
       return res.status(403).json({
         success: false,
@@ -167,7 +168,7 @@ export const updateLobby = async (req: Request, res: Response) => {
       });
     }
 
-    // 🚫 Already in lobby
+    //  Already in lobby
     if (room.state === "WAITING") {
       return res.status(200).json({
         success: true,
@@ -175,7 +176,7 @@ export const updateLobby = async (req: Request, res: Response) => {
       });
     }
 
-    // 🚫 Cannot go back from finished
+    //  Cannot go back from finished
     if (room.state === "FINISHED") {
       return res.status(400).json({
         success: false,
@@ -183,7 +184,7 @@ export const updateLobby = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Move to lobby
+    //  Move to lobby
     const updatedRoom = await prisma.room.update({
       where: { roomName: roomId },
       data: {
@@ -191,10 +192,10 @@ export const updateLobby = async (req: Request, res: Response) => {
       },
     });
 
-    // 📝 Log event
+    //  Log event
     await prisma.roomEvent.create({
       data: {
-        roomId: room.id, // ✅ correct FK
+        roomId: room.id, //  correct FK
         userId: hostId,
         eventType: "ROOM_MOVED_TO_LOBBY",
         payload: {},
@@ -256,10 +257,10 @@ console.log("room Id",roomId)
     // 2. Initialize Redis Data
     const roomKey = `room:${roomId}`;
     
-    // 🔥 SYNC: Fetch players from LOBBY (Redis) and ensure they are in DB
-    console.log(`📝 [RoomController] Reading players from Redis Key: ${roomKey}:players`);
+    //  SYNC: Fetch players from LOBBY (Redis) and ensure they are in DB
+    console.log(` [RoomController] Reading players from Redis Key: ${roomKey}:players`);
     const lobbyPlayers = await redisClient.hgetall(`${roomKey}:players`);
-    console.log(`📝 [RoomController] Found ${Object.keys(lobbyPlayers).length} players in Redis`);
+    console.log(` [RoomController] Found ${Object.keys(lobbyPlayers).length} players in Redis`);
     
     const playersToSync = Object.entries(lobbyPlayers).map(([userId, dataStr]) => {
         let parsed: any = {};
@@ -295,23 +296,23 @@ console.log("room Id",roomId)
       currentQuestionIndex: -1,
       startTime: Date.now(),
     });
-    await redisClient.expire(`${roomKey}:state`, 3600); // 🛡️ TTL
+    await redisClient.expire(`${roomKey}:state`, 3600); //  TTL
 
     // Push Questions
     const questions = room.quiz.Question.map((q) => JSON.stringify(q));
     if (questions.length > 0) {
-      console.log(`📝 [RoomController] Pushing ${questions.length} questions to Redis for ${roomId}`);
+      console.log(` [RoomController] Pushing ${questions.length} questions to Redis for ${roomId}`);
       await redisClient.del(`${roomKey}:questions`);
       await redisClient.rpush(`${roomKey}:questions`, ...questions);
-      await redisClient.expire(`${roomKey}:questions`, 3600); // 🛡️ TTL
+      await redisClient.expire(`${roomKey}:questions`, 3600); //  TTL
       
-      // 🔥 CLEANUP: Remove old answers
+      //  CLEANUP: Remove old answers
       const oldAnswerKeys = await redisClient.keys(`${roomKey}:answers:*`);
       if (oldAnswerKeys.length > 0) {
           await redisClient.del(oldAnswerKeys);
       }
 
-      // 🔥 DB SYNC: Create RoomQuestion records for persistent results
+      //  DB SYNC: Create RoomQuestion records for persistent results
       const roomQuestionsData = room.quiz.Question.map((q: any, index: number) => ({
           roomId: room.id,
           questionId: q.id,
@@ -324,10 +325,10 @@ console.log("room Id",roomId)
       await prisma.roomQuestion.createMany({
           data: roomQuestionsData
       });
-      console.log(`✅ [RoomController] Created ${roomQuestionsData.length} RoomQuestion records`);
+      console.log(` [RoomController] Created ${roomQuestionsData.length} RoomQuestion records`);
 
     } else {
-        console.warn(`⚠️ [RoomController] No questions found for quiz ${room.quiz.id} in room ${roomId}`);
+        console.warn(` [RoomController] No questions found for quiz ${room.quiz.id} in room ${roomId}`);
         return res.status(400).json({ success: false, message: "Quiz has no questions! Cannot start." });
     }
     
@@ -346,11 +347,11 @@ console.log("room Id",roomId)
 
     if (Object.keys(playerScores).length > 0) {
       await redisClient.hset(`${roomKey}:scores`, playerScores);
-      await redisClient.expire(`${roomKey}:scores`, 3600); // 🛡️ TTL
+      await redisClient.expire(`${roomKey}:scores`, 3600); //  TTL
     }
     // 3. Update DB State
     await prisma.room.update({
-      where: { id: room.id }, // ✅ Use ID (UUID) from fetched room for safety
+      where: { id: room.id }, //  Use ID (UUID) from fetched room for safety
       data: { state: "COUNTDOWN", startedAt: new Date() },
     });
     return res.status(200).json({ success: true, message: "Game starting", synced: playersToSync.length });
@@ -393,7 +394,7 @@ export const finalizeRoom = async (req: Request, res: Response) => {
     });
     await Promise.all(updates);
     
-    // 3. 🔥 SAVE PLAYER ANSWERS
+    // 3.  SAVE PLAYER ANSWERS
     const roomQuestions = room.questions;
     const playerAnswersToCreate: any[] = [];
     
@@ -434,7 +435,7 @@ export const finalizeRoom = async (req: Request, res: Response) => {
             data: playerAnswersToCreate,
             skipDuplicates: true
         });
-        console.log(`✅ Saved ${playerAnswersToCreate.length} player answers to DB`);
+        console.log(` Saved ${playerAnswersToCreate.length} player answers to DB`);
     }
 
 
@@ -454,7 +455,7 @@ export const finalizeRoom = async (req: Request, res: Response) => {
         await redisClient.expire(k, 3600);
     }
     
-    // 🔥 UNLOCK (Allow restart after delay or immediately)
+    //  UNLOCK (Allow restart after delay or immediately)
     await redisClient.del(`${roomKey}:loop_lock`);
 
     return res.status(200).json({ success: true, message: "Game finalized" });

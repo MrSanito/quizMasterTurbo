@@ -52,7 +52,7 @@ const LoginForm = () => {
 useEffect(() => {
   if (!state.success) return;
 
-  router.refresh(); // 🔥 clear server cache
+  router.refresh(); //  clear server cache
   router.replace("/dashboard"); // navigate
  }, [state.success, router]);
 
@@ -60,7 +60,7 @@ useEffect(() => {
 
 
   useEffect(() => {
-    console.log("🧾 loginAction response:", state);
+    console.log(" loginAction response:", state);
   }, [state]);
 
   return (
@@ -131,7 +131,7 @@ useEffect(() => {
       {/* SUCCESS */}
       {state.success && (
         <p className="text-green-600 text-sm">
-          Login Successfully 🎉 Redirecting...
+          Login Successfully  Redirecting...
         </p>
       )}
       {!state.success && state.message && (

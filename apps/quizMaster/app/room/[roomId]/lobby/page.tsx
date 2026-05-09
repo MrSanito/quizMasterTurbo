@@ -34,7 +34,7 @@ const ConnectionStatus = ({
   socketId,
 }: ConnectionStatusProps) => {
   const [progress, setProgress] = useState(100);
-  const [status, setStatus] = useState("Connecting to server…");
+  const [status, setStatus] = useState("Connecting to server...");
   const [connected, setConnected] = useState(false);
 
   const colorMap = {
@@ -51,7 +51,7 @@ const ConnectionStatus = ({
 
     const t1 = setTimeout(() => {
       setProgress(90);
-      setStatus("Joining room…");
+      setStatus("Joining room...");
     }, 800);
 
     const t2 = setTimeout(() => {
@@ -103,10 +103,10 @@ const ConnectionStatus = ({
 
 const LoginRequired = () => (
   <div className="min-h-[80dvh] flex flex-col justify-center items-center gap-4 text-center">
-    <h2 className="text-xl font-bold">Login Required 🚫</h2>
+    <h2 className="text-xl font-bold">Login Required </h2>
     <p className="opacity-70">You need an account to join a room.</p>
     <a href="/login" className="btn btn-primary">
-      Login to Play →
+      Login to Play ->
     </a>
   </div>
 );
@@ -133,32 +133,32 @@ const RoomLobbyPage = () => {
   const startGameHandler = async () => {
     const socket = socketRef.current;
     if (!socket) {
-        console.error("❌ Socket not initialized");
+        console.error(" Socket not initialized");
         return;
     }
-    console.log("🚀 User clicked Start Game for room:", roomId);
+    console.log(" User clicked Start Game for room:", roomId);
     setStartingStatus(true);
 
     try {
       // 1. Call API to initialize game in Redis/DB
-      console.log("➡️ Calling API: /room/" + roomId + "/start");
+      console.log(" Calling API: /room/" + roomId + "/start");
       console.log(api)
       const res = await api.post(`/room/${roomId}/start`);
-      console.log("✅ API Response:", res.data);
+      console.log(" API Response:", res.data);
       
       if (res.data.success) {
         // 2. Notify Server to start game for everyone
-        console.log("➡️ Emitting 'lobby:letsstart' to WS for room:", roomId);
+        console.log(" Emitting 'lobby:letsstart' to WS for room:", roomId);
         if (socket.connected) {
              socket.emit("lobby:letsstart", { roomId, hostId: user.id });
-             console.log("✅ Emit sent!");
+             console.log(" Emit sent!");
         } else {
-             console.error("❌ Socket disconnected! Cannot emit start command.");
+             console.error(" Socket disconnected! Cannot emit start command.");
              socket.connect(); // Try to reconnect
         }
       }
     } catch (error: any) {
-      console.error("❌ Failed to start game:", error);
+      console.error(" Failed to start game:", error);
       alert("Failed to start game: " + (error.response?.data?.message || error.message));
       setStartingStatus(false);
     }
@@ -172,7 +172,7 @@ const RoomLobbyPage = () => {
       }
     : null;
 
-  /* 🔌 Create socket once */
+  /*  Create socket once */
   useEffect(() => {
     socketRef.current = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
       transports: ["websocket"],
@@ -182,7 +182,7 @@ const RoomLobbyPage = () => {
     return () => socketRef.current?.disconnect();
   }, []);
 
-  /* 🚀 Connect & listen */
+  /*  Connect & listen */
   useEffect(() => {
     if (!roomId || !player) return;
 
@@ -210,13 +210,13 @@ const RoomLobbyPage = () => {
       } else if (Array.isArray(data.players)) {
         list = data.players;
       } else {
-        // 🚨 THIS IS YOUR CASE
+        //  THIS IS YOUR CASE
         list = Object.entries(data).map(([id, value]: any) => {
-          const parsed = JSON.parse(value); // 💥 unwrap string
+          const parsed = JSON.parse(value); //  unwrap string
           return {
             id,
             name: parsed.username,
-            avatar: parsed.avatar, // 👈 ADD THIS
+            avatar: parsed.avatar, //  ADD THIS
 
             socketId: parsed.socketId,
             score: parsed.score,
@@ -237,13 +237,13 @@ const RoomLobbyPage = () => {
       } else if (Array.isArray(data.players)) {
         list = data.players;
       } else {
-        // 🚨 THIS IS YOUR CASE
+        //  THIS IS YOUR CASE
         list = Object.entries(data).map(([id, value]: any) => {
-          const parsed = JSON.parse(value); // 💥 unwrap string
+          const parsed = JSON.parse(value); //  unwrap string
           return {
             id,
             name: parsed.username,
-            avatar: parsed.avatar, // 👈 ADD THIS
+            avatar: parsed.avatar, //  ADD THIS
 
             socketId: parsed.socketId,
             score: parsed.score,
@@ -267,7 +267,7 @@ const RoomLobbyPage = () => {
       socket.off("lobby:players", onPlayers);
       socket.off("lobby:startingRoom", onLetStart);
 
-      // 🔌 Actually close connection
+      //  Actually close connection
       socket.disconnect();
     };
   }, [roomId, player?.id]);
@@ -286,9 +286,9 @@ const RoomLobbyPage = () => {
         const roomData = roomDataFromAPI.data.room;
         console.log("roomDetail from api", roomData);
 
-        // 🔥 CHECK STATUS: If game already started/finished, redirect to Game Page
+        //  CHECK STATUS: If game already started/finished, redirect to Game Page
         if (roomData.state === "PLAYING" || roomData.state === "FINISHED" || roomData.state === "COUNTDOWN") {
-             console.log("⚠️ Game already running/finished. Redirecting to Game Page...");
+             console.log(" Game already running/finished. Redirecting to Game Page...");
              router.replace(`/room/${roomId}/game`);
              return;
         }
@@ -300,7 +300,7 @@ const RoomLobbyPage = () => {
         return;
       } catch (err: any) {
         if (err.response?.status === 403) {
-          console.log("Not host — skipping lobby state update");
+          console.log("Not host - skipping lobby state update");
           const roomDataFromAPI = await api.get(`/room/${roomId}/`);
           const roomData = roomDataFromAPI.data.room;
           console.log("roomDetail from api", roomData);
@@ -312,7 +312,7 @@ const RoomLobbyPage = () => {
 
           return; // silently ignore
         }
-        console.error("❌ Failed to fetch categories", err);
+        console.error(" Failed to fetch categories", err);
         setScreen("Failed");
       } finally {
       }
@@ -379,7 +379,7 @@ const RoomLobbyPage = () => {
     "
             onClick={startGameHandler}
           >
-            {startingStatus ? "Starting ..." : "🚀 Start Game"}
+            {startingStatus ? "Starting ..." : " Start Game"}
           </button>
         ) : (
           <div>Wait Let Admin Start The Game</div>

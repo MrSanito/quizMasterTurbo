@@ -43,9 +43,9 @@ export default function RootLayout({ children }) {
               pauseOnHover
               theme="dark"
               toastStyle={{
-                width: "260px", // 👈 fixed width = predictable
+                width: "260px", //  fixed width = predictable
                 maxWidth: "260px",
-                whiteSpace: "nowrap", // 👈 single line
+                whiteSpace: "nowrap", //  single line
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 borderRadius: "14px",

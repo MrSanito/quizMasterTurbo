@@ -26,7 +26,7 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // 🚫 Don't fetch if auth blocks the page
+    //  Don't fetch if auth blocks the page
     if (loading || isMaxTryReached || (!isLogin && !isGuest) || !quizId) return;
 
     const fetchQuiz = async () => {
@@ -40,24 +40,24 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
         );
 
         if (!res.ok) {
-          console.error("❌ Quiz API failed");
-          setError("Server Took an L 💥");
+          console.error(" Quiz API failed");
+          setError("Server Took an L ");
           return;
         }
 
         const data = await res.json();
 
         if (!data.success || !data.formattedQuiz) {
-          console.warn("⚠️ Quiz not found:", quizId);
-          setError("Quiz Broken 💀");
+          console.warn(" Quiz not found:", quizId);
+          setError("Quiz Broken ");
           return;
         }
 
         console.log(data.formattedQuiz);
         setQuiz(data.formattedQuiz);
       } catch (err) {
-        console.error("❌ Error loading quiz:", err);
-        setError("Something went wrong 😓");
+        console.error(" Error loading quiz:", err);
+        setError("Something went wrong ");
       } finally {
         setPageLoading(false);
       }
@@ -68,44 +68,44 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
 
   /* ---------------- GUARDS (AFTER HOOKS) ---------------- */
 
-  // 1️⃣ Auth loading
+  // 1 Auth loading
   if (loading) {
     return <Loading />;
   }
 
-  // 2️⃣ Guest blocked
+  // 2 Guest blocked
   if (isMaxTryReached) {
     return <MaxTryReached />;
   }
 
-  // 3️⃣ Not logged in & not guest
+  // 3 Not logged in & not guest
   if (!isLogin && !isGuest) {
     return <NotLoginComponent />;
   }
 
-  // 4️⃣ Page data loading
+  // 4 Page data loading
   if (pageLoading) {
     return (
       <div className="min-h-[80dvh] flex items-center justify-center text-white">
-        Loading quiz… 🧠⚡
+        Loading quiz... 
       </div>
     );
   }
 
-  // 5️⃣ Error states
+  // 5 Error states
   if (error) {
-    if (error === "Server Took an L 💥") {
+    if (error === "Server Took an L ") {
       return (
         <QuizNotFound
-          title="Server Took an L 💥"
+          title="Server Took an L "
           message="Our servers are having a tiny meltdown. Refreshing the page to fix it..."
         />
       );
     }
-    if (error === "Quiz Broken 💀") {
+    if (error === "Quiz Broken ") {
       return (
         <QuizNotFound
-          title="Quiz Broken 💀"
+          title="Quiz Broken "
           message="The quiz data looks corrupted. Reloading to fix the glitch..."
         />
       );
@@ -117,7 +117,7 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
     );
   }
 
-  // 6️⃣ Show quiz
+  // 6 Show quiz
   if (quiz) {
     return (
       <div className="min-h-[80dvh]">

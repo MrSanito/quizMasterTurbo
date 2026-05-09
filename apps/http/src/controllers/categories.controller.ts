@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "@repo/db"; // ✅ correct import
+import { prisma } from "@repo/db"; //  correct import
 
 /* ================= FETCH CATEGORIES ================= */
 
@@ -54,7 +54,7 @@ export const fetchQuizzies = async (
     const quizzes = await prisma.quiz.findMany({
       where: { categoryId },
       orderBy: {
-        quizNumber: "asc", // 🔥 SORT HERE
+        quizNumber: "asc", //  SORT HERE
       },
       select: {
         id: true,

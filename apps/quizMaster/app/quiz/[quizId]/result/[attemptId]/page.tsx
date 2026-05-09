@@ -228,10 +228,10 @@ export default function ClientQuizResult() {
 
                   if (isCorrect) {
                     style = "border-success bg-success/10";
-                    icon = "✔";
+                    icon = "";
                   } else if (isSelected) {
                     style = "border-error bg-error/10";
-                    icon = "✖";
+                    icon = "";
                   }
 
                   return (
@@ -250,7 +250,7 @@ export default function ClientQuizResult() {
                 })}
               </div>
 
-              <div className="text-xs opacity-60">⏱ {q.timeTaken}s</div>
+              <div className="text-xs opacity-60"> {q.timeTaken}s</div>
             </div>
           ))}
         </div>

@@ -30,7 +30,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [isLogin, setIsLogin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false); // 🔑
+  const [authChecked, setAuthChecked] = useState(false); // 
 
   const [isGuest, setIsGuest] = useState(false);
   const [isMaxTryReached, setIsMaxTryReached] = useState(false);
@@ -67,7 +67,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setIsLogin(false);
       } finally {
         if (!cancelled) {
-          setAuthChecked(true); // ✅ auth decision made
+          setAuthChecked(true); //  auth decision made
           setLoading(false);
         }
       }
@@ -86,7 +86,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
  
   /* ================= GUEST MODE (FALLBACK) ================= */
   useEffect(() => {
-    // ⛔ WAIT until auth is checked
+    //  WAIT until auth is checked
     if (!authChecked || isLogin) return;
 
     let guestId = localStorage.getItem("guestId");
@@ -136,7 +136,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         guestCount,
         guestLeft: Math.max(0, MAX_GUEST_TRIES - guestCount),
         incrementGuestCount,
-        refreshAuth: checkAuth, // 🔥 NEW
+        refreshAuth: checkAuth, //  NEW
       }}
     >
       {children}

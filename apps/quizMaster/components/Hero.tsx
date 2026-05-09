@@ -82,7 +82,7 @@ const HeroSection = () => {
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs text-gray-400 uppercase">
-                Science • Level 4
+                Science  Level 4
               </span>
               <div className="flex items-center gap-1 text-primary text-xs font-semibold">
                 <Timer size={14} />
@@ -117,7 +117,7 @@ const HeroSection = () => {
                 <Trophy size={14} className="text-yellow-500" />
                 Top 5%
               </div>
-              <span>Next →</span>
+              <span>Next -></span>
             </div>
           </motion.div>
 

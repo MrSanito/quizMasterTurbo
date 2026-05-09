@@ -42,4 +42,4 @@ seeds.forEach((seed, index) => {
   fs.writeFileSync(path.join(avatarsDir, `avatar${index + 1}.svg`), svg);
 });
 
-console.log("Avatars generated successfully 🎉");
+console.log("Avatars generated successfully ");

@@ -49,7 +49,7 @@ const Navbar = () => {
                 href="/leaderboard"
                 className="btn btn-ghost hover:text-primary hover:scale-[1.05] transition"
               >
-                🏆 Leaderboard
+                 Leaderboard
               </Link>
 
               <Link
@@ -73,19 +73,19 @@ const Navbar = () => {
                 href="/dashboard"
                 className="btn btn-ghost hover:text-primary hover:scale-[1.05] transition"
               >
-                👤 Guest
+                 Guest
               </Link>
               <Link
                 href="/register"
                 className="btn btn-ghost hover:text-primary hover:scale-[1.05] transition"
               >
-                ✨ Register
+                 Register
               </Link>
               <Link
                 href="/login"
                 className="btn btn-ghost hover:text-primary hover:scale-[1.05] transition"
               >
-                🔐 Login
+                 Login
               </Link>
             </>
           )}
@@ -114,7 +114,7 @@ const Navbar = () => {
           <X size={26} />
         </button>
 
-        {/* 🔥 USER AVATAR IN MOBILE */}
+        {/*  USER AVATAR IN MOBILE */}
         {isLogin && (
           <div className="flex items-center gap-3 mb-2 px-2">
             <Avatar
@@ -128,7 +128,7 @@ const Navbar = () => {
             />
             <div>
               <p className="font-semibold text-lg">{user?.firstName +" "+ user?.lastName}</p>
-              <p className="text-sm opacity-60">Welcome back 👋</p>
+              <p className="text-sm opacity-60">Welcome back </p>
             </div>
           </div>
         )}
@@ -136,8 +136,8 @@ const Navbar = () => {
         {/* Nav Links */}
         <nav className="flex flex-col gap-3">
           {[
-            { href: "/", label: "🏠 Home" },
-            { href: "/categories", label: "🧩 Categories" },
+            { href: "/", label: " Home" },
+            { href: "/categories", label: " Categories" },
           ].map((item) => (
             <Link
               key={item.href}
@@ -162,7 +162,7 @@ const Navbar = () => {
               className="btn btn-ghost justify-start hover:text-primary"
               onClick={() => setIsOpen(false)}
             >
-              🏆 Leaderboard
+               Leaderboard
             </Link>
 
             <Link
@@ -170,7 +170,7 @@ const Navbar = () => {
               className="btn btn-primary justify-start gap-2"
               onClick={() => setIsOpen(false)}
             >
-              👋 {user?.name ?? "Dashboard"}
+               {user?.name ?? "Dashboard"}
             </Link>
           </div>
         ) : (
@@ -180,7 +180,7 @@ const Navbar = () => {
               className="btn btn-outline btn-primary"
               onClick={() => setIsOpen(false)}
             >
-              👤 Guest Dashboard
+               Guest Dashboard
             </Link>
 
             <Link
@@ -188,7 +188,7 @@ const Navbar = () => {
               className="btn btn-secondary"
               onClick={() => setIsOpen(false)}
             >
-              ✨ Register
+               Register
             </Link>
 
             <Link
@@ -196,7 +196,7 @@ const Navbar = () => {
               className="btn btn-primary"
               onClick={() => setIsOpen(false)}
             >
-              🔐 Login
+               Login
             </Link>
           </div>
         )}

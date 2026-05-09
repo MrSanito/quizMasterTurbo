@@ -2,12 +2,12 @@
 // import { NextResponse } from "next/server";
 // import { nanoid } from "nanoid";
 
-// // 🟢 Anyone can access
+// //  Anyone can access
 // const guestAllowedRoutes = ["/", "/login", "/register"];
 
-// // 🔴 Must be logged in
+// //  Must be logged in
 // const protectedRoutes = ["/profile", "/dashboard", "/settings"];
-// // 🎮 Guest limited routes
+// //  Guest limited routes
 // const quizRoutePrefix = "/quiz";
 
 
@@ -19,12 +19,12 @@
 //   const guestId = request.cookies.get("guestId");
 //   const quizCount = Number(request.cookies.get("quizCount")?.value || 0);
 
-//   // ✅ Public routes → always allow
+//   //  Public routes -> always allow
 //   if (guestAllowedRoutes.includes(pathname)) {
 //     return res;
 //   }
 
-//   // 🔐 Protected routes → require token
+//   //  Protected routes -> require token
 //   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
 //     if (!token) {
 //       return NextResponse.redirect(new URL("/login", request.url));
@@ -37,9 +37,9 @@
 
 
 
-//   // 🎮 Quiz logic (guest allowed but limited)
+//   //  Quiz logic (guest allowed but limited)
 //   if (pathname.startsWith(quizRoutePrefix)) {
-//     // Logged-in user → unlimited
+//     // Logged-in user -> unlimited
 //     if (token) return res;
 
 //     // New guest

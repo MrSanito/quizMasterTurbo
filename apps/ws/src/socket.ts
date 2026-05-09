@@ -5,7 +5,7 @@ import http from "http";
 
 export function setupSocket(server: http.Server) {
   const io = new Server(server, {
-    path: "/socket.io/", // 🔥 prevents path mismatch
+    path: "/socket.io/", //  prevents path mismatch
 
     cors: {
       origin: [
@@ -13,13 +13,13 @@ export function setupSocket(server: http.Server) {
         "http://localhost:3000",
         "https://quiz-master-turbo-quiz-master.vercel.app",
       ],
-      methods: ["GET", "POST"], // 🔥 required for handshake
+      methods: ["GET", "POST"], //  required for handshake
       credentials: true,
     },
 
-    transports: ["websocket", "polling"], // 🔥 Render sleep fix
+    transports: ["websocket", "polling"], //  Render sleep fix
     allowUpgrades: true,
-    pingTimeout: 60000, // 🔥 stop random drops
+    pingTimeout: 60000, //  stop random drops
     pingInterval: 25000,
   });
 

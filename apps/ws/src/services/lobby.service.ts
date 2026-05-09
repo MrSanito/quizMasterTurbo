@@ -2,7 +2,7 @@ import { redis } from "./redis.service.js";
 
 export async function joinLobby(roomId: string, player: any, socketId: string) {
   const key = `room:${roomId}:players`;
-  console.log(`📝 [LobbyService] Writing player ${player.id} to Redis Key: ${key}`);
+  console.log(` [LobbyService] Writing player ${player.id} to Redis Key: ${key}`);
   await redis.hset(
     key,
     player.id,

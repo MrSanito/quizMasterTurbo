@@ -12,12 +12,12 @@ interface RealTimeQuizPlayerProps {
   qIndex: number;
   totalQuestions: number;
   score: number;
-  timeLeft: number; // 🔥 ADDED
-  startTime: number; // 🔥 ADDED
-  onAnswer: (answer: string, timeTaken: number) => void; // 🔥 ADDED
+  timeLeft: number; //  ADDED
+  startTime: number; //  ADDED
+  onAnswer: (answer: string, timeTaken: number) => void; //  ADDED
   isAnswered: boolean;
   correctAnswer?: string; // Only available after answer/timeout
-  instantFeedback?: { isCorrect: boolean, correctOptionText?: string } | null; // 🔥 NEW PROP
+  instantFeedback?: { isCorrect: boolean, correctOptionText?: string } | null; //  NEW PROP
 }
 
 export default function RealTimeQuizPlayer({
@@ -59,7 +59,7 @@ export default function RealTimeQuizPlayer({
   const handleOptionSelect = (optionText: string) => {
     if (isAnswered) return;
     setSelectedOption(optionText);
-    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    const timeTaken = Date.now() - startTime;
     onAnswer(optionText, timeTaken);
   };
 

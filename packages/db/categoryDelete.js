@@ -1,10 +1,10 @@
 // import { prisma } from "./lib/prisma";
 import { prisma } from "../db/dist/client.js";
 
-const CATEGORY_NAME = "Tech & Coding"; // ⚠️ CHANGE THIS to the category you want to delete
+const CATEGORY_NAME = "Tech & Coding"; //  CHANGE THIS to the category you want to delete
 
 async function main() {
-  console.log(`🗑️  Starting deletion for category: "${CATEGORY_NAME}"...`);
+  console.log(`  Starting deletion for category: "${CATEGORY_NAME}"...`);
 
   // 1. Find the category
   const category = await prisma.category.findUnique({
@@ -12,11 +12,11 @@ async function main() {
   });
 
   if (!category) {
-    console.log(`❌ Category "${CATEGORY_NAME}" not found. Nothing to delete.`);
+    console.log(` Category "${CATEGORY_NAME}" not found. Nothing to delete.`);
     return;
   }
 
-  console.log(`📍 Found Category ID: ${category.id}`);
+  console.log(` Found Category ID: ${category.id}`);
 
   // 2. Find all Quizzes in this category
   const quizzes = await prisma.quiz.findMany({
@@ -25,7 +25,7 @@ async function main() {
   });
 
   const quizIds = quizzes.map((q) => q.id);
-  console.log(`📉 Found ${quizIds.length} quizzes to remove.`);
+  console.log(` Found ${quizIds.length} quizzes to remove.`);
 
   if (quizIds.length > 0) {
     // 3. Find all Questions in these quizzes (to delete their options first)
@@ -61,7 +61,7 @@ async function main() {
     where: { id: category.id },
   });
 
-  console.log(`✅ Successfully deleted category: "${CATEGORY_NAME}"`);
+  console.log(` Successfully deleted category: "${CATEGORY_NAME}"`);
 }
 
 main()

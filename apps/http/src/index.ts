@@ -10,15 +10,15 @@ import cors from "cors";
 import cookieparser from "cookie-parser";
 
 // This points to the .env at the root of quizmasterturbo
-console.log("🔥 PID:", process.pid);
+console.log(" PID:", process.pid);
 
 const app = express();
-app.use(express.json()); // ❌ too late
+app.use(express.json()); //  too late
 app.use(cookieparser());
 
 
 app.use((req, res, next) => {
-  console.log(`🔔 Incoming Request: ${req.method} ${req.url}`);
+  console.log(` Incoming Request: ${req.method} ${req.url}`);
   next();
 });
 

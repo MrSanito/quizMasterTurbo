@@ -8,7 +8,7 @@ const MaxTryReached = () => {
         {/* Icon / Emoji */}
         <div className="pt-6 flex justify-center">
           <div className="h-14 w-14 rounded-full bg-error/10 flex items-center justify-center">
-            <span className="text-2xl">🚫</span>
+            <span className="text-2xl"></span>
           </div>
         </div>
 
@@ -18,8 +18,8 @@ const MaxTryReached = () => {
           </h2>
 
           <p className="text-sm sm:text-base text-base-content/70 leading-relaxed">
-            Oops! You’ve used all your guest attempts. Log in to unlock
-            unlimited quizzes and flex your brain 🧠💪
+            Oops! You've used all your guest attempts. Log in to unlock
+            unlimited quizzes and flex your brain 
           </p>
 
           <div className="card-actions w-full flex flex-col justify-center sm:flex-row gap-2 pt-2">

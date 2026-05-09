@@ -69,7 +69,7 @@ const ProfileEditPage = () => {
 
   const [state, formAction, isPending] = useActionState(editUser, initialState);
 
-  // ✅ Fill form when user loads
+  //  Fill form when user loads
   useEffect(() => {
     if (user) {
       skipFirstUsernameCheck.current = true; // mark this update as system update
@@ -87,10 +87,10 @@ const ProfileEditPage = () => {
   }, [user]);
   const handleUsername = (e) => {
     let { name, value } = e.target;
-    // 1️⃣ convert to lowercase
+    // 1 convert to lowercase
     value = value.toLowerCase();
 
-    // 2️⃣ remove unwanted characters
+    // 2 remove unwanted characters
     value = value.replace(/[^a-z0-9_]/g, "");
 
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -135,17 +135,17 @@ const ProfileEditPage = () => {
     runCheck();
   }, [debouncedUsername]);
 
-  // 1️⃣ Loading (highest priority)
+  // 1 Loading (highest priority)
   if (loading) {
     return <Loading />;
   }
 
-  // 2️⃣ Blocked guest
+  // 2 Blocked guest
   if (isMaxTryReached) {
     return <MaxTryReached />;
   }
 
-  // 3️⃣ Not logged in at all
+  // 3 Not logged in at all
   if (!isLogin && !isGuest) {
     return <NotLoginComponent />;
   }
@@ -159,7 +159,7 @@ const ProfileEditPage = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        bgcolor: "var(--b1)", // 🌍 base-100 (page)
+        bgcolor: "var(--b1)", //  base-100 (page)
         p: 2,
       }}
     >
@@ -168,7 +168,7 @@ const ProfileEditPage = () => {
           width: "100%",
           maxWidth: 620,
           borderRadius: 4,
-          bgcolor: "var(--b2)", // 🧱 base-200 (card surface)
+          bgcolor: "var(--b2)", //  base-200 (card surface)
           color: "#fff",
           boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
         }}
@@ -255,14 +255,14 @@ const ProfileEditPage = () => {
                 )}
                 {usernameStatus === "checking" && (
                   <p className="text-yellow-500 text-sm">
-                    Checking username… ⏳
+                    Checking username... 
                   </p>
                 )}
                 {usernameStatus === "available" && (
-                  <p className="text-green-500 text-sm">{`${form.username} Username available ✅`}</p>
+                  <p className="text-green-500 text-sm">{`${form.username} Username available `}</p>
                 )}
                 {usernameStatus === "taken" && (
-                  <p className="text-red-500 text-sm">{`${form.username} Username already taken ❌`}</p>
+                  <p className="text-red-500 text-sm">{`${form.username} Username already taken `}</p>
                 )}
               </fieldset>
               <div className="flex  md:flex-row  gap-4 w-full">
@@ -341,7 +341,7 @@ const ProfileEditPage = () => {
             {/* SUCCESS */}
             {state.success && (
               <p className="text-green-600 text-sm">
-                Changes Saved Successfully 🎉
+                Changes Saved Successfully 
               </p>
             )}
             {!state.success && state.message && (

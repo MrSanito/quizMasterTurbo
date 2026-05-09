@@ -50,13 +50,13 @@ const Dashboard = () => {
 
   // const api = axios.create({
   //   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  //   withCredentials: true, // 🔥 REQUIRED
+  //   withCredentials: true, //  REQUIRED
   // });
 
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout"); // 🍪 cookie cleared by Express
+      await api.post("/auth/logout"); //  cookie cleared by Express
       await refreshAuth();
       router.refresh(); // refetch auth state
       router.replace("/login"); // go to login
@@ -80,34 +80,34 @@ const Dashboard = () => {
     user?.avatar ? `/avatars/${user.avatar}` : "/avatars/avatar1.svg",
   );
 
-  // 1️⃣ Loading (highest priority)
+  // 1 Loading (highest priority)
   if (loading) {
     return <Loading />;
   }
 
-  // 2️⃣ Blocked guest
+  // 2 Blocked guest
   if (isMaxTryReached) {
     return <MaxTryReached />;
   }
 
-  // 3️⃣ Not logged in at all
+  // 3 Not logged in at all
   if (!isLogin && !isGuest) {
     // return <NotLoginComponent />;
     return null;
   }
 
-  // 4️⃣ Guest user (allowed but limited)
+  // 4 Guest user (allowed but limited)
   if (isGuest) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-base-200">
-        <h2 className="text-xl font-bold text-warning">Guest Mode 👀</h2>
+        <h2 className="text-xl font-bold text-warning">Guest Mode </h2>
         <p className="mt-2 text-neutral-500">Tries left: {guestLeft}</p>
         <QuizPlayerHistory viewerId={viewerId} viewerType={viewerType} />
       </div>
     );
   }
 
-  // 5️⃣ Logged-in user dashboard ✅
+  // 5 Logged-in user dashboard 
   if (isLogin && user) {
     const dummyUser = {
       name: "Jane Doe",
@@ -165,7 +165,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 🔥 Logout Modal */}
+        {/*  Logout Modal */}
         {logOutModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-[#151b23] border border-gray-800 rounded-2xl p-6 w-[90%] max-w-md shadow-lg">
@@ -215,10 +215,10 @@ const Dashboard = () => {
     );
   }
 
-  // 6️⃣ Fallback (should never happen)
+  // 6 Fallback (should never happen)
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-error">⚠️ Something went wrong. Please refresh.</p>
+      <p className="text-error"> Something went wrong. Please refresh.</p>
     </div>
   );
 };

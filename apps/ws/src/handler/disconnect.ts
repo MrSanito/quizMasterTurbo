@@ -1,7 +1,7 @@
 import { leaveLobby, removePlayerBySocket } from "../services/lobby.service.js";
 
 export async function handleDisconnect(io: any, socket: any) {
-  console.log("❌ Disconnected:", socket.id);
+  console.log(" Disconnected:", socket.id);
 
   const roomId = socket.data.roomId;
   const playerId = socket.data.playerId;

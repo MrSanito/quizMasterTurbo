@@ -9,7 +9,7 @@ CREATE TABLE "Category" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "icon" TEXT NOT NULL DEFAULT '📦',
+    "icon" TEXT NOT NULL DEFAULT 'box',
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
 );

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "@repo/db"; // ✅ FIXED import (package entry)
+import { prisma } from "@repo/db"; //  FIXED import (package entry)
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
@@ -70,7 +70,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.cookie("hasSession", "true", {
       httpOnly: false, // OK, frontend can read
-      secure: true, // 🔥 MUST be true
+      secure: true, //  MUST be true
       sameSite: "none",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -153,7 +153,7 @@ export const register = async (
 
     res.cookie("hasSession", "true", {
       httpOnly: false, // OK, frontend can read
-      secure: true, // 🔥 MUST be true
+      secure: true, //  MUST be true
       sameSite: "none",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -221,7 +221,7 @@ export const verifyUser = async (req: Request, res: Response) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
-    // 🔒 TYPE GUARD (TS ONLY)
+    //  TYPE GUARD (TS ONLY)
     if (typeof decoded === "string" || !("email" in decoded)) {
       return res.status(401).json({
         valid: false,
