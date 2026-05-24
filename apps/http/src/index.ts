@@ -1,8 +1,6 @@
 // 1. LOAD ENV FIRST
-import dotenv from "dotenv";
-import path from "path";
-dotenv.config();
-console.log(process.env.DATABASE_URL);
+import "dotenv/config";
+console.log("DATABASE_URL =>", process.env.DATABASE_URL);
 
 import express from "express";
 import router from "./routes/index.js";
@@ -42,7 +40,7 @@ const PORT = process.env.PORT || 3001;
 app.get("/", async (req, res) => {
   res.json({
     success: true,
-    message: "working fine on path /",
+    message: "working fine on path /health",
   });
 });
 

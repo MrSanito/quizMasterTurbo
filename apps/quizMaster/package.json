@@ -2,6 +2,9 @@
   "name": "quizMaster",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev ",
     "build": "next build",
@@ -25,6 +28,7 @@
     "daisyui": "^5.0.9",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.26",
+    "idb-keyval": "^6.2.4",
     "lucide-react": "^0.482.0",
     "mongoose": "^8.13.0",
     "nanoid": "^5.1.6",

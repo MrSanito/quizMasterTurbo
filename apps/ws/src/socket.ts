@@ -26,4 +26,24 @@ export function setupSocket(server: http.Server) {
   instrument(io, { auth: false });
 
   io.on("connection", (socket) => registerConnection(io, socket));
+  // ✅ GRACEFUL SHUTDOWN
+const shutdown = async () => {
+  console.log("Shutting down server...");
+
+  io.close(() => {
+    console.log("Socket.IO closed");
+  });
+
+  server.close(() => {
+    console.log("HTTP server closed");
+    process.exit(0);
+  });
+};
+
+// Ctrl + C
+process.on("SIGINT", shutdown);
+
+// nodemon restart
+process.on("SIGTERM", shutdown);
 }
+

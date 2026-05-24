@@ -246,7 +246,7 @@ disabled            />
           </button>
 
           <a href={`/room/${roomName}/lobby`} className="btn btn-primary w-64">
-            Go to Lobby ->
+            Go to Lobby 
           </a>
         </div>
       )}

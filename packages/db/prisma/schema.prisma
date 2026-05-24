@@ -16,6 +16,7 @@ model User {
   password                       String
   avatar                         String    @default("avatar1.svg")
   createdAt                      DateTime      @default(now())
+  updatedAt                      DateTime      @default(now()) @updatedAt
   Friend_Friend_receiverIdToUser Friend[]      @relation("Friend_receiverIdToUser")
   Friend_Friend_senderIdToUser   Friend[]      @relation("Friend_senderIdToUser")
   QuizAttempt                    QuizAttempt[]
@@ -23,6 +24,7 @@ model User {
   roomPlayers RoomPlayer[]
   answers     PlayerAnswer[]
   events      RoomEvent[]
+  sessions    Session[]
 }
 
 model Category {
@@ -209,4 +211,33 @@ model RoomEvent {
   user User? @relation(fields: [userId], references: [id])
 
   @@index([roomId])
+}
+
+model Session {
+  id                 String   @id  // this IS the sessionId (cuid)
+  sessionToken       String   @unique
+  familyId           String   // groups rotations for one login event
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt          DateTime @default(now())
+  expiresAt          DateTime
+  lastUsedAt         DateTime @default(now())
+
+  // Device info (from client)
+  ipAddress          String?
+  userAgent          String?
+  deviceType         String?
+  deviceName         String?
+  browser            String?
+  os                 String?
+  country            String?
+  city               String?
+
+  // Fingerprint & PoP
+  deviceFingerprint  String?  // SHA-256 hash of browser signals
+  publicKeyThumbprint String? // SHA-256 of device public key JWK (for PoP)
+
+  @@index([userId])
+  @@index([familyId])
 }

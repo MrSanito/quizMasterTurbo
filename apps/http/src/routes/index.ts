@@ -4,11 +4,13 @@ import { Router } from "express";
  import quizzesRoutes from "./quizzes.route.js";
  import roomRoutes from "./room.route.js";
  import gameRoutes from "./game.route.js";
+ import newAuthRouter from "../auth/auth.routes.js"
 
 const router = Router();
 
 // /api/auth/...
 router.use("/auth", authRoutes);
+router.use("/auth2", newAuthRouter);
 router.use("/categories/", categoriesRoutes);
 router.use("/quizzes/", quizzesRoutes);
 router.use("/room/", roomRoutes);

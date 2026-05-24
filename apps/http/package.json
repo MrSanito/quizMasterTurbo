@@ -2,6 +2,9 @@
   "name": "http",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "compilerOptions": {
     "moduleResolution": "node",
     "baseUrl": ".",
@@ -23,7 +26,9 @@
   "description": "",
   "devDependencies": {
     "@repo/db": "*",
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
+    "@types/nodemailer": "^8.0.0",
     "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
@@ -32,7 +37,7 @@
   "dependencies": {
     "@repo/db": "*",
     "@repo/redis": "^1.0.0",
-    "@types/bcrypt": "^6.0.0",
+    "@repo/types": "*",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
@@ -42,6 +47,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.8",
+    "resend": "^6.12.3"
   }
 }

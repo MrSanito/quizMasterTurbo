@@ -4,6 +4,7 @@ import { prisma } from '@repo/db';
 import { redisClient } from '@repo/redis';
 
 import { Redis } from "ioredis";
+console.log("here is the env variables",process.env.REDIS_URL,process.env.REDIS_PASSWORD,process.env.REDIS_HOST,process.env.REDIS_PORT)
 
 // Create Redis instance
 const connection = process.env.REDIS_URL 

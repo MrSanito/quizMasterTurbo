@@ -117,7 +117,7 @@ const HeroSection = () => {
                 <Trophy size={14} className="text-yellow-500" />
                 Top 5%
               </div>
-              <span>Next -></span>
+              <span>Next </span>
             </div>
           </motion.div>
 

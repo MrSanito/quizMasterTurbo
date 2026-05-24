@@ -1,0 +1,352 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/app/(auth)/context/GetUserContext";
+import { FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
+import api from "@/app/lib/api";
+import Loading from "@/components/Loading";
+import Link from "next/link";
+
+export default function Register2Page() {
+  const router = useRouter();
+  const { loading, isLogin } = useUser();
+
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess] = useState(false);
+
+  // Live username state
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameMessage, setUsernameMessage] = useState("");
+
+  // Redirect if logged in
+  useEffect(() => {
+    if (!loading && isLogin) {
+      router.replace("/dashboard");
+    }
+  }, [loading, isLogin, router]);
+
+  // Debounced username check
+  useEffect(() => {
+    if (!form.username) {
+      setUsernameStatus("idle");
+      setUsernameMessage("");
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setUsernameStatus("checking");
+      try {
+        const res = await api.post("/auth2/check_username", {
+          username: form.username,
+        });
+        if (res.data?.available) {
+          setUsernameStatus("available");
+          setUsernameMessage(`${form.username} is available!`);
+        } else {
+          setUsernameStatus("taken");
+          setUsernameMessage("Username is already taken");
+        }
+      } catch (err) {
+        setUsernameStatus("idle");
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [form.username]);
+
+  const toggleEyeHandler = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.toLowerCase();
+    // Allow only lowercase, numbers, and underscores
+    value = value.replace(/[^a-z0-9_]/g, "");
+    setForm((prev) => ({ ...prev, username: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPending(true);
+    setError(null);
+    setFieldErrors({});
+    setSuccess(false);
+
+    // Client-side validations
+    const errors: Record<string, string> = {};
+    if (!form.firstName) errors.firstName = "First name is required";
+    if (!form.lastName) errors.lastName = "Last name is required";
+    if (!form.username) {
+      errors.username = "Username is required";
+    } else if (form.username.length < 3) {
+      errors.username = "Username must be at least 3 characters";
+    }
+    if (!form.email) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+    if (!form.password) {
+      errors.password = "Password is required";
+    } else if (form.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    if (usernameStatus === "taken") {
+      errors.username = "This username is already taken";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setIsPending(false);
+      return;
+    }
+
+    try {
+      console.log("Submitting register to auth2...");
+      const res = await api.post("/auth2/register", {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        username: form.username,
+        email: form.email,
+        password: form.password,
+      });
+
+      console.log("Register2 Response:", res.data);
+
+      if (res.data?.success) {
+        setSuccess(true);
+        setForm({
+          firstName: "",
+          lastName: "",
+          username: "",
+          email: "",
+          password: "",
+        });
+      } else {
+        setError(res.data?.message || "Registration failed");
+      }
+    } catch (err: any) {
+      console.error("Register2 error:", err);
+      const msg = err.response?.data?.message || "Connection refused. Please verify backend is running.";
+      setError(msg);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  if (isLogin) return null;
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  return (
+    <div className="flex flex-col min-h-[90vh] justify-center items-center px-4 py-8 relative overflow-hidden">
+      {/* Decorative Blur Orbs */}
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
+
+      <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
+          <FiUser className="text-3xl text-white animate-bounce" />
+        </div>
+
+        <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary pb-2">
+          Create Account
+        </h3>
+        <p className="text-sm opacity-60 mb-8 text-center">
+          Register to get started with QuizMaster Auth2
+        </p>
+
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
+          {/* First & Last Name */}
+          <div className="flex gap-4">
+            <div className="form-control flex-1">
+              <label className="label py-1">
+                <span className="label-text font-semibold text-xs">First Name</span>
+              </label>
+              <input
+                type="text"
+                name="firstName"
+                className={`input input-bordered w-full rounded-xl focus:input-primary ${
+                  fieldErrors.firstName ? "input-error" : ""
+                }`}
+                placeholder="Joe"
+                value={form.firstName}
+                onChange={handleChange}
+                disabled={isPending}
+              />
+              {fieldErrors.firstName && (
+                <span className="label-text-alt text-error mt-1">{fieldErrors.firstName}</span>
+              )}
+            </div>
+
+            <div className="form-control flex-1">
+              <label className="label py-1">
+                <span className="label-text font-semibold text-xs">Last Name</span>
+              </label>
+              <input
+                type="text"
+                name="lastName"
+                className={`input input-bordered w-full rounded-xl focus:input-primary ${
+                  fieldErrors.lastName ? "input-error" : ""
+                }`}
+                placeholder="Doe"
+                value={form.lastName}
+                onChange={handleChange}
+                disabled={isPending}
+              />
+              {fieldErrors.lastName && (
+                <span className="label-text-alt text-error mt-1">{fieldErrors.lastName}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="form-control w-full">
+            <label className="label py-1">
+              <span className="label-text font-semibold text-xs flex items-center gap-1">
+                <FiUser /> Username
+              </span>
+            </label>
+            <input
+              type="text"
+              name="username"
+              className={`input input-bordered w-full rounded-xl focus:input-primary ${
+                fieldErrors.username ? "input-error" : ""
+              }`}
+              placeholder="username"
+              value={form.username}
+              onChange={handleUsernameChange}
+              disabled={isPending}
+            />
+            {fieldErrors.username && (
+              <span className="label-text-alt text-error mt-1">{fieldErrors.username}</span>
+            )}
+            {usernameStatus === "checking" && (
+              <span className="label-text-alt text-warning mt-1">Checking availability...</span>
+            )}
+            {usernameStatus === "available" && (
+              <span className="label-text-alt text-success mt-1">{usernameMessage}</span>
+            )}
+            {usernameStatus === "taken" && (
+              <span className="label-text-alt text-error mt-1">{usernameMessage}</span>
+            )}
+          </div>
+
+          {/* Email */}
+          <div className="form-control w-full">
+            <label className="label py-1">
+              <span className="label-text font-semibold text-xs flex items-center gap-1">
+                <FiMail /> Email Address
+              </span>
+            </label>
+            <input
+              type="text"
+              name="email"
+              className={`input input-bordered w-full rounded-xl focus:input-primary ${
+                fieldErrors.email ? "input-error" : ""
+              }`}
+              placeholder="name@example.com"
+              value={form.email}
+              onChange={handleChange}
+              disabled={isPending}
+            />
+            {fieldErrors.email && (
+              <span className="label-text-alt text-error mt-1">{fieldErrors.email}</span>
+            )}
+          </div>
+
+          {/* Password */}
+          <div className="form-control w-full">
+            <label className="label py-1">
+              <span className="label-text font-semibold text-xs flex items-center gap-1">
+                <FiLock /> Password
+              </span>
+            </label>
+            <div className="relative w-full">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                className={`input input-bordered w-full rounded-xl pr-12 focus:input-primary ${
+                  fieldErrors.password ? "input-error" : ""
+                }`}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={handleChange}
+                disabled={isPending}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center px-4 hover:opacity-80 transition"
+                onClick={toggleEyeHandler}
+                disabled={isPending}
+              >
+                {showPassword ? (
+                  <FiEyeOff className="text-primary text-lg" />
+                ) : (
+                  <FiEye className="text-primary text-lg" />
+                )}
+              </button>
+            </div>
+            {fieldErrors.password && (
+              <span className="label-text-alt text-error mt-1">{fieldErrors.password}</span>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
+            disabled={isPending}
+          >
+            {isPending ? (
+              <span className="loading loading-spinner loading-md"></span>
+            ) : (
+              "Sign Up"
+            )}
+          </button>
+        </form>
+
+        {/* Status Alerts */}
+        {success && (
+          <div className="alert alert-success rounded-xl mt-4 py-2 shadow-sm text-sm">
+            <span>Registration email sent! Please check your inbox to verify.</span>
+          </div>
+        )}
+        {error && (
+          <div className="alert alert-error rounded-xl mt-4 py-2 shadow-sm text-sm">
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="divider opacity-20 my-6 w-full"></div>
+
+        <p className="text-sm opacity-70">
+          Already have an account?{" "}
+          <Link className="link link-primary font-semibold" href="/login2">
+            Login
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -23,7 +23,7 @@
     "prettier": "^3.7.4"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.0.0"
   },
   "packageManager": "npm@10.8.2",
   "dependencies": {

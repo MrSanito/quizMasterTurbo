@@ -106,7 +106,7 @@ const LoginRequired = () => (
     <h2 className="text-xl font-bold">Login Required </h2>
     <p className="opacity-70">You need an account to join a room.</p>
     <a href="/login" className="btn btn-primary">
-      Login to Play ->
+      Login to Play 
     </a>
   </div>
 );
