@@ -267,10 +267,11 @@
       await pipeline.exec();
 
       // Set refresh token cookie
+      const isProd = process.env.NODE_ENV === "production";
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
         maxAge: TTL * 1000,
       });
 
@@ -419,10 +420,11 @@
     await redis.set(rtKey(userId, familyId, sessionId), newRefreshToken, "EX", TTL);
 
     generateAccessToken(userId, sessionId, familyId, res); // sets new access token cookie
+    const isProd = process.env.NODE_ENV === "production";
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       maxAge: TTL * 1000,
     });
 
@@ -588,7 +590,12 @@
   // ─── Helper ───────────────────────────────────────────────────────────────────
 
   function clearAuthCookies(res: Response) {
-    const opts = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" as const };
+    const isProd = process.env.NODE_ENV === "production";
+    const opts = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" as const : "lax" as const,
+    };
     res.clearCookie("accessToken", opts);
     res.clearCookie("refreshToken", opts);
   } 

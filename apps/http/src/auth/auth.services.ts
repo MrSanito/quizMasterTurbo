@@ -19,10 +19,11 @@ export function generateAccessToken(
     ACCESS_SECRET,
     { expiresIn: "15m" },
   );
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie("accessToken", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     maxAge: 15 * 60 * 1000,
   });
   return token;
