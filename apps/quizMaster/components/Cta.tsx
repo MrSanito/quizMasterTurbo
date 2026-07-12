@@ -11,7 +11,7 @@ const Cta = () => {
           <div className="max-w-xl text-left">
             <h1 className="text-4xl font-bold text-primary mb-4">
               Join the Quiz Challenge Today!
-            </h1>
+            </h1>  
             <p className="text-base text-gray-600 mb-6">
               Sign up now to access exciting quizzes and daily challenges
               tailored just for you!
