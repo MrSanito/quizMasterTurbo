@@ -6,7 +6,7 @@ import { startGameLoop } from "../services/game.service.js";
 export function lobbyEvents(io: any, socket: any) {
   socket.on("lobby:join", async ({ roomId, player }: JoinRoomPayload) => {
     console.log("join request come");
-    // 🔥 SAVE DATA ON SOCKET
+    //  SAVE DATA ON SOCKET
     socket.data.roomId = roomId;
     socket.data.playerId = player.id;
 
@@ -31,7 +31,7 @@ export function lobbyEvents(io: any, socket: any) {
   });
 
   socket.on("lobby:letsstart", async ({ roomId }: any) => {
-    console.log(`🚀 Host triggered start for room ${roomId}`);
+    console.log(` Host triggered start for room ${roomId}`);
     
     // 1. Notify everyone to redirect
     const response = {

@@ -9,7 +9,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Toastify mobile width fix — REAL fix */
+/* Toastify mobile width fix - REAL fix */
 @media (max-width: 640px) {
   .Toastify__toast-container {
     --toastify-toast-width: 60%;

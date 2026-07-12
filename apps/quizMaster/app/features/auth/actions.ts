@@ -26,7 +26,7 @@ export type RegisterActionState = {
   };
 };
 
-// 🔹 LOGIN
+//  LOGIN
 export type LoginActionState = {
   success: boolean;
   message?: string;
@@ -55,9 +55,9 @@ export async function registerAction(
   _prev: RegisterActionState | null,
   formData: FormData,
 ): Promise<RegisterActionState> {
-  noStore(); // 🔥 THIS IS THE MAGIC LINE
+  noStore(); //  THIS IS THE MAGIC LINE
 
-  // 1️⃣ Extract form data
+  // 1 Extract form data
   const rawData = {
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
@@ -67,7 +67,7 @@ export async function registerAction(
   };
   console.log("rawdata", rawData);
 
-  // 2️⃣ Zod validation
+  // 2 Zod validation
   const parsed = registerSchema.safeParse(rawData);
   console.log("parsed", parsed);
 
@@ -83,20 +83,20 @@ export async function registerAction(
     return {
       success: false,
       errors,
-      data: rawData, // so user input doesn’t vanish
+      data: rawData, // so user input doesn't vanish
     };
   }
 
-  // 3️⃣ Proxy to Express
+  // 3 Proxy to Express
   try {
-    console.log("🔥 PROXYING TO EXPRESS");
+    console.log(" PROXYING TO EXPRESS");
     console.log("process env", process.env.NEXT_PUBLIC_API_BASE_URL);
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     const res = await api.post(`/auth/register`, parsed.data, {
       timeout: 3000,
 
-      withCredentials: true, // 🔥 VERY IMPORTANT
+      withCredentials: true, //  VERY IMPORTANT
     });
 
     console.log(res.data);
@@ -107,7 +107,7 @@ export async function registerAction(
         "Account created successfully ho gaya bhai ho gaya",
     };
   } catch (err: any) {
-    console.log("❌ EXPRESS FAILED");
+    console.log(" EXPRESS FAILED");
 
     if (isAxiosError(err)) {
       return {
@@ -130,14 +130,14 @@ export async function loginAction(
 ): Promise<LoginActionState> {
   noStore(); // Prevent caching issues with cookies
 
-  // 1️⃣ Extract form data
+  // 1 Extract form data
   console.log("I am running in the browser");
   const rawData = {
     email: formData.get("email"),
     password: formData.get("password"),
   };
 
-  // 2️⃣ Zod validation
+  // 2 Zod validation
   const parsed = loginSchema.safeParse(rawData);
   let shouldRedirect = false;
 
@@ -155,9 +155,9 @@ export async function loginAction(
     };
   }
 
-  // 3️⃣ Proxy to Express
+  // 3 Proxy to Express
   try {
-    console.log("🔥 PROXYING TO EXPRESS");
+    console.log(" PROXYING TO EXPRESS");
 
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -176,13 +176,13 @@ export async function loginAction(
         password,
       },
       {
-        withCredentials: true, // 🔥 VERY IMPORTANT
+        withCredentials: true, //  VERY IMPORTANT
       },
     );
     console.log("response from login", res);
     const data = res.data;
 
-    // ❌ Backend rejected login
+    //  Backend rejected login
     if (!data.success) {
       return {
         success: false,
@@ -190,14 +190,14 @@ export async function loginAction(
       };
     }
 
-    // ✅ Set cookie from token in response body
+    //  Set cookie from token in response body
     // This is necessary because server-to-server fetch doesn't forward Set-Cookie to browser
     const token = data?.data?.token || data?.token;
     const hasSession = data?.data?.hasSession || data?.hasSession;
 
     if (token) {
       console.log(
-        "🍪 Setting cookie with token:",
+        " Setting cookie with token:",
         token.substring(0, 20) + "...",
       );
 
@@ -221,10 +221,10 @@ export async function loginAction(
       //   maxAge: 7 * 24 * 60 * 60,
       // });
 
-      console.log("✅ Cookie set successfully");
+      console.log(" Cookie set successfully");
       shouldRedirect = true; // Flag success instead of redirecting here
     } else {
-      console.warn("⚠️ No token in response:", data);
+      console.warn(" No token in response:", data);
     }
 
     return {
@@ -232,7 +232,7 @@ export async function loginAction(
       message: data?.message ?? "Login successfully",
     };
   } catch (err: any) {
-    console.log("❌ EXPRESS FAILED", err);
+    console.log(" EXPRESS FAILED", err);
 
     if (isAxiosError(err)) {
       return {
@@ -247,7 +247,7 @@ export async function loginAction(
     //   message: "Server not reachable Login failed",
     // };
   }
-  // 🔥 Run redirect AFTER the try/catch block
+  //  Run redirect AFTER the try/catch block
   if (shouldRedirect) {
     redirect("/dashboard");
   }
@@ -300,10 +300,10 @@ export async function editUser(
       };
     }
 
-    // ✅ SUCCESS MESSAGE SENT TO UI
+    //  SUCCESS MESSAGE SENT TO UI
     return {
       success: true,
-      message: "Profile updated successfully 🎉",
+      message: "Profile updated successfully ",
     };
   } catch (error: any) {
     return {

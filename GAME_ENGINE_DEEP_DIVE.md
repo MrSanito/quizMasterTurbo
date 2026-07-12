@@ -1,4 +1,4 @@
-# 🎮 QuizMaster: Game Engine Deep Dive (Complete Version)
+#  QuizMaster: Game Engine Deep Dive (Complete Version)
 
 This guide provides an exhaustive breakdown of the QuizMaster engine logic. If you are learning how to build real-time multiplayer games, this is your roadmap.
 
@@ -14,7 +14,7 @@ QuizMaster follows a **Hybrid Reality** model. The server is the absolute source
 
 ---
 
-## 2. Phase 1: The Transition (Lobby → Game)
+## 2. Phase 1: The Transition (Lobby -> Game)
 
 ### A. The Start Trigger
 When the host clicks "Start", the backend `startRoom` controller performs a "Database Migration":
@@ -67,7 +67,7 @@ By basing the countdown on a **shared timestamp**, every player's screen flashes
 
 ---
 
-## 4. Phase 3: The Event Lifecycle (Start → End)
+## 4. Phase 3: The Event Lifecycle (Start -> End)
 
 ### Event 1: `game:questionStart`
 **Trigger**: Every 20 seconds from the server loop.
@@ -121,7 +121,7 @@ The 3-second delay allows the user to see their final rank on the leaderboard be
 
 ---
 
-## 🛠️ Where to look in the Code?
+##  Where to look in the Code?
 - **Timer Sync**: `apps/quizMaster/components/RealTimeQuizPlayer.tsx` -> Look at the `useEffect` that uses `startTime`.
 - **Fast Scoring**: `apps/ws/src/services/game.service.ts` -> Look at `submitAnswer`.
 - **Bulk Save**: `apps/http/src/controllers/room.controller.ts` -> Look at `finalizeRoom`.

@@ -4,10 +4,10 @@ export default function NotAllowedPage() {
   return (
     <div className="flex min-h-[80vh] items-center justify-center">
       <div className="text-center max-w-md">
-        <h1 className="text-3xl font-bold text-red-500">Access Denied 🚫</h1>
+        <h1 className="text-3xl font-bold text-red-500">Access Denied </h1>
 
         <p className="mt-3 text-gray-400">
-          You’ve reached the free quiz limit. Login to continue your journey 🚀
+          You've reached the free quiz limit. Login to continue your journey 
         </p>
 
         <Link

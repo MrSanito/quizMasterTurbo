@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,13 +23,15 @@
     "seed": "ts-node /seed.ts"
   },
   "devDependencies": {
-    "@types/pg": "^8.16.0"
+    "@types/pg": "^8.16.0",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@prisma/client": "^6.0.0",
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "7.2.0",
     "dotenv": "^17.2.3",
     "pg": "^8.16.3",
-    "prisma": "6.0.0",
+    "prisma": "7.2.0",
     "ts-node": "^10.9.2"
   }
 }

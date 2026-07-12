@@ -1,7 +1,7 @@
 import { prisma } from "../db/dist/client.js";
 
 async function main() {
-  console.log("🚀 Seeding Advanced Tech & Coding Category...");
+  console.log(" Seeding Advanced Tech & Coding Category...");
 
   const shuffleAndFormat = (qText, opts, correctIdx) => {
     const correctValue = opts[correctIdx];
@@ -26,7 +26,7 @@ async function main() {
       quizNumber: 1,
       title: "Programming Languages Deep Dive",
       questions: [
-        // 🟢 EASY
+        //  EASY
         [
           "Which language is mainly used in browsers?",
           ["Python", "Java", "JavaScript", "Go"],
@@ -53,7 +53,7 @@ async function main() {
           "EASY",
         ],
 
-        // 🟡 MEDIUM
+        //  MEDIUM
         [
           "Why is C considered faster than Python?",
           [
@@ -95,7 +95,7 @@ async function main() {
           "MEDIUM",
         ],
 
-        // 🔴 HARD
+        //  HARD
         [
           "What happens when a C program accesses freed memory?",
           ["Nothing", "Memory leak", "Undefined behavior", "Compilation error"],
@@ -138,7 +138,7 @@ async function main() {
       quizNumber: 2,
       title: "Web Development Concepts",
       questions: [
-        // 🟢 EASY
+        //  EASY
         [
           "What does HTML structure?",
           ["Logic", "Style", "Content", "Database"],
@@ -170,7 +170,7 @@ async function main() {
           "EASY",
         ],
 
-        // 🟡 MEDIUM
+        //  MEDIUM
         [
           "Why use semantic HTML?",
           [
@@ -212,7 +212,7 @@ async function main() {
           "MEDIUM",
         ],
 
-        // 🔴 HARD
+        //  HARD
         [
           "What happens if event loop is blocked in JS?",
           ["Faster UI", "UI freezes", "Memory leak", "Recompile"],
@@ -256,7 +256,7 @@ async function main() {
       ],
     },
 
-    // 👉 You repeat same pattern for remaining quizzes
+    //  You repeat same pattern for remaining quizzes
     {
       quizNumber: 3,
       title: "Databases & Data Engineering",
@@ -951,7 +951,7 @@ async function main() {
         ],
         [
           "Array access time?",
-          ["O(1)", "O(n)", "O(log n)", "O(n²)"],
+          ["O(1)", "O(n)", "O(log n)", "O(n)"],
           0,
           "EASY",
         ],
@@ -997,7 +997,7 @@ async function main() {
         ],
         [
           "Time complexity of merge sort?",
-          ["O(n log n)", "O(n)", "O(n²)", "O(1)"],
+          ["O(n log n)", "O(n)", "O(n)", "O(1)"],
           0,
           "HARD",
         ],
@@ -1703,7 +1703,7 @@ async function main() {
           "MEDIUM",
         ],
         [
-          "Moore’s Law predicts?",
+          "Moore's Law predicts?",
           ["Transistor doubling", "Internet speed", "UI growth", "Security"],
           0,
           "MEDIUM",
@@ -1978,11 +1978,11 @@ async function main() {
           },
         },
       });
-      console.log(`✅ Seeded: ${quiz.title}`);
+      console.log(` Seeded: ${quiz.title}`);
     }
   }
 
-  console.log("🏁 Seeding complete!");
+  console.log(" Seeding complete!");
 }
 
 main()

@@ -179,7 +179,7 @@ export default function ClientQuizPlayer({ quiz }) {
         throw new Error("attemptId missing");
       }
     } catch (err) {
-      console.error("❌ Submit failed:", err);
+      console.error(" Submit failed:", err);
       alert("Failed to submit quiz");
       setIsSubmitting(false);
     }
@@ -194,7 +194,7 @@ export default function ClientQuizPlayer({ quiz }) {
             {/* Title */}
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2">
-                🧠 {quiz.title}
+                 {quiz.title}
               </h1>
               <p className="text-sm opacity-70 mt-1">
                 Think fast. Click faster. No mercy.

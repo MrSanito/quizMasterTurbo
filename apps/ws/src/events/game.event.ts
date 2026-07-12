@@ -41,6 +41,7 @@ export function gameEvents(io: any, socket: any) {
             timeTaken: data.timeTaken 
         });
 
+        console.log("submit answer result", result)
         if (result.error) {
              socket.emit("error", { message: result.error });
              return;

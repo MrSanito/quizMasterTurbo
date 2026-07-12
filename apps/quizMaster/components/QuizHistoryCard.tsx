@@ -31,7 +31,7 @@ const QuizHistoryCard = () => {
       <div className="card w-[90%] sm:w-[80%] lg:w-[70%] bg-base-100 border border-base-200 shadow-sm">
         <div className="card-body gap-4">
           {/* Header */}
-          <h2 className="text-lg sm:text-xl font-bold">📊 Quiz History</h2>
+          <h2 className="text-lg sm:text-xl font-bold"> Quiz History</h2>
 
           {/* History Rows */}
           <div className="flex flex-col gap-3">
@@ -61,7 +61,7 @@ const QuizHistoryCard = () => {
 
           {/* Footer */}
           <p className="text-xs opacity-60">
-            Score calculated from <b>4 questions × 15 points = 60</b>
+            Score calculated from <b>4 questions  15 points = 60</b>
           </p>
         </div>
       </div>

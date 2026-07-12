@@ -56,7 +56,7 @@ const NotLoginComponent = () => {
           {/* Subtitle */}
           <p className="mt-4 text-neutral-400 text-sm sm:text-lg max-w-md mx-auto leading-relaxed">
             You need to be signed in to access this page. Log in or create an
-            account to unlock exclusive quizzes 🚀
+            account to unlock exclusive quizzes 
           </p>
 
           {/* Actions */}

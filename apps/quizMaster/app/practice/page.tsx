@@ -333,7 +333,7 @@ const TestPage = () => {
           },
           {
             _id: "cmk1az0yj005vigtxhn050bs6",
-            text: "9.8 m/s²",
+            text: "9.8 m/s",
             isCorrect: true,
           },
           {
@@ -350,7 +350,7 @@ const TestPage = () => {
       },
       {
         _id: "cmk1az173005zigtxc0lws08l",
-        questionText: "Boiling water °C?",
+        questionText: "Boiling water C?",
         points: 4,
         negativePoints: -1,
         options: [

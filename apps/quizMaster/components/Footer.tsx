@@ -90,7 +90,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-base-300 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 font-medium">
-          <p>© {new Date().getFullYear()} QuizMaster. All rights reserved.</p>
+          <p> {new Date().getFullYear()} QuizMaster. All rights reserved.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>

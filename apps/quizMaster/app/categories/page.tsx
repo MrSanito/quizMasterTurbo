@@ -37,7 +37,7 @@ export default function CategoriesPage() {
 
         setCategories(res.data.categories ?? res.data);
       } catch (err) {
-        console.error("❌ Failed to fetch categories", err);
+        console.error(" Failed to fetch categories", err);
       } finally {
         setPageLoading(false);
       }
@@ -69,7 +69,7 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-[80dvh] flex flex-col items-center justify-center p-4">
       <h1 className="text-3xl font-bold text-white mb-6">
-        Play by Category 🎯
+        Play by Category 
       </h1>
 
       {/* Empty state */}
@@ -90,7 +90,7 @@ export default function CategoriesPage() {
             >
               <div className="flex items-center space-x-4">
                 {/* Icon */}
-                <span className="text-3xl">{category.icon || "📚"}</span>
+                <span className="text-3xl">{category.icon || ""}</span>
 
                 <div>
                   <p className="text-lg font-semibold">{category.name}</p>

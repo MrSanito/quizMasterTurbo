@@ -42,10 +42,10 @@ const RegisterForm = () => {
   };
   const handleUsername = (e) => {
     let { name, value } = e.target;
-    // 1️⃣ convert to lowercase
+    // 1 convert to lowercase
     value = value.toLowerCase();
 
-    // 2️⃣ remove unwanted characters
+    // 2 remove unwanted characters
     value = value.replace(/[^a-z0-9_]/g, "");
 
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -79,7 +79,7 @@ const RegisterForm = () => {
   
     const timer = setTimeout(() => {
       router.push("/dashboard");
-    }, 3000); // ⏳ 3 seconds
+    }, 3000); //  3 seconds
   
     // cleanup (important!)
     return () => clearTimeout(timer);
@@ -139,15 +139,15 @@ const RegisterForm = () => {
         <p className="text-red-500 text-sm">{state.errors.username}</p>
       )}
       {usernameStatus === "checking" && (
-        <p className="text-yellow-500 text-sm">Checking username… ⏳</p>
+        <p className="text-yellow-500 text-sm">Checking username... </p>
       )}
 
       {usernameStatus === "available" && (
-        <p className="text-green-500 text-sm">{`${form.username} Username available ✅`}</p>
+        <p className="text-green-500 text-sm">{`${form.username} Username available `}</p>
       )}
 
       {usernameStatus === "taken" && (
-        <p className="text-red-500 text-sm">{`${form.username} Username already taken ❌`}</p>
+        <p className="text-red-500 text-sm">{`${form.username} Username already taken `}</p>
       )}
 
       <fieldset className="fieldset">
@@ -198,7 +198,7 @@ const RegisterForm = () => {
       {/* SUCCESS */}
       {state.success && (
         <p className="text-green-600 text-sm">
-          Account created successfully 🎉
+          Account created successfully 
         </p>
       )}
       {!state.success && state.message && (

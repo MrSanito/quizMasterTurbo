@@ -83,7 +83,7 @@ export const getQuiz = async (
       formattedQuiz,
     });
   } catch (err) {
-    console.error("❌ getQuiz error:", err);
+    console.error(" getQuiz error:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch quiz",
@@ -147,7 +147,7 @@ export const submitQuiz = async (
       attemptId: attempt.id,
     });
   } catch (err) {
-    console.error("❌ Quiz submit error:", err);
+    console.error(" Quiz submit error:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to submit quiz",
@@ -249,7 +249,7 @@ export const getQuizResultByAttemptId = async (
       attempt,
     });
   } catch (err) {
-    console.error("❌ Fetch attempt error:", err);
+    console.error(" Fetch attempt error:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch quiz result",
@@ -301,7 +301,7 @@ export const getQuizHistory = async (req: Request, res: Response) => {
       attempts,
     });
   } catch (err) {
-    console.error("❌ History fetch error:", err);
+    console.error(" History fetch error:", err);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch quiz history",

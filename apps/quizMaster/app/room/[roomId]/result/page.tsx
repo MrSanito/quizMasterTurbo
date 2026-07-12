@@ -14,26 +14,52 @@ export default function RoomResultPage() {
   const [resultData, setResultData] = useState<any>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+
     const fetchResult = async () => {
       try {
         const res = await api.get(`/game/${roomId}/result`);
-        if (res.data.success) {
-          setResultData(res.data.results);
+        if (isMounted && res.data.success) {
+          
+          // Check if processing is complete
+          if (res.data.state === "FINISHED") {
+              console.log(" Game Finished! Results:", res.data);
+              setResultData(res.data.results);
+              setLoading(false);
+          } else {
+              // Poll again if not finished
+              console.log("Game not marked FINISHED yet, retrying...");
+              timeoutId = setTimeout(fetchResult, 2000);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch result", err);
-      } finally {
         setLoading(false);
       }
     };
+    
     fetchResult();
-  }, [roomId]);
 
-  if (loading) return <Loading />;
+    return () => {
+        isMounted = false;
+        clearTimeout(timeoutId);
+    };
+  }, [roomId]);
+  
+  if (loading) return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+          <Loading />
+          <p className="animate-pulse opacity-70">Finalizing scores & analyzing results...</p>
+      </div>
+  );
   if (!resultData) return <div className="p-10 text-center">No results found (or game not finished yet).</div>;
 
   // Find My Result
   const myResult = resultData.find((r: any) => r.user.id === user?.id) || resultData[0]; // Fallback to winner if viewing as guest?
+  console.log(" My Result:", myResult);
+
+  if (!myResult) return <div className="p-10 text-center">Results parsed but user not found in list. Raw Results: {JSON.stringify(resultData)}</div>;
 
   return (
     <div className="min-h-screen bg-base-200 py-10 px-4">
@@ -41,7 +67,7 @@ export default function RoomResultPage() {
         
         {/* Header Data */}
         <div className="text-center space-y-2">
-            <h1 className="text-4xl font-black text-primary">Game Results 🏆</h1>
+            <h1 className="text-4xl font-black text-primary">Game Results </h1>
             <p className="opacity-60">Room: {roomId}</p>
         </div>
 

@@ -18,6 +18,7 @@ import { FaUser, FaAt, FaEnvelope, FaSave } from "react-icons/fa";
 import NotLoginComponent from "@/app/(auth)/components/NotLoginComponent";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import Loading from "@/components/Loading";
+import api from "@/app/lib/api";
 import MaxTryReached from "@/app/(auth)/components/MaxTryReached";
 import { useDebounce } from "@/app/features/hook/useDebouncer";
 import {
@@ -34,7 +35,7 @@ const ProfileEditPage = () => {
   const router = useRouter();
 
 
-  const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft } =
+  const { user, guest, loading, isLogin, isGuest, isMaxTryReached, guestLeft, refreshAuth } =
     useUser();
 
   const viewerId =
@@ -69,7 +70,7 @@ const ProfileEditPage = () => {
 
   const [state, formAction, isPending] = useActionState(editUser, initialState);
 
-  // ✅ Fill form when user loads
+  //  Fill form when user loads
   useEffect(() => {
     if (user) {
       skipFirstUsernameCheck.current = true; // mark this update as system update
@@ -87,10 +88,10 @@ const ProfileEditPage = () => {
   }, [user]);
   const handleUsername = (e) => {
     let { name, value } = e.target;
-    // 1️⃣ convert to lowercase
+    // 1 convert to lowercase
     value = value.toLowerCase();
 
-    // 2️⃣ remove unwanted characters
+    // 2 remove unwanted characters
     value = value.replace(/[^a-z0-9_]/g, "");
 
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -135,17 +136,17 @@ const ProfileEditPage = () => {
     runCheck();
   }, [debouncedUsername]);
 
-  // 1️⃣ Loading (highest priority)
+  // 1 Loading (highest priority)
   if (loading) {
     return <Loading />;
   }
 
-  // 2️⃣ Blocked guest
+  // 2 Blocked guest
   if (isMaxTryReached) {
     return <MaxTryReached />;
   }
 
-  // 3️⃣ Not logged in at all
+  // 3 Not logged in at all
   if (!isLogin && !isGuest) {
     return <NotLoginComponent />;
   }
@@ -159,20 +160,20 @@ const ProfileEditPage = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        bgcolor: "var(--b1)", // 🌍 base-100 (page)
+        bgcolor: "var(--b1)", //  base-100 (page)
         p: 2,
       }}
     >
-      <Card
-        sx={{
-          width: "100%",
-          maxWidth: 620,
-          borderRadius: 4,
-          bgcolor: "var(--b2)", // 🧱 base-200 (card surface)
-          color: "#fff",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-        }}
-      >
+      <Stack spacing={3} sx={{ width: "100%", maxWidth: 620 }}>
+        <Card
+          sx={{
+            width: "100%",
+            borderRadius: 4,
+            bgcolor: "var(--b2)", //  base-200 (card surface)
+            color: "#fff",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        >
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" fontWeight="bold" gutterBottom>
             Edit Profile
@@ -223,23 +224,10 @@ const ProfileEditPage = () => {
             </Grid>
 
             {/* Form Fields */}
-            <Stack
-              spacing={2}
-              sx={{
-                "& .MuiInputBase-input": { color: "#fff" },
-                "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.7)" },
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "rgba(255,255,255,0.3)" },
-                  "&:hover fieldset": { borderColor: "#fff" },
-                  "&.Mui-focused fieldset": { borderColor: "#1976d2" },
-                },
-              }}
-            >
-              {" "}
+            <div className="flex flex-col gap-4">
+              {/* Username */}
               <fieldset className="fieldset">
-                <legend className="fieldset-legend text-xl">Username</legend>
-                <FaUser color="white" size={16} />
-
+                <legend className="fieldset-legend text-lg font-semibold text-white">Username</legend>
                 <input
                   type="text"
                   name="username"
@@ -249,70 +237,71 @@ const ProfileEditPage = () => {
                   onChange={handleUsername}
                 />
                 {state.errors?.username && (
-                  <p className="text-red-500 text-sm">
+                  <p className="text-red-500 text-sm mt-1">
                     {state.errors.username}
                   </p>
                 )}
                 {usernameStatus === "checking" && (
-                  <p className="text-yellow-500 text-sm">
-                    Checking username… ⏳
+                  <p className="text-yellow-500 text-sm mt-1">
+                    Checking username... 
                   </p>
                 )}
                 {usernameStatus === "available" && (
-                  <p className="text-green-500 text-sm">{`${form.username} Username available ✅`}</p>
+                  <p className="text-green-500 text-sm mt-1">{`${form.username} Username available `}</p>
                 )}
                 {usernameStatus === "taken" && (
-                  <p className="text-red-500 text-sm">{`${form.username} Username already taken ❌`}</p>
+                  <p className="text-red-500 text-sm mt-1">{`${form.username} Username already taken `}</p>
                 )}
               </fieldset>
-              <div className="flex  md:flex-row  gap-4 w-full">
-                <div>
 
-                <fieldset className="fieldset flex-1 ">
-                  <legend className="fieldset-legend text-xl">
-                    First Name
-                  </legend>
-                  <input
-                    type="text"
-                    name="firstName"
-                    className="input input-primary w-full"
-                    placeholder="Joe"
-                    value={form.firstName}
-                    onChange={handleChange}
+              {/* First Name & Last Name */}
+              <div className="flex flex-col md:flex-row gap-4 w-full">
+                <div className="flex-1">
+                  <fieldset className="fieldset w-full">
+                    <legend className="fieldset-legend text-lg font-semibold text-white">
+                      First Name
+                    </legend>
+                    <input
+                      type="text"
+                      name="firstName"
+                      className="input input-primary w-full"
+                      placeholder="Joe"
+                      value={form.firstName}
+                      onChange={handleChange}
                     />
-                </fieldset>
-                {state.errors && state.errors.firstName && (
-                  <p className="text-red-500 text-sm">
-                    {state.errors.firstName}
-                  </p>
-                )}
+                  </fieldset>
+                  {state.errors?.firstName && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {state.errors.firstName}
+                    </p>
+                  )}
                 </div>
 
-                <div>
-                  <fieldset className="fieldset  flex-1 ">
-                    <legend className="fieldset-legend text-xl">
+                <div className="flex-1">
+                  <fieldset className="fieldset w-full">
+                    <legend className="fieldset-legend text-lg font-semibold text-white">
                       Last Name
                     </legend>
                     <input
                       type="text"
                       name="lastName"
-                      className="input input-primary w-full "
+                      className="input input-primary w-full"
                       placeholder="Doe"
                       value={form.lastName}
                       onChange={handleChange}
                     />
                   </fieldset>
-                  {state.errors && state.errors.lastName && (
-                    <p className="text-red-500 text-sm">
+                  {state.errors?.lastName && (
+                    <p className="text-red-500 text-sm mt-1">
                       {state.errors.lastName}
                     </p>
                   )}
                 </div>
               </div>
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend text-xl">Email</legend>
-                <FaUser color="white" size={16} />
 
+              {/* Email */}
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend text-lg font-semibold text-white">Email</legend>
                 <input
                   type="text"
                   name="email"
@@ -322,34 +311,39 @@ const ProfileEditPage = () => {
                   onChange={handleChange}
                 />
               </fieldset>
-            </Stack>
+            </div>
+            
             <input type="hidden" name="avatar" value={selectedAvatar} />
             <input type="hidden" name="id" value={form.id} />
 
             {/* Save Button */}
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={
-                isPending ||
-                usernameStatus === "checking" ||
-                usernameStatus === "taken"
-              }
-            >
-              {isPending ? "Saving..." : "Save Changes"}
-            </button>
-            {/* SUCCESS */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                className="btn btn-primary w-full"
+                disabled={
+                  isPending ||
+                  usernameStatus === "checking" ||
+                  usernameStatus === "taken"
+                }
+              >
+                {isPending ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+
+            {/* SUCCESS / ERROR Messages */}
             {state.success && (
-              <p className="text-green-600 text-sm">
-                Changes Saved Successfully 🎉
+              <p className="text-green-500 text-sm text-center mt-2">
+                Changes Saved Successfully 
               </p>
             )}
             {!state.success && state.message && (
-              <p className="text-red-600 text-sm mt-2">{state.message}</p>
+              <p className="text-red-500 text-sm text-center mt-2">{state.message}</p>
             )}
           </form>
         </CardContent>
-      </Card>
+        </Card>
+      </Stack>
     </Box>
   );
 };

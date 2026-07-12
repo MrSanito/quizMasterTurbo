@@ -38,7 +38,7 @@ export default function QuizPlayerHistory({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 🚫 HARD GUARD (THIS MATTERS)
+    //  HARD GUARD (THIS MATTERS)
     if (!viewerId || !viewerType) {
       setLoading(false);
       return;
@@ -54,19 +54,19 @@ export default function QuizPlayerHistory({
           }
         );
 
-        console.log("HISTORY RESPONSE 👉", res);
+        console.log("HISTORY RESPONSE ", res);
 
         const payload = res.data;
 
         if (!payload || !Array.isArray(payload.attempts)) {
-          console.error("BAD SHAPE 👉", payload);
+          console.error("BAD SHAPE ", payload);
           throw new Error("Invalid history response");
         }
 
         const attempts = payload.attempts;
 
 
-        // ✅ Normalize Prisma casing (Quiz → quiz)
+        //  Normalize Prisma casing (Quiz -> quiz)
         const normalized: QuizHistoryItem[] = attempts.map((a: any) => ({
           id: a.id,
           score: a.score,
@@ -82,7 +82,7 @@ export default function QuizPlayerHistory({
 
         setHistory(normalized);
       } catch (err) {
-        console.error("❌ Failed to load quiz history", err);
+        console.error(" Failed to load quiz history", err);
         setError("Failed to load history");
       } finally {
         setLoading(false);
@@ -97,7 +97,7 @@ export default function QuizPlayerHistory({
   if (loading) {
     return (
       <div className="mt-10 text-center text-neutral-400">
-        Loading your quiz history… 🧠⌛
+        Loading your quiz history... 
       </div>
     );
   }
@@ -109,7 +109,7 @@ export default function QuizPlayerHistory({
   if (history.length === 0) {
     return (
       <div className="mt-10 text-center text-neutral-400">
-        You haven’t played any quizzes yet 😴
+        You haven't played any quizzes yet 
       </div>
     );
   }
@@ -119,7 +119,7 @@ export default function QuizPlayerHistory({
   return (
     <div className="max-w-7xl mx-auto mt-12">
       <h2 className="text-xl sm:text-2xl font-bold mb-6">
-        🧾 Your Quiz History
+         Your Quiz History
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -145,7 +145,7 @@ export default function QuizPlayerHistory({
                   </p>
 
                   <p className="text-xs opacity-60 mt-1">
-                    ⏱ {item.timeTaken}s •{" "}
+                     {item.timeTaken}s {" "}
                     {new Date(item.createdAt).toLocaleDateString()}
                   </p>
                 </div>

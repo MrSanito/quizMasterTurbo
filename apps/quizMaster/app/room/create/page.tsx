@@ -65,7 +65,7 @@ const CreatePage = () => {
 
       // setRoomId(res.data.id); // use DB room id, not random one
       setStep("share");
-      toast.success("Room created successfully 🎉");
+      toast.success("Room created successfully ");
     } catch (err) {
       console.error(err);
       setStep("failed");
@@ -75,7 +75,7 @@ const CreatePage = () => {
     // setTimeout(() => {
 
     //   setStep("share");
-    //   toast.success("Room created successfully 🎉");
+    //   toast.success("Room created successfully ");
     // }, 2000);
   };
 
@@ -89,7 +89,7 @@ const CreatePage = () => {
         setCategories(res.data.categories ?? res.data);
         console.log(categories);
       } catch (err) {
-        console.error("❌ Failed to fetch categories", err);
+        console.error(" Failed to fetch categories", err);
       } finally {
       }
     };
@@ -111,7 +111,7 @@ const CreatePage = () => {
         setQuiz(res.data.quizzes);
         console.log(quiz);
       } catch (err) {
-        console.error("❌ Failed to fetch quizzes", err);
+        console.error(" Failed to fetch quizzes", err);
       } finally {
       }
     };
@@ -126,7 +126,7 @@ const CreatePage = () => {
 
     try {
       await navigator.clipboard.writeText(link);
-      toast.success("Invite link copied 🚀");
+      toast.success("Invite link copied ");
     } catch (err) {
       // Fallback for focus / permission issues
       const textarea = document.createElement("textarea");
@@ -139,9 +139,9 @@ const CreatePage = () => {
 
       try {
         document.execCommand("copy");
-        toast.success("Invite link copied 🚀");
+        toast.success("Invite link copied ");
       } catch {
-        toast.error("Failed to copy link 😬");
+        toast.error("Failed to copy link ");
       }
 
       document.body.removeChild(textarea);
@@ -171,7 +171,7 @@ const CreatePage = () => {
             <legend className="fieldset-legend text-xl">Room Name</legend>
             <input
               className="input input-primary w-64"
-              placeholder="Quiz Night 🔥"
+              placeholder="Quiz Night "
               value={roomName}
 disabled            />
           </fieldset>
@@ -221,7 +221,7 @@ disabled            />
 
       {step === "loading" && (
         <div className="flex flex-col items-center gap-4 min-h-[80dvh]">
-          <Loading /> <p className="text-sm opacity-70">Creating your room…</p>
+          <Loading /> <p className="text-sm opacity-70">Creating your room...</p>
         </div>
       )}
 
@@ -229,7 +229,7 @@ disabled            />
 
       {step === "share" && (
         <div className="flex flex-col items-center gap-4">
-          <h3 className="text-lg font-bold">Room Ready 🎉</h3>
+          <h3 className="text-lg font-bold">Room Ready </h3>
 
           <QRCodeCanvas
             value={`${window.location.origin}/room/${roomName}/lobby`}
@@ -246,7 +246,7 @@ disabled            />
           </button>
 
           <a href={`/room/${roomName}/lobby`} className="btn btn-primary w-64">
-            Go to Lobby →
+            Go to Lobby 
           </a>
         </div>
       )}

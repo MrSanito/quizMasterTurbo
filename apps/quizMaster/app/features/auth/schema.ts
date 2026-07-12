@@ -30,7 +30,7 @@ export const registerSchema = z.object({
 /* ---------------- LOGIN ---------------- */
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email or password"), // 👈 security best practice
+  email: z.string().email("Invalid email or password"), //  security best practice
 
   password: z.string().min(8, "Invalid email or password"),
 });

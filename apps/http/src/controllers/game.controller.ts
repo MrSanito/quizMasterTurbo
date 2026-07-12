@@ -119,8 +119,13 @@ export const getGameResult = async (req: Request, res: Response) => {
     }
 
     // Fetch Room Logic
-    const room = await prisma.room.findUnique({
-      where: { id: roomId },
+    const room = await prisma.room.findFirst({
+      where: { 
+        OR: [
+            { id: roomId }, 
+            { roomName: roomId }
+        ]
+      },
       include: {
         players: {
           include: {
@@ -210,6 +215,8 @@ export const getGameResult = async (req: Request, res: Response) => {
   
       return res.status(200).json({
         success: true,
+        roomName: room.roomName,
+        state: room.state,
         results,
       });
   

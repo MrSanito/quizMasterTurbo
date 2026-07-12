@@ -38,7 +38,7 @@ const CountdownScreen = ({ timeLeft }: { timeLeft: number }) => (
       {timeLeft <= 1 ? "Get Ready!" : "Game Starting..."}
     </h2>
     <div className="text-[12rem] font-black text-white drop-shadow-lg leading-none">
-        {timeLeft > 0 ? timeLeft : "🚀"}
+        {timeLeft > 0 ? timeLeft : ""}
     </div>
     <div className="loading loading-ring loading-lg text-primary"></div>
   </div>
@@ -204,7 +204,7 @@ const GamePage = () => {
 
     // Listeners
     socket.on("connect", () => {
-        console.log("🔌 Connected to Game Socket");
+        console.log(" Connected to Game Socket");
         socket.emit("game:join", { 
             roomId, 
             player: { 
@@ -217,9 +217,9 @@ const GamePage = () => {
 
     // SYNC: Restores state on reconnect
     socket.on("game:sync", (data: any) => {
-        console.log("🔄 Sync:", data);
+        console.log(" Sync:", data);
         if (data.leaderboard) {
-            console.log("📊 Sync Leaderboard Data:", data.leaderboard);
+            console.log(" Sync Leaderboard Data:", data.leaderboard);
             setLeaderboard(data.leaderboard);
         }
         setGameState(data.gameState);
@@ -244,16 +244,16 @@ const GamePage = () => {
         }
     });
 
-    // 🕒 COUNTDOWN (Server Driven)
+    //  COUNTDOWN (Server Driven)
     socket.on("game:countdown", (data: { timeLeft: number }) => {
-        console.log("⏳ Countdown:", data.timeLeft);
+        console.log(" Countdown:", data.timeLeft);
          setGameState("COUNTDOWN"); // Ensure we are in countdown state
         setTimeLeft(data.timeLeft);
     });
 
     // START QUESTION
     socket.on("game:questionStart", (data: any) => {
-        console.log("❓ Question Start:", data);
+        console.log(" Question Start:", data);
         setGameState("PLAYING");
         setCurrentQuestion(data.question);
         setQIndex(data.questionIndex);
@@ -283,7 +283,7 @@ const GamePage = () => {
 
     // Live Answer Result (Instant Feedback)
     socket.on("game:answerResult", (data: { isCorrect: boolean, correctOptionText?: string, points: number, newScore: number }) => {
-        console.log("📝 Answer Result:", data);
+        console.log(" Answer Result:", data);
         if (data.isCorrect) {
             toast.success(`Correct! +${data.points}`);
             new Audio("/sounds/correct.mp3").play().catch(e => {}); // Optional sound
@@ -302,7 +302,7 @@ const GamePage = () => {
 
     // END QUESTION (Show Results)
     socket.on("game:questionEnd", (data: any) => {
-        console.log("🛑 Question End:", data);
+        console.log(" Question End:", data);
         setGameState("BREAK");
         setLastCorrectAnswer(data.correctOptionId); // backend sends text
         setLeaderboard(data.leaderboard);
@@ -313,14 +313,14 @@ const GamePage = () => {
 
     // GAME FINISHED
     socket.on("game:finished", (data: any) => {
-        console.log("🏁 Game Finished:", data);
+        console.log(" Game Finished:", data);
         setGameState("FINISHED");
         setLeaderboard(data.results);
         
-        // Redirect to Result Page after 3 seconds
+        // Redirect to Result Page after 5 seconds to allow worker to finish
         setTimeout(() => {
             router.replace(`/room/${roomId}/result`);
-        }, 3000);
+        }, 5000);
     });
 
     // ERRORS
@@ -348,10 +348,10 @@ const GamePage = () => {
   // 2. Redirect on Finish
   useEffect(() => {
     if (gameState === "FINISHED") {
-        console.log("🏁 Game state is FINISHED, redirecting to result page...");
+        console.log(" Game state is FINISHED, redirecting to result page...");
          const timer = setTimeout(() => {
             router.replace(`/room/${roomId}/result`);
-        }, 3000);
+        }, 5000);
         return () => clearTimeout(timer);
     }
   }, [gameState, roomId]);
@@ -381,7 +381,7 @@ const GamePage = () => {
       <div className="navbar bg-base-100 shadow-md px-4 sticky top-0 z-50">
         <div className="flex-1">
             <span className="font-black text-2xl text-primary">
-                QuizMaster Live 🔴
+                QuizMaster Live 
             </span>
         </div>
         <div className="flex-none gap-4">
@@ -408,7 +408,7 @@ const GamePage = () => {
                     startTime={startTime}
                     onAnswer={handleAnswer}
                     isAnswered={!!selectedAnswer}
-                    instantFeedback={instantFeedback} // 🔥 Pass feedback
+                    instantFeedback={instantFeedback} //  Pass feedback
                 />
             )}
 
