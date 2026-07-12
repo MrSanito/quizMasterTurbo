@@ -32,9 +32,8 @@ api.interceptors.response.use(
       
       // If the request was to the refresh or verification endpoint itself, do not retry
       if (
-        originalRequest.url?.includes("/auth2/refresh") || 
-        originalRequest.url?.includes("/auth2/verifyLoginOTP") ||
-        originalRequest.url?.includes("/auth/verify_token")
+        originalRequest.url?.includes("/auth/refresh") || 
+        originalRequest.url?.includes("/auth/verifyLoginOTP")
       ) {
         return Promise.reject(error);
       }
@@ -57,7 +56,7 @@ api.interceptors.response.use(
       try {
         let headers = {};
         try {
-          const refreshUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth2/refresh`;
+          const refreshUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`;
           const dpopProof = await createDpopProof(refreshUrl, "POST");
           headers = { "dpop-proof": dpopProof };
         } catch (dpopErr) {
@@ -66,7 +65,7 @@ api.interceptors.response.use(
 
         // Silent token rotation refresh call
         await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth2/refresh`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true, headers }
         );

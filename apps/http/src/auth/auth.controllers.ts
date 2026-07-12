@@ -598,4 +598,35 @@
     };
     res.clearCookie("accessToken", opts);
     res.clearCookie("refreshToken", opts);
-  } 
+  }
+
+  export const editUser = TryCatch(async (req: Request, res: Response) => {
+    const { id, firstName, lastName, username, email, avatar } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required to update.",
+      });
+    }
+
+    const savedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        firstName,
+        lastName,
+        email,
+        username,
+        avatar,
+      },
+    });
+
+    // Invalidate cached user profile in Redis
+    await redis.del(`user:${id}`);
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: savedUser,
+    });
+  }); 

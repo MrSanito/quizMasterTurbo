@@ -129,7 +129,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       // Reaching this line means either the token was valid, or the
       // interceptor silently refreshed and retried for us — no manual
       // second attempt needed here.
-      const res = await api.post("/auth2/me");
+      const res = await api.post("/auth/me");
       console.log(res)
       if (requestId !== requestIdRef.current) return; // superseded by a newer call
 

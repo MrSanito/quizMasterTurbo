@@ -21,11 +21,7 @@ import Loading from "@/components/Loading";
 import api from "@/app/lib/api";
 import MaxTryReached from "@/app/(auth)/components/MaxTryReached";
 import { useDebounce } from "@/app/features/hook/useDebouncer";
-import {
-  checkUsername,
-  editUser,
-  EditUserFormState,
-} from "@/app/features/auth/actions";
+// Removed actions.ts import
 import Grid from "@mui/material/Grid";
  
 
@@ -62,13 +58,61 @@ const ProfileEditPage = () => {
   const debouncedUsername = useDebounce(form.username, 2000);
   const skipFirstUsernameCheck = React.useRef(true);
 
-  const initialState: EditUserFormState = {
-    success: false,
-    message: "",
-    errors: {},
-  };
+  const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const [state, formAction, isPending] = useActionState(editUser, initialState);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setSuccess(false);
+    setErrorMsg("");
+    setFieldErrors({});
+
+    const errors: Record<string, string> = {};
+    if (!form.username) errors.username = "Username is required";
+    if (!form.firstName) errors.firstName = "First name is required";
+    if (!form.lastName) errors.lastName = "Last name is required";
+    if (!form.email) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = "Invalid email address";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const res = await api.post("/auth/edit", {
+        id: form.id,
+        username: form.username,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        avatar: selectedAvatar,
+      });
+
+      if (res.data?.success) {
+        setSuccess(true);
+        if (refreshAuth) {
+          await refreshAuth();
+        }
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
+      } else {
+        setErrorMsg(res.data?.message || "Failed to update profile");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || "Something went wrong.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   //  Fill form when user loads
   useEffect(() => {
@@ -103,16 +147,7 @@ const ProfileEditPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-    useEffect(() => {
-      if (state.success) {
-        // show message for 1.5s then navigate
-        const timer = setTimeout(() => {
-          router.push("/dashboard");
-        }, 1500);
-
-        return () => clearTimeout(timer);
-      }
-    }, [state.success]);
+    // Handled in handleSubmit
 
   useEffect(() => {
     if (!debouncedUsername) {
@@ -126,11 +161,14 @@ const ProfileEditPage = () => {
 
     const runCheck = async () => {
       setUsernameStatus("checking");
-
-      const res = await checkUsername(debouncedUsername);
-      console.log(res);
-
-      setUsernameStatus(res?.available ? "available" : "taken");
+      try {
+        const res = await api.post("/auth/check_username", {
+          username: debouncedUsername,
+        });
+        setUsernameStatus(res.data?.available ? "available" : "taken");
+      } catch {
+        setUsernameStatus("idle");
+      }
     };
 
     runCheck();
@@ -179,7 +217,7 @@ const ProfileEditPage = () => {
             Edit Profile
           </Typography>
 
-          <form action={formAction} suppressHydrationWarning>
+          <form onSubmit={handleSubmit} suppressHydrationWarning>
             {/* Avatar Preview */}
             <Stack alignItems="center" spacing={1} sx={{ mb: 3 }}>
               <Avatar
@@ -236,9 +274,9 @@ const ProfileEditPage = () => {
                   value={form.username}
                   onChange={handleUsername}
                 />
-                {state.errors?.username && (
+                 {fieldErrors.username && (
                   <p className="text-red-500 text-sm mt-1">
-                    {state.errors.username}
+                    {fieldErrors.username}
                   </p>
                 )}
                 {usernameStatus === "checking" && (
@@ -270,9 +308,9 @@ const ProfileEditPage = () => {
                       onChange={handleChange}
                     />
                   </fieldset>
-                  {state.errors?.firstName && (
+                  {fieldErrors.firstName && (
                     <p className="text-red-500 text-sm mt-1">
-                      {state.errors.firstName}
+                      {fieldErrors.firstName}
                     </p>
                   )}
                 </div>
@@ -291,9 +329,9 @@ const ProfileEditPage = () => {
                       onChange={handleChange}
                     />
                   </fieldset>
-                  {state.errors?.lastName && (
+                  {fieldErrors.lastName && (
                     <p className="text-red-500 text-sm mt-1">
-                      {state.errors.lastName}
+                      {fieldErrors.lastName}
                     </p>
                   )}
                 </div>
@@ -322,23 +360,23 @@ const ProfileEditPage = () => {
                 type="submit"
                 className="btn btn-primary w-full"
                 disabled={
-                  isPending ||
+                  isSaving ||
                   usernameStatus === "checking" ||
                   usernameStatus === "taken"
                 }
               >
-                {isPending ? "Saving..." : "Save Changes"}
+                {isSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>
 
             {/* SUCCESS / ERROR Messages */}
-            {state.success && (
+            {success && (
               <p className="text-green-500 text-sm text-center mt-2">
                 Changes Saved Successfully 
               </p>
             )}
-            {!state.success && state.message && (
-              <p className="text-red-500 text-sm text-center mt-2">{state.message}</p>
+            {errorMsg && (
+              <p className="text-red-500 text-sm text-center mt-2">{errorMsg}</p>
             )}
           </form>
         </CardContent>

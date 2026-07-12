@@ -136,18 +136,17 @@ function OtpPageContent() {
       const { browser, os, deviceType, deviceName } = getBrowserAndOS();
 
       // Formulate verification URL for DPoP verification
-      const verifyUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth2/verifyLoginOTP`;
+      const verifyUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/verifyLoginOTP`;
       const dpopProof = await createDpopProof(verifyUrl, "POST");
 
       // Map deviceType to lowercase to match Zod schema enum ("mobile" | "desktop" | "tablet" | "unknown")
       const mappedDeviceType = deviceType ? (deviceType.toLowerCase() as "mobile" | "desktop" | "tablet" | "unknown") : undefined;
 
       console.log(email, otp , publicKeyJwk, browser , os , deviceType, deviceName)
-      console.log("Submitting OTP verification to auth2...");
+      console.log("Submitting OTP verification to auth...");
 
-      
       const res = await api.post(
-        "/auth2/verifyLoginOTP",
+        "/auth/verifyLoginOTP",
         {
           email,
           otp: otpCode,
@@ -197,8 +196,6 @@ function OtpPageContent() {
     setIsResending(true);
     setError(null);
     try {
-      // Re-trigger auth2 login (assumes password login is needed or backend supports a direct resend mechanism)
-      // Since backend login is structured to send OTP directly, we tell them to request login again or trigger resend.
       setError("To get a new OTP, please go back and enter your password again for security.");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to resend OTP.");
@@ -279,7 +276,7 @@ function OtpPageContent() {
             </button>
           )}
 
-          <Link href="/login2" className="link opacity-60 hover:opacity-100 flex items-center gap-1 text-xs transition">
+          <Link href="/login" className="link opacity-60 hover:opacity-100 flex items-center gap-1 text-xs transition">
             <FiArrowLeft /> Back to Login
           </Link>
         </div>
