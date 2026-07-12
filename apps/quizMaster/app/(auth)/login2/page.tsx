@@ -7,6 +7,7 @@ import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
 import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 import Link from "next/link";
+import { GetDeviceDetails } from "../components/deviceKey";
 
 const Login2Page = () => {
   const router = useRouter();
@@ -21,6 +22,22 @@ const Login2Page = () => {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+
+
+
+  useEffect(() => {
+
+    const fingerprintData = {
+  userAgent: navigator.userAgent,
+  language: navigator.language,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  screenRes: `${screen.width}x${screen.height}`,
+  hardwareConcurrency: navigator.hardwareConcurrency,
+};
+   console.log(GetDeviceDetails())
+   console.log(fingerprintData)
+  }, [ ])
+  
 
   // Redirect if logged in
   useEffect(() => {
@@ -38,6 +55,10 @@ const Login2Page = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const isFormValid =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
+    form.password.length >= 8;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
@@ -54,8 +75,8 @@ const Login2Page = () => {
     }
     if (!form.password) {
       errors.password = "Password is required";
-    } else if (form.password.length < 6) {
-      errors.password = "Password must be at least 6 characters";
+    } else if (form.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -96,7 +117,7 @@ const Login2Page = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-[85vh] justify-center items-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-base-300 flex items-center justify-center relative overflow-hidden px-4">
       {/* Decorative Blur Orbs for Rich Aesthetics */}
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
@@ -178,7 +199,7 @@ const Login2Page = () => {
           <button
             type="submit"
             className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
-            disabled={isPending}
+            disabled={isPending || !isFormValid}
           >
             {isPending ? (
               <span className="loading loading-spinner loading-md"></span>

@@ -87,3 +87,50 @@ export async function getDeviceFingerprint(): Promise<string> {
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   return hashHex;
 }
+
+export function getBrowserAndOS() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return { browser: "Unknown", os: "Unknown", deviceType: "Unknown", deviceName: "Unknown" };
+  }
+  const ua = navigator.userAgent;
+  let browser = "Unknown Browser";
+  let os = "Unknown OS";
+  let deviceType = "Desktop";
+  let deviceName = "Unknown Device";
+
+  // Browser detection
+  if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("SamsungBrowser")) browser = "Samsung Browser";
+  else if (ua.includes("Opera") || ua.includes("OPR")) browser = "Opera";
+  else if (ua.includes("Trident")) browser = "Internet Explorer";
+  else if (ua.includes("Edge") || ua.includes("Edg")) browser = "Edge";
+  else if (ua.includes("Chrome")) browser = "Chrome";
+  else if (ua.includes("Safari")) browser = "Safari";
+
+  // OS detection
+  if (ua.includes("Windows")) os = "Windows";
+  else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
+  else if (ua.includes("Android")) {
+    os = "Android";
+    deviceType = "Mobile";
+  } else if (ua.includes("iPhone") || ua.includes("iPad")) {
+    os = "iOS";
+    deviceType = "Mobile";
+  } else if (ua.includes("Linux")) os = "Linux";
+
+  // Device detection
+  if (/mobile/i.test(ua)) deviceType = "Mobile";
+  else if (/tablet|ipad/i.test(ua)) deviceType = "Tablet";
+
+  // Quick platform-based device name
+  if (ua.includes("iPhone")) deviceName = "iPhone";
+  else if (ua.includes("iPad")) deviceName = "iPad";
+  else if (ua.includes("Windows")) deviceName = "Windows PC";
+  else if (ua.includes("Macintosh")) deviceName = "Macintosh";
+  else if (ua.includes("Android")) {
+    const match = ua.match(/Android\s+([^\s;]+)/);
+    deviceName = match ? `Android Device (${match[1]})` : "Android Device";
+  }
+
+  return { browser, os, deviceType, deviceName };
+}

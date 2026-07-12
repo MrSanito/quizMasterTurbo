@@ -28,6 +28,18 @@ export function generateAccessToken(
   return token;
 }
 
+
+export function verifyAccessToken(
+  token: string,
+): { userId: string; sessionId: string; familyId: string } | null {
+  try {
+    return jwt.verify(token, ACCESS_SECRET) as any;
+  } catch {
+    return null;
+  }
+}
+
+
 export function generateRefreshToken(
   userId: string,
   sessionId: string,
@@ -40,15 +52,7 @@ export function generateRefreshToken(
   );
 }
 
-export function verifyAccessToken(
-  token: string,
-): { userId: string; sessionId: string; familyId: string } | null {
-  try {
-    return jwt.verify(token, ACCESS_SECRET) as any;
-  } catch {
-    return null;
-  }
-}
+ 
 
 export function verifyRefreshToken(
   token: string,
@@ -65,10 +69,16 @@ export function verifyRefreshToken(
 export const rtKey = (userId: string, familyId: string, sessionId: string) =>
   `rt:${userId}:${familyId}:${sessionId}`;
 
+
+// REDIS Family Id to check 
 export const familyKey = (familyId: string) => `family:${familyId}`;
 
+
+// OTP Key while verifying the Regitration 
 export const otpKey = (email: string) => `otp:${email}`;
 
+
+//User Cache to Verify it 
 export const userCacheKey = (userId: string) => `user:${userId}`;
 
 // ─── PoP helpers ─────────────────────────────────────────────────────────────
@@ -89,6 +99,19 @@ export async function computeJwkThumbprint(jwk: {
     x: jwk.x,
     y: jwk.y,
   }); // keys must be sorted — crv < kty < x < y ✓
+  console.log("canonical", canonical)
+
+  /* This return line converts this {
+  "kty":"EC",
+  "crv":"P-256",
+  "x":"...",
+  "y":"..."
+  
+  to a 64 character hexadecimanl string for the convinence so we can reduce the action and 
+  get better flexibility with handling
+
+} */
+
   return crypto.createHash("sha256").update(canonical).digest("hex");
 }
 
@@ -161,19 +184,4 @@ export async function verifyDpopProof(opts: {
     return false;
   }
 }
-
-// ─── Device fingerprint ───────────────────────────────────────────────────────
-
-/** Cheap server-side fingerprint from request headers — layered with client one */
-export function serverFingerprint(req: {
-  ip?: string;
-  headers: Record<string, string | string[] | undefined>;
-}): string {
-  const raw = [
-    req.ip ?? "",
-    req.headers["accept-language"] ?? "",
-    req.headers["accept-encoding"] ?? "",
-    req.headers["user-agent"] ?? "",
-  ].join("|");
-  return crypto.createHash("sha256").update(raw).digest("hex");
-}
+

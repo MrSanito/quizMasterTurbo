@@ -82,6 +82,14 @@ export default function Register2Page() {
     setForm((prev) => ({ ...prev, username: value }));
   };
 
+  const isFormValid =
+    form.firstName.trim() !== "" &&
+    form.lastName.trim() !== "" &&
+    form.username.trim() !== "" &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
+    form.password.length >= 8 &&
+    usernameStatus === "available";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
@@ -105,8 +113,8 @@ export default function Register2Page() {
     }
     if (!form.password) {
       errors.password = "Password is required";
-    } else if (form.password.length < 6) {
-      errors.password = "Password must be at least 6 characters";
+    } else if (form.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
     }
 
     if (usernameStatus === "taken") {
@@ -159,25 +167,25 @@ export default function Register2Page() {
   }
 
   return (
-    <div className="flex flex-col min-h-[90vh] justify-center items-center px-4 py-8 relative overflow-hidden">
-      {/* Decorative Blur Orbs */}
+    <div className="min-h-screen bg-base-300 flex items-center justify-center relative overflow-hidden px-4 py-8">
+      {/* Decorative Blur Orbs for Rich Aesthetics */}
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
 
       <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
-          <FiUser className="text-3xl text-white animate-bounce" />
+          <FiUser className="text-3xl text-white" />
         </div>
 
         <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary pb-2">
           Create Account
         </h3>
-        <p className="text-sm opacity-60 mb-8 text-center">
-          Register to get started with QuizMaster Auth2
+        <p className="text-sm opacity-60 mb-6 text-center">
+          Sign up to get started with QuizMaster Auth2
         </p>
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
-          {/* First & Last Name */}
+          {/* Name fields */}
           <div className="flex gap-4">
             <div className="form-control flex-1">
               <label className="label py-1">
@@ -189,7 +197,7 @@ export default function Register2Page() {
                 className={`input input-bordered w-full rounded-xl focus:input-primary ${
                   fieldErrors.firstName ? "input-error" : ""
                 }`}
-                placeholder="Joe"
+                placeholder="John"
                 value={form.firstName}
                 onChange={handleChange}
                 disabled={isPending}
@@ -316,7 +324,7 @@ export default function Register2Page() {
           <button
             type="submit"
             className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
-            disabled={isPending}
+            disabled={isPending || !isFormValid}
           >
             {isPending ? (
               <span className="loading loading-spinner loading-md"></span>

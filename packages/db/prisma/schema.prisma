@@ -234,8 +234,7 @@ model Session {
   country            String?
   city               String?
 
-  // Fingerprint & PoP
-  deviceFingerprint  String?  // SHA-256 hash of browser signals
+  // PoP
   publicKeyThumbprint String? // SHA-256 of device public key JWK (for PoP)
 
   @@index([userId])

@@ -24,6 +24,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       userId: string;
       sessionId: string;
     };
+    console.log(decoded)
     req.user = decoded;
     next();
   } catch {

@@ -1,15 +1,23 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import { FiKey, FiArrowLeft, FiRefreshCw, FiCheckCircle } from "react-icons/fi";
 import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 import Link from "next/link";
-import { getOrCreateDeviceKeyPair, createDpopProof, getDeviceFingerprint } from "@/app/lib/deviceKey";
+import { getOrCreateDeviceKeyPair, createDpopProof, getBrowserAndOS } from "@/app/lib/deviceKey";
 
 export default function OtpPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <OtpPageContent />
+    </Suspense>
+  );
+}
+
+function OtpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
@@ -124,21 +132,30 @@ export default function OtpPage() {
       console.log("Generating device keypair, DPoP signatures and fingerprint...");
       // Generate or retrieve the device key pair passively
       const keypairResult = await getOrCreateDeviceKeyPair();
-      const publicKeyJwk = keypairResult?.publicKeyJwk || null;
-      const deviceFingerprint = await getDeviceFingerprint();
+      const publicKeyJwk = keypairResult?.publicKeyJwk || undefined;
+      const { browser, os, deviceType, deviceName } = getBrowserAndOS();
 
       // Formulate verification URL for DPoP verification
       const verifyUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth2/verifyLoginOTP`;
       const dpopProof = await createDpopProof(verifyUrl, "POST");
 
+      // Map deviceType to lowercase to match Zod schema enum ("mobile" | "desktop" | "tablet" | "unknown")
+      const mappedDeviceType = deviceType ? (deviceType.toLowerCase() as "mobile" | "desktop" | "tablet" | "unknown") : undefined;
+
+      console.log(email, otp , publicKeyJwk, browser , os , deviceType, deviceName)
       console.log("Submitting OTP verification to auth2...");
+
+      
       const res = await api.post(
         "/auth2/verifyLoginOTP",
         {
           email,
           otp: otpCode,
-          deviceFingerprint,
           publicKeyJwk,
+          browser: browser || undefined,
+          os: os || undefined,
+          deviceType: mappedDeviceType,
+          deviceName: deviceName || undefined,
         },
         {
           headers: {

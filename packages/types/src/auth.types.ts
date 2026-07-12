@@ -25,8 +25,6 @@ export const DeviceContextSchema = z.object({
   os: z.string().optional(),
   deviceType: z.enum(["mobile", "desktop", "tablet", "unknown"]).optional(),
   deviceName: z.string().optional(),
-  // SHA-256 of { userAgent, language, timezone, screenRes, hardwareConcurrency }
-  deviceFingerprint: z.string().length(64).optional(),
   // Public JWK the client generated (P-256). Server stores thumbprint.
   publicKeyJwk: z
     .object({

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "@repo/db"; //  FIXED import (package entry)
 import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import redis from "@repo/redis";
 
 /* ================= TYPES ================= */
 
@@ -292,6 +293,9 @@ export const editUser = async (req: Request, res: Response) => {
         avatar,
       },
     });
+
+    // Invalidate cached user profile in Redis
+    await redis.del(`user:${id}`);
 
     res.status(200).json({
       success: true,
