@@ -12,6 +12,8 @@ export function setupSocket(server: http.Server) {
         "https://admin.socket.io",
         "http://localhost:3000",
         "https://quiz-master-turbo-quiz-master.vercel.app",
+        "https://quizmaster.zynito.in",
+        "http://quizmaster.zynito.in",
       ],
       methods: ["GET", "POST"], //  required for handshake
       credentials: true,

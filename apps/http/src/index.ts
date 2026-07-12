@@ -26,6 +26,8 @@ app.use(
       "http://localhost:3000",
       "https://quiz-master-turbo-quiz-master.vercel.app",
       "https://quiz-master-turbo-quiz-master.vercel.app/",
+      "https://quizmaster.zynito.in",
+      "http://quizmaster.zynito.in",
     ],
     credentials: true,
   }),
