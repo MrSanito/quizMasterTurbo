@@ -1,5 +1,5 @@
   import { TryCatch } from "../middleware/tryCatch";
-  import { LoginSchema, RegisterSchema, ValidateLoginSchema, ValidateRegisterSchema } from "packages/types/src";
+  import { LoginSchema, RegisterSchema, ValidateLoginSchema, ValidateRegisterSchema } from "@repo/types";
   import bcrypt from "bcrypt"
   import redis from "@repo/redis";
   import { sendMail } from "../configs/sendEmail";
