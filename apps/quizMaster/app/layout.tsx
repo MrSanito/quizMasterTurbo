@@ -25,10 +25,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body
         className={`
           antialiased bg-base-100 text-white min-h-screen`}
+        suppressHydrationWarning
       >
         <UserProvider>
           <Navbar />

@@ -20,7 +20,13 @@ export default function OtpPage() {
 function OtpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") || "";
+  const [email, setEmail] = useState<string>("");
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("email") || searchParams.get("email") || "";
+    setEmail(storedEmail);
+  }, [searchParams]);
+
   const { loading, isLogin, refreshAuth } = useUser();
 
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));

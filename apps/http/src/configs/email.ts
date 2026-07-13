@@ -231,3 +231,59 @@ export const getVerifyEmailHtml = ({ email, token }: any) => {
 </body>
 </html>`;
 };
+
+export const getForgotPasswordHtml = ({ email, token }: any) => {
+  const appName = process.env.APP_NAME || "QuizMaster";
+  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  // Reset password path matches /reset-password/[token]
+  const resetUrl = `${baseUrl.replace(/\/+$/, "")}/reset-password/${encodeURIComponent(token)}`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="x-apple-disable-message-reformatting"/>
+<title>Reset your ${appName} password</title>
+<style>${BASE_STYLES}</style>
+</head>
+<body>
+<table role="presentation" class="wrapper" width="100%" border="0" cellspacing="0" cellpadding="0">
+<tr><td align="center">
+  <table role="presentation" class="container" border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="card-body">
+
+    <div class="accent-bar"></div>
+    <p class="brand">${appName}</p>
+    <h1 class="title">Reset your password</h1>
+    <p class="body-text">
+      We received a request to reset the password for your QuizMaster account
+      (<span style="color:#ffffff;font-weight:600">${email}</span>).
+      Click the button below to choose a new password.
+    </p>
+
+    <!-- CTA -->
+    <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:32px">
+    <tr><td>
+      <a class="btn" href="${resetUrl}" target="_blank" rel="noopener">
+        Reset Password &rarr;
+      </a>
+    </td></tr>
+    </table>
+
+    <p class="muted" style="margin-bottom:6px">Or copy and paste this link into your browser:</p>
+    <a class="link" href="${resetUrl}" target="_blank" rel="noopener">${resetUrl}</a>
+
+    <div class="divider"></div>
+    <p class="muted" style="margin-bottom:20px">
+      This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.
+    </p>
+    <p class="footer">© ${new Date().getFullYear()} ${appName}. All rights reserved.</p>
+
+  </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`;
+};

@@ -128,7 +128,7 @@ export default function RegisterPage() {
     }
 
     try {
-      console.log("Submitting register to auth2...");
+      console.log("Submitting register to auth...");
       const res = await api.post("/auth/register", {
         firstName: form.firstName,
         lastName: form.lastName,
@@ -137,7 +137,7 @@ export default function RegisterPage() {
         password: form.password,
       });
 
-      console.log("Register2 Response:", res.data);
+      console.log("Register Response:", res.data);
 
       if (res.data?.success) {
         setSuccess(true);

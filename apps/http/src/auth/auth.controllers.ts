@@ -4,7 +4,7 @@
   import redis from "@repo/redis";
   import { sendMail } from "../configs/sendEmail";
   import crypto from "crypto";
-  import { getOtpHtml, getVerifyEmailHtml } from "../configs/email";
+  import { getForgotPasswordHtml, getOtpHtml, getVerifyEmailHtml } from "../configs/email";
 
 
   import { Request, Response } from "express"
@@ -390,7 +390,7 @@
             proofJwt: dpopProof,
             publicKeyJwk: JSON.parse(storedJwk),
             expectedMethod: "POST",
-            expectedUrl: `${BASE_URL}/api/v1/auth2/refresh`,
+            expectedUrl: `${BASE_URL}/api/v1/auth/refresh`,
             jtiCache: {
               has: async (jti) => {
                 const exists = await redis.exists(`dpop-jti:${jti}`);
@@ -629,4 +629,23 @@
       message: "User updated successfully",
       data: savedUser,
     });
-  }); 
+  });
+
+  export const forgotPassword = TryCatch(async (req: Request, res: Response) => {
+
+    const {email} = req.body;
+
+    const randomId=  crypto.randomUUID()
+
+    sendResendEmail({to:email , subject:"Forgot password" , html:getForgotPasswordHtml({token:randomId , email})})
+
+    await redis.set(`verifyKey:${randomId}`, email, "EX", 3600, "NX");
+
+    return res.status(200).json({
+      success: true,
+      message: "Reset password email sent successfully"
+    });
+
+  });
+
+  

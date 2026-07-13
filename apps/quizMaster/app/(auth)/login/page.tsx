@@ -91,9 +91,10 @@ const LoginPage = () => {
       console.log("Login Response:", res.data);
 
       if (res.data?.success) {
+        localStorage.setItem("email",form.email)
         setSuccess(true);
         // Redirect to OTP verification page
-        router.push(`/login/otp?email=${encodeURIComponent(form.email)}`);
+        router.push(`/login/otp`);
       } else {
         setError(res.data?.message || "Login failed");
       }

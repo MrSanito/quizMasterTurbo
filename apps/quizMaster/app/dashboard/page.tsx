@@ -56,7 +56,7 @@ const Dashboard = () => {
   const fetchSessions = async () => {
     try {
       setSessionsLoading(true);
-      const res = await api.get("/auth2/sessions");
+      const res = await api.get("/auth/sessions");
       if (res.data?.success) {
         setSessions(res.data.sessions || []);
       } else {
@@ -78,7 +78,7 @@ const Dashboard = () => {
 
   const handleRevokeSession = async (sessionId: string) => {
     try {
-      const res = await api.post(`/auth2/revoke/${sessionId}`);
+      const res = await api.post(`/auth/revoke/${sessionId}`);
       if (res.data?.success) {
         fetchSessions();
       } else {
@@ -99,7 +99,7 @@ const Dashboard = () => {
       return;
     }
     try {
-      const res = await api.post("/auth2/logoutall");
+      const res = await api.post("/auth/logoutall");
       if (res.data?.success) {
         if (refreshAuth) {
           await refreshAuth();
