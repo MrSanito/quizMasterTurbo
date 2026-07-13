@@ -11,7 +11,7 @@ export function gameEvents(io: any, socket: any) {
   // 1. JOIN GAME (Reconnect or New)
   socket.on("game:join", async ({ roomId, player }: JoinRoomPayload) => {
     socket.join(roomId);
-    
+          
     // Store user info on socket for later use
     socket.data.roomId = roomId;
     socket.data.playerId = player.id;

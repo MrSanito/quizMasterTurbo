@@ -21,10 +21,12 @@ function OtpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState<string>("");
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("email") || searchParams.get("email") || "";
     setEmail(storedEmail);
+    setIsLoaded(true);
   }, [searchParams]);
 
   const { loading, isLogin, refreshAuth } = useUser();
@@ -212,7 +214,7 @@ function OtpPageContent() {
 
   if (isLogin) return null;
 
-  if (loading) {
+  if (loading || !isLoaded) {
     return <Loading />;
   }
 
@@ -222,84 +224,102 @@ function OtpPageContent() {
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
 
-      <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
-          <FiKey className="text-3xl text-white animate-bounce" />
-        </div>
-
-        <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary pb-2">
-          Verify OTP
-        </h3>
-        <p className="text-sm opacity-60 mb-8 text-center px-2">
-          We've sent a 6-digit verification code to <span className="font-semibold text-primary">{email || "your email"}</span>
-        </p>
-
-        <form onSubmit={handleVerify} className="w-full space-y-6">
-          {/* 6 Digit Inputs */}
-          <div className="flex justify-between gap-2 max-w-sm mx-auto" onPaste={handlePaste}>
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={inputRefs[index]}
-                type="text"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleInputChange(e.target.value, index)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                disabled={isPending}
-                className="w-12 h-14 text-center text-2xl font-bold bg-base-300 border-2 border-base-300 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
-              />
-            ))}
+      {!email ? (
+        <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-warning to-error flex items-center justify-center shadow-lg shadow-warning/20 mb-6">
+            <FiArrowLeft className="text-3xl text-white animate-pulse" />
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
-            disabled={isPending || otp.some((digit) => digit === "")}
-          >
-            {isPending ? (
-              <span className="loading loading-spinner loading-md"></span>
-            ) : (
-              "Verify & Proceed"
-            )}
-          </button>
-        </form>
-
-        {/* Resend Section */}
-        <div className="flex items-center justify-between w-full mt-6 text-sm">
-          {resendTimer > 0 ? (
-            <span className="opacity-60 flex items-center gap-1.5">
-              <FiRefreshCw className="animate-spin text-xs" /> Resend OTP in {resendTimer}s
-            </span>
-          ) : (
-            <button
-              onClick={handleResend}
-              disabled={isResending}
-              className="link link-primary font-semibold flex items-center gap-1 hover:opacity-80 transition"
-            >
-              <FiRefreshCw /> Resend OTP
-            </button>
-          )}
-
-          <Link href="/login" className="link opacity-60 hover:opacity-100 flex items-center gap-1 text-xs transition">
-            <FiArrowLeft /> Back to Login
+          <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-warning to-error pb-2">
+            No Email Found
+          </h3>
+          <p className="text-sm opacity-60 mb-8 text-center px-2">
+            Please return to the login page to verify your credentials.
+          </p>
+          <Link href="/login" className="btn btn-primary w-full rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center">
+            Back to Login
           </Link>
         </div>
+      ) : (
+        <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
+            <FiKey className="text-3xl text-white animate-bounce" />
+          </div>
 
-        {/* Status Alerts */}
-        {success && (
-          <div className="alert alert-success rounded-xl mt-6 py-2 shadow-sm text-sm flex items-center gap-2">
-            <FiCheckCircle className="text-lg animate-bounce" />
-            <span>Success! Logging you in...</span>
+          <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary pb-2">
+            Verify OTP
+          </h3>
+          <p className="text-sm opacity-60 mb-8 text-center px-2">
+            We've sent a 6-digit verification code to <span className="font-semibold text-primary">{email}</span>
+          </p>
+
+          <form onSubmit={handleVerify} className="w-full space-y-6">
+            {/* 6 Digit Inputs */}
+            <div className="flex justify-between gap-2 max-w-sm mx-auto" onPaste={handlePaste}>
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={inputRefs[index]}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleInputChange(e.target.value, index)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  disabled={isPending}
+                  className="w-12 h-14 text-center text-2xl font-bold bg-base-300 border-2 border-base-300 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
+                />
+              ))}
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
+              disabled={isPending || otp.some((digit) => digit === "")}
+            >
+              {isPending ? (
+                <span className="loading loading-spinner loading-md"></span>
+              ) : (
+                "Verify & Proceed"
+              )}
+            </button>
+          </form>
+
+          {/* Resend Section */}
+          <div className="flex items-center justify-between w-full mt-6 text-sm">
+            {resendTimer > 0 ? (
+              <span className="opacity-60 flex items-center gap-1.5">
+                <FiRefreshCw className="animate-spin text-xs" /> Resend OTP in {resendTimer}s
+              </span>
+            ) : (
+              <button
+                onClick={handleResend}
+                disabled={isResending}
+                className="link link-primary font-semibold flex items-center gap-1 hover:opacity-80 transition"
+              >
+                <FiRefreshCw /> Resend OTP
+              </button>
+            )}
+
+            <Link href="/login" className="link opacity-60 hover:opacity-100 flex items-center gap-1 text-xs transition">
+              <FiArrowLeft /> Back to Login
+            </Link>
           </div>
-        )}
-        {error && (
-          <div className="alert alert-error rounded-xl mt-6 py-2 shadow-sm text-sm">
-            <span>{error}</span>
-          </div>
-        )}
-      </div>
+
+          {/* Status Alerts */}
+          {success && (
+            <div className="alert alert-success rounded-xl mt-6 py-2 shadow-sm text-sm flex items-center gap-2">
+              <FiCheckCircle className="text-lg animate-bounce" />
+              <span>Success! Logging you in...</span>
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-error rounded-xl mt-6 py-2 shadow-sm text-sm">
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

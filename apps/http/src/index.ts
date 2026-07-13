@@ -13,7 +13,7 @@ console.log(" PID:", process.pid);
 const app = express();
 app.use(express.json()); //  too late
 app.use(cookieparser());
-
+app.set("trust proxy", true);
 
 app.use((req, res, next) => {
   console.log(` Incoming Request: ${req.method} ${req.url}`);
@@ -43,6 +43,20 @@ app.get("/", async (req, res) => {
   res.json({
     success: true,
     message: "working fine on path /health",
+  });
+});
+app.get("/test", (req, res) => {
+  console.log({
+    ip: req.ip,
+    remoteAddress: req.socket.remoteAddress,
+    xForwardedFor: req.headers["x-forwarded-for"],
+    host: req.headers.host,
+  });
+
+  res.json({
+    ip: req.ip,
+    remoteAddress: req.socket.remoteAddress,
+    xForwardedFor: req.headers["x-forwarded-for"],
   });
 });
 
