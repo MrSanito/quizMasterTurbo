@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
 import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 import Link from "next/link";
@@ -107,6 +108,10 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    console.log("Google login button clicked");
+  };
+
   if (isLogin) return null;
 
   if (loading) {
@@ -114,20 +119,20 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-300 flex items-center justify-center relative overflow-hidden px-4">
+    <div className="min-h-screen bg-base-100 flex items-center justify-center relative overflow-hidden px-4">
       {/* Decorative Blur Orbs for Rich Aesthetics */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-primary/15 rounded-full blur-3xl -z-10 animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/15 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
 
-      <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
-          <FiLock className="text-3xl text-white animate-bounce" />
+      <div className="w-full max-w-md bg-base-200/35 backdrop-blur-xl border border-base-300/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 shadow-sm shadow-primary/5">
+          <FiLock className="text-2xl text-primary" />
         </div>
 
-        <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary pb-2">
-          Welcome Back
+        <h3 className="text-2xl font-bold text-base-content tracking-tight mb-1 text-center">
+          Welcome back
         </h3>
-        <p className="text-sm opacity-60 mb-8 text-center">
+        <p className="text-sm text-base-content/60 mb-8 text-center">
           Log in with your credentials to access QuizMaster
         </p>
 
@@ -142,7 +147,7 @@ const LoginPage = () => {
             <input
               type="text"
               name="email"
-              className={`input input-bordered w-full rounded-xl focus:input-primary ${
+              className={`input input-bordered w-full rounded-xl focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
                 fieldErrors.email ? "input-error" : ""
               }`}
               placeholder="name@example.com"
@@ -166,7 +171,7 @@ const LoginPage = () => {
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                className={`input input-bordered w-full rounded-xl pr-12 focus:input-primary ${
+                className={`input input-bordered w-full rounded-xl pr-12 focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
                   fieldErrors.password ? "input-error" : ""
                 }`}
                 placeholder="••••••••"
@@ -203,6 +208,18 @@ const LoginPage = () => {
             ) : (
               "Sign In"
             )}
+          </button>
+
+          <div className="divider opacity-20 my-4 text-xs">OR</div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="btn btn-outline w-full rounded-xl flex items-center justify-center gap-2 border-base-300/30 bg-base-100/30 hover:bg-base-100/60 hover:border-primary/50 transition-all duration-300"
+            disabled={isPending}
+          >
+            <FcGoogle className="text-xl" />
+            Continue with Google
           </button>
         </form>
 

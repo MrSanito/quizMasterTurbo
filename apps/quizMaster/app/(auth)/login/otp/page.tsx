@@ -219,21 +219,21 @@ function OtpPageContent() {
   }
 
   return (
-    <div className="flex flex-col min-h-[85vh] justify-center items-center px-4 relative overflow-hidden">
+    <div className="flex flex-col min-h-[85vh] justify-center items-center px-4 relative overflow-hidden bg-base-100">
       {/* Decorative Blur Orbs for Rich Aesthetics */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-primary/15 rounded-full blur-3xl -z-10 animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/15 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
 
       {!email ? (
-        <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-warning to-error flex items-center justify-center shadow-lg shadow-warning/20 mb-6">
-            <FiArrowLeft className="text-3xl text-white animate-pulse" />
+        <div className="w-full max-w-md bg-base-200/35 backdrop-blur-xl border border-base-300/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+          <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/20 flex items-center justify-center mb-4 shadow-sm shadow-warning/5">
+            <FiArrowLeft className="text-2xl text-warning" />
           </div>
 
-          <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-warning to-error pb-2">
+          <h3 className="text-2xl font-bold text-base-content tracking-tight mb-1 text-center">
             No Email Found
           </h3>
-          <p className="text-sm opacity-60 mb-8 text-center px-2">
+          <p className="text-sm text-base-content/60 mb-8 text-center px-2">
             Please return to the login page to verify your credentials.
           </p>
           <Link href="/login" className="btn btn-primary w-full rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center">
@@ -241,15 +241,15 @@ function OtpPageContent() {
           </Link>
         </div>
       ) : (
-        <div className="w-full max-w-md bg-base-200/80 backdrop-blur-md border border-base-300 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20 mb-6">
-            <FiKey className="text-3xl text-white animate-bounce" />
+        <div className="w-full max-w-md bg-base-200/35 backdrop-blur-xl border border-base-300/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 shadow-sm shadow-primary/5">
+            <FiKey className="text-2xl text-primary" />
           </div>
 
-          <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary pb-2">
+          <h3 className="text-2xl font-bold text-base-content tracking-tight mb-1 text-center">
             Verify OTP
           </h3>
-          <p className="text-sm opacity-60 mb-8 text-center px-2">
+          <p className="text-sm text-base-content/60 mb-8 text-center px-2">
             We've sent a 6-digit verification code to <span className="font-semibold text-primary">{email}</span>
           </p>
 
@@ -266,7 +266,7 @@ function OtpPageContent() {
                   onChange={(e) => handleInputChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   disabled={isPending}
-                  className="w-12 h-14 text-center text-2xl font-bold bg-base-300 border-2 border-base-300 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
+                  className="w-12 h-14 text-center text-2xl font-bold bg-base-100/50 border border-base-300/30 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
                 />
               ))}
             </div>
