@@ -266,7 +266,7 @@ function OtpPageContent() {
                   onChange={(e) => handleInputChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   disabled={isPending}
-                  className="w-12 h-14 text-center text-2xl font-bold bg-base-100/50 border border-base-300/30 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
+                  className="w-12 h-14 text-center text-2xl font-bold bg-base-100/80 border-2 border-base-300 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
                 />
               ))}
             </div>
