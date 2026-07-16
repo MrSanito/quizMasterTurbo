@@ -6,6 +6,12 @@ import express from "express";
 import router from "./routes/index.js";
 import cors from "cors";
 import cookieparser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+import path from "path";
+
+// Load OpenAPI spec
+const swaggerDocument = YAML.load(path.join(process.cwd(), "openapi.yaml"));
 
 // This points to the .env at the root of quizmasterturbo
 console.log(" PID:", process.pid);
@@ -36,6 +42,9 @@ app.use(
 
 // all routes go through here
 app.use("/api/v1", router);
+
+// swagger ui docs
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const PORT = process.env.PORT || 3001;
 

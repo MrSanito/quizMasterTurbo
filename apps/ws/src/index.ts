@@ -7,10 +7,12 @@
   const app = express(); //  attach express
   const server = http.createServer(app); // use SAME server
 
-  setupSocket(server).catch((err) => {
-  console.error("Failed to set up socket server:", err);
-  process.exit(1);
-});
+  try {
+    setupSocket(server);
+  } catch (err) {
+    console.error("Failed to set up socket server:", err);
+    process.exit(1);
+  }
 
   const PORT = process.env.PORT || 3002; // Render provides PORT
 
