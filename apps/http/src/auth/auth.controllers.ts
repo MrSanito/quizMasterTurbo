@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
   import { TryCatch } from "../middleware/tryCatch";
   import { LoginSchema, RegisterSchema, ValidateLoginSchema, ValidateRegisterSchema } from "@repo/types";
   import bcrypt from "bcrypt"
@@ -21,11 +22,11 @@
     const parsed = RegisterSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      console.log(parsed);
+      logger.info(parsed);
       return res.status(409).json(parsed.error);
     }
 
-    console.log("successfully pasrsed");
+    logger.info("successfully pasrsed");
 
     const {email,firstName , lastName , password, username} = parsed.data;
 
@@ -79,14 +80,14 @@
       "NX",
     );
 
-    console.log("token is saved", verifyToken);
+    logger.info({ verifyToken }, "token is saved");
 
     const html = getVerifyEmailHtml({ token: verifyToken.toString(), email });
 
   //   const sendEmail = await sendMail(email, "Verify your email", html);
 
   const sendEmail = await sendResendEmail({to:email, subject: "verify" ,html})
-    console.log(sendEmail);
+    logger.info(sendEmail);
 
     if (!sendEmail) {
       return res.status(400).json({
@@ -105,7 +106,7 @@
   })  
 
   export const verify = TryCatch( async (req:Request , res:Response) => {
-      console.log(req.params)
+      logger.info(req.params)
       const unvalidated = {
     
         token: String(req.params.token ?? "")
@@ -115,7 +116,7 @@
 
       const parsed = ValidateRegisterSchema.safeParse(unvalidated);
 
-      console.log(parsed);
+      logger.info(parsed);
       if (!parsed.success) return res.status(400).json(parsed.error);
 
       const stored = await redis.get(`verifyKey:${parsed.data.token}`);
@@ -142,7 +143,7 @@
         },
       });
 
-      console.log("if user exists", alreadyExist);
+      logger.info({ alreadyExist }, "if user exists");
       if (alreadyExist) {
         return res.status(409).json({
           success: "false",
@@ -166,7 +167,7 @@
 
     const parsed = LoginSchema.safeParse(req.body);
   
-    console.log(parsed.data)
+    logger.info(parsed.data)
     if (!parsed.success) return res.status(400).json(parsed.error);
 
     const { email, password } = parsed.data;
@@ -244,7 +245,7 @@
       // ── PoP: compute thumbprint from client's public key ────────────────────
       let publicKeyThumbprint: string | undefined;
       if (publicKeyJwk) {
-        console.log("public key jwk", publicKeyJwk)
+        logger.info({ publicKeyJwk }, "public key jwk")
         publicKeyThumbprint = await computeJwkThumbprint(publicKeyJwk);
       }
 
@@ -326,7 +327,7 @@
 
   export const refreshTokenController = TryCatch(async (req: Request, res: Response) => {
     const { refreshToken } = req.cookies;
-    console.log("refresh token : ",refreshToken)
+    logger.info({ refreshToken }, "refresh token : ")
     if (!refreshToken) {
       return res.status(401).json({ success: false, message: "No refresh token" });
     }
@@ -383,8 +384,8 @@
         // We need the full public JWK to verify. 
         // Store it in Redis at login for fast access here (don't want a DB round trip on every refresh).
         const storedJwk = await redis.get(`pubkey:${sessionId}`);
-        console.log("storedJwk", storedJwk)
-        console.log("dpopProof", dpopProof)
+        logger.info({ storedJwk }, "storedJwk")
+        logger.info({ dpopProof }, "dpopProof")
         if (storedJwk) {
           const popValid = await verifyDpopProof({
             proofJwt: dpopProof,

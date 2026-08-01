@@ -50,8 +50,10 @@ const FriendRequest = () => {
   const [outgoing, setOutgoing] = useState<RequestItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUserItem[]>([]);
+  const [discoverUsers, setDiscoverUsers] = useState<SearchUserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Fetch friends and pending requests on load
@@ -72,8 +74,28 @@ const FriendRequest = () => {
     }
   };
 
+  const fetchDiscoverUsers = async () => {
+    try {
+      setDiscoverLoading(true);
+      const res = await api.get("/friends/discover");
+      if (Array.isArray(res.data)) {
+        const formatted: SearchUserItem[] = res.data.map((u: any) => ({
+          ...u,
+          friendshipStatus: "NONE",
+          friendshipId: null,
+        }));
+        setDiscoverUsers(formatted);
+      }
+    } catch (err) {
+      console.error("Error fetching discover users:", err);
+    } finally {
+      setDiscoverLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchDiscoverUsers();
   }, []);
 
   // Debounced/Triggered User Search
@@ -115,6 +137,12 @@ const FriendRequest = () => {
             : u
           )
         );
+        setDiscoverUsers(prev => 
+          prev.map(u => u.id === userId 
+            ? { ...u, friendshipStatus: "PENDING_OUTGOING", friendshipId: res.data.friendRequest.id } 
+            : u
+          )
+        );
         fetchData(); // Sync tabs background
       }
     } catch (err: any) {
@@ -150,6 +178,12 @@ const FriendRequest = () => {
               : u
             )
           );
+          setDiscoverUsers(prev => 
+            prev.map(u => u.id === acceptedReq.user.id 
+              ? { ...u, friendshipStatus: "ACCEPTED", friendshipId: res.data.friendship.id } 
+              : u
+            )
+          );
         }
       }
     } catch (err: any) {
@@ -174,6 +208,12 @@ const FriendRequest = () => {
 
         // Reset search results locally
         setSearchResults(prev => 
+          prev.map(u => u.friendshipId === requestId 
+            ? { ...u, friendshipStatus: "NONE", friendshipId: null } 
+            : u
+          )
+        );
+        setDiscoverUsers(prev => 
           prev.map(u => u.friendshipId === requestId 
             ? { ...u, friendshipStatus: "NONE", friendshipId: null } 
             : u
@@ -611,8 +651,76 @@ const FriendRequest = () => {
                     </div>
                   )
                 ) : (
-                  <div className="text-center py-10 border border-dashed border-gray-800 rounded-xl bg-gray-900/10 text-gray-500 text-sm">
-                    Enter a username or email address to search for players.
+                  <div className="space-y-4">
+                    <h4 className="text-gray-400 font-extrabold text-sm tracking-wide uppercase pl-1">
+                      Discover Players
+                    </h4>
+                    {discoverLoading ? (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <span className="loading loading-spinner loading-sm text-blue-500"></span>
+                      </div>
+                    ) : discoverUsers.length === 0 ? (
+                      <div className="text-center py-10 border border-dashed border-gray-800 rounded-xl bg-gray-900/10 text-gray-500 text-sm">
+                        No new players to discover at the moment.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {discoverUsers.map((user) => (
+                          <div
+                            key={user.id}
+                            className="bg-gray-900 border border-gray-800/80 rounded-xl p-4 flex items-center justify-between hover:border-gray-700 transition-all shadow-sm"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="avatar">
+                                <div className="w-12 h-12 rounded-full border border-gray-700">
+                                  <img src={getAvatarUrl(user.avatar)} alt="avatar" />
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-white font-bold text-sm">
+                                  {user.firstName || user.lastName
+                                    ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+                                    : user.email.split("@")[0]}
+                                </span>
+                                <span className="text-gray-400 text-xs font-semibold">@{user.username}</span>
+                              </div>
+                            </div>
+
+                            {/* Friendship Status Actions */}
+                            <div>
+                              {user.friendshipStatus === "NONE" && (
+                                <button
+                                  onClick={() => handleSendRequest(user.username, user.id)}
+                                  disabled={actionLoadingId === user.id}
+                                  className="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg font-bold"
+                                >
+                                  {actionLoadingId === user.id ? (
+                                    <span className="loading loading-spinner loading-xs"></span>
+                                  ) : (
+                                    <UserPlus className="w-4 h-4" />
+                                  )}
+                                  Add Friend
+                                </button>
+                              )}
+
+                              {user.friendshipStatus === "PENDING_OUTGOING" && (
+                                <button
+                                  onClick={() => user.friendshipId && handleDeclineRequest(user.friendshipId, false)}
+                                  disabled={actionLoadingId === user.friendshipId}
+                                  className="btn btn-sm bg-gray-800 hover:bg-red-500/10 hover:text-red-400 text-gray-400 border-none rounded-lg font-bold"
+                                >
+                                  {actionLoadingId === user.friendshipId ? (
+                                    <span className="loading loading-spinner loading-xs"></span>
+                                  ) : (
+                                    "Cancel Request"
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>

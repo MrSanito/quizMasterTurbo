@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 import { randomUUID } from "crypto";
 import { Request, Response } from "express";
 import { prisma } from "@repo/db";
@@ -8,7 +9,7 @@ export const getQuiz = async (
   req: Request<{ quizId: string }>,
   res: Response
 ) => {
-  console.log("get quiz");
+  logger.info("get quiz");
   const { quizId } = req.params;
 
   if (!quizId) {
@@ -158,7 +159,7 @@ export const submitQuiz = async (
 /* ================= RESULT / HISTORY PLACEHOLDERS ================= */
 
 export const resultOfQuiz = (req: Request, res: Response) => {
-  console.log("lalal");
+  logger.info("lalal");
 };
 
 export const historyQuiz = async (req: Request, res: Response) => {};
@@ -192,7 +193,7 @@ export const getQuizResultByAttemptId = async (
         throw new Error();
       }
     } catch {
-      console.log(res)
+      logger.info(res)
       return res.status(400).json({
         success: false,
         message: "Invalid auth format",

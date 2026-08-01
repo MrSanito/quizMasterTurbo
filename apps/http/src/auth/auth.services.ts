@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 // auth.services.ts
 import jwt from "jsonwebtoken";
 import type { Response } from "express";
@@ -100,7 +101,7 @@ export async function computeJwkThumbprint(jwk: {
     x: jwk.x,
     y: jwk.y,
   }); // keys must be sorted — crv < kty < x < y ✓
-  console.log("canonical", canonical)
+  logger.info({ canonical }, "canonical")
 
   /* This return line converts this {
   "kty":"EC",

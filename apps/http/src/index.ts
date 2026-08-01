@@ -1,6 +1,7 @@
 // 1. LOAD ENV FIRST
 import "dotenv/config";
-console.log("DATABASE_URL =>", process.env.DATABASE_URL);
+import { logger } from "./utils/logger.js";
+logger.info(`DATABASE_URL => ${process.env.DATABASE_URL}`);
 
 import express from "express";
 import router from "./routes/index.js";
@@ -14,7 +15,7 @@ import path from "path";
 const swaggerDocument = YAML.load(path.join(process.cwd(), "openapi.yaml"));
 
 // This points to the .env at the root of quizmasterturbo
-console.log(" PID:", process.pid);
+logger.info(` PID: ${process.pid}`);
 
 const app = express();
 app.use(express.json()); //  too late
@@ -22,7 +23,7 @@ app.use(cookieparser());
 app.set("trust proxy", true);
 
 app.use((req, res, next) => {
-  console.log(` Incoming Request: ${req.method} ${req.url}`);
+  logger.info(` Incoming Request: ${req.method} ${req.url}`);
   next();
 });
 
@@ -55,7 +56,7 @@ app.get("/", async (req, res) => {
   });
 });
 app.get("/test", (req, res) => {
-  console.log({
+  logger.info({
     ip: req.ip,
     remoteAddress: req.socket.remoteAddress,
     xForwardedFor: req.headers["x-forwarded-for"],
@@ -70,7 +71,7 @@ app.get("/test", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  logger.info(`Server running on http://localhost:${PORT}`);
 });
 
 process.stdin.resume();

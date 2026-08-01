@@ -17,8 +17,13 @@ model User {
   avatar                         String    @default("avatar1.svg")
   createdAt                      DateTime      @default(now())
   updatedAt                      DateTime      @default(now()) @updatedAt
-  Friend_Friend_receiverIdToUser Friend[]      @relation("Friend_receiverIdToUser")
-  Friend_Friend_senderIdToUser   Friend[]      @relation("Friend_senderIdToUser")
+
+ sentRequests     FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+
+    friendshipsA Friendship[] @relation("UserA")
+  friendshipsB Friendship[] @relation("UserB")
+ 
   QuizAttempt                    QuizAttempt[]
   hostedRooms Room[]      @relation("RoomHost")
   roomPlayers RoomPlayer[]
@@ -26,6 +31,50 @@ model User {
   events      RoomEvent[]
   sessions    Session[]
 }
+
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+
+model FriendRequest {
+  id         String              @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     FriendRequestStatus @default(PENDING)
+
+  sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+}
+
+
+model Friendship {
+  id      String @id @default(cuid())
+  userAId String
+  userBId String
+
+  userA User @relation("UserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("UserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userAId, userBId])
+  @@index([userBId])
+}
+
+
+
+
 
 model Category {
   id        String   @id @default(uuid())
@@ -35,18 +84,7 @@ model Category {
   Quiz      Quiz[]
 }
 
-model Friend {
-  id                           String       @id @default(uuid())
-  senderId                     String
-  receiverId                   String
-  status                       FriendStatus @default(PENDING)
-  createdAt                    DateTime     @default(now())
-  User_Friend_receiverIdToUser User         @relation("Friend_receiverIdToUser", fields: [receiverId], references: [id])
-  User_Friend_senderIdToUser   User         @relation("Friend_senderIdToUser", fields: [senderId], references: [id])
-
-  @@unique([senderId, receiverId])
-}
-
+ 
 model Option {
   id         String   @id @default(uuid())
   questionId String

@@ -1,10 +1,11 @@
+import { logger } from "../utils/logger.js";
 import { prisma } from "@repo/db";
 import { Request, Response } from "express";
 import { redisClient } from "@repo/redis";
 
 export const createRoom = async (req: Request, res: Response) => {
   const { hostId, roomName, quizId } = req.body;
-  console.log(hostId, roomName, quizId);
+  logger.info({ hostId, roomName, quizId });
 
   try {
     const room = await prisma.room.create({
@@ -56,7 +57,7 @@ export const getRoom = async (req: Request, res: Response) => {
     where: { roomName: roomId },
     // select: { id: true, hostId: true, state: true },
   });
-  console.log("room data", room);
+  logger.info({ room }, "room data");
   return res.status(200).json({
     success: true,
 
@@ -144,14 +145,14 @@ export const updateLobby = async (req: Request, res: Response) => {
     : req.params.roomId;
 
   const { hostId } = req.body;
-  console.log(roomId);
+  logger.info(roomId);
 
   try {
     const room = await prisma.room.findUnique({
       where: { roomName: roomId },
       select: { id: true, hostId: true, state: true },
     });
-    console.log("room", room);
+    logger.info({ room }, "room");
 
     if (!room) {
       return res.status(404).json({
@@ -221,7 +222,7 @@ export const startRoom = async (req: Request, res: Response) => {
     const roomId = Array.isArray(req.params.roomId) 
       ? req.params.roomId[0] 
       : req.params.roomId;
-console.log("room Id",roomId)
+logger.info({ roomId }, "room Id")
     if (!roomId) {
       return res.status(400).json({ success: false, message: "Invalid Room ID" });
     }
@@ -248,7 +249,7 @@ console.log("room Id",roomId)
       },
     });
 
-    console.log("Fetched room details", room)
+    logger.info({ room }, "Fetched room details")
 
      if (!room) {
       return res.status(404).json({ success: false, message: "Room not found" });
@@ -258,9 +259,9 @@ console.log("room Id",roomId)
     const roomKey = `room:${roomId}`;
     
     //  SYNC: Fetch players from LOBBY (Redis) and ensure they are in DB
-    console.log(` [RoomController] Reading players from Redis Key: ${roomKey}:players`);
+    logger.info(` [RoomController] Reading players from Redis Key: ${roomKey}:players`);
     const lobbyPlayers = await redisClient.hgetall(`${roomKey}:players`);
-    console.log(` [RoomController] Found ${Object.keys(lobbyPlayers).length} players in Redis`);
+    logger.info(` [RoomController] Found ${Object.keys(lobbyPlayers).length} players in Redis`);
     
     const playersToSync = Object.entries(lobbyPlayers).map(([userId, dataStr]) => {
         let parsed: any = {};
@@ -286,7 +287,7 @@ console.log("room Id",roomId)
             data: playersToSync,
             skipDuplicates: true, // If already in DB, ignore
         });
-        console.log(`Synced ${playersToSync.length} players from Redis to DB`);
+        logger.info(`Synced ${playersToSync.length} players from Redis to DB`);
     }
 
 
@@ -301,7 +302,7 @@ console.log("room Id",roomId)
     // Push Questions
     const questions = room.quiz.Question.map((q) => JSON.stringify(q));
     if (questions.length > 0) {
-      console.log(` [RoomController] Pushing ${questions.length} questions to Redis for ${roomId}`);
+      logger.info(` [RoomController] Pushing ${questions.length} questions to Redis for ${roomId}`);
       await redisClient.del(`${roomKey}:questions`);
       await redisClient.rpush(`${roomKey}:questions`, ...questions);
       await redisClient.expire(`${roomKey}:questions`, 3600); //  TTL
@@ -325,7 +326,7 @@ console.log("room Id",roomId)
       await prisma.roomQuestion.createMany({
           data: roomQuestionsData
       });
-      console.log(` [RoomController] Created ${roomQuestionsData.length} RoomQuestion records`);
+      logger.info(` [RoomController] Created ${roomQuestionsData.length} RoomQuestion records`);
 
     } else {
         console.warn(` [RoomController] No questions found for quiz ${room.quiz.id} in room ${roomId}`);
@@ -435,7 +436,7 @@ export const finalizeRoom = async (req: Request, res: Response) => {
             data: playerAnswersToCreate,
             skipDuplicates: true
         });
-        console.log(` Saved ${playerAnswersToCreate.length} player answers to DB`);
+        logger.info(` Saved ${playerAnswersToCreate.length} player answers to DB`);
     }
 
 

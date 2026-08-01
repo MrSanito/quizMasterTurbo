@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 // middleware/auth.middleware.ts
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
@@ -24,8 +25,9 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
       userId: string;
       sessionId: string;
     };
-    console.log(decoded)
+    logger.info(decoded)
     req.user = decoded;
+    logger.info(req.user)
     next();
   } catch {
     return res

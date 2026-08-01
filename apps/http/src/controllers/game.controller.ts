@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 
 import { Request, Response } from "express";
 import { prisma } from "@repo/db";
@@ -21,7 +22,7 @@ export const saveGame = async (req: Request, res: Response) => {
         console.warn(`[GameController] No results provided for room ${roomId}`);
     }
 
-    console.log(`[GameController] Saving game results for room: ${roomId}`);
+    logger.info(`[GameController] Saving game results for room: ${roomId}`);
 
     // 1. Update Room State to FINISHED
     await prisma.room.update({

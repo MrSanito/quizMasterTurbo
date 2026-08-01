@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger.js";
 import { Request, Response } from "express";
 import { prisma } from "@repo/db"; //  correct import
 
@@ -5,7 +6,7 @@ import { prisma } from "@repo/db"; //  correct import
 
 export const fetchCategories = async (req: Request, res: Response) => {
   try {
-    console.log("DATABASE_URL =>", process.env.DATABASE_URL);
+    logger.info({ DATABASE_URL: process.env.DATABASE_URL }, "DATABASE_URL =>");
 
     const categories = await prisma.category.findMany({
       select: {
@@ -17,7 +18,7 @@ export const fetchCategories = async (req: Request, res: Response) => {
         },
       },
     });
-    console.log(categories);
+    logger.info(categories);
 
     const formattedCategories = categories.map(
       (cat: (typeof categories)[number]) => ({
