@@ -30,10 +30,13 @@ api.interceptors.response.use(
     // Check if the error is 401 (Unauthorized) and the request has not been retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       
-      // If the request was to the refresh or verification endpoint itself, do not retry
+      // If the request was to authentication, refresh, or OTP endpoints, do not retry
       if (
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/register") ||
         originalRequest.url?.includes("/auth/refresh") || 
-        originalRequest.url?.includes("/auth/verifyLoginOTP")
+        originalRequest.url?.includes("/auth/verifyLoginOTP") ||
+        originalRequest.url?.includes("/auth/forgot-password")
       ) {
         return Promise.reject(error);
       }
