@@ -165,10 +165,18 @@ const Dashboard = () => {
   // 4 Guest user (allowed but limited)
   if (isGuest) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-base-200">
-        <h2 className="text-xl font-bold text-warning">Guest Mode </h2>
-        <p className="mt-2 text-neutral-500">Tries left: {guestLeft}</p>
-        <QuizPlayerHistory viewerId={viewerId} viewerType={viewerType} />
+      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4 py-10">
+        {/* Ambient glow, echoes the hero's palette */}
+        <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#F0DE4A]/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#B9EEDC]/10 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col items-center rounded-3xl bg-white px-10 py-8 shadow-2xl">
+          <h2 className="text-xl font-bold text-[#7047C7]">Guest Mode</h2>
+          <p className="mt-2 text-sm text-gray-500">Tries left: {guestLeft}</p>
+        </div>
+        <div className="relative z-10 w-full">
+          <QuizPlayerHistory viewerId={viewerId} viewerType={viewerType} />
+        </div>
       </div>
     );
   }
@@ -182,15 +190,20 @@ const Dashboard = () => {
       greeting: "Welcome back,",
     };
     return (
-      <div className="min-h-screen bg-base-200 px-4 py-6">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4 py-6">
+        {/* Ambient glow, echoes the hero's palette */}
+        <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#F0DE4A]/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#B9EEDC]/10 blur-3xl" />
+
+        <div className="relative z-10">
         <div>
           <div className="w-full p-4">
             {/* Card Container */}
-            <div className="flex flex-col md:flex-row items-center justify-between bg-[#151b23] rounded-2xl p-6 shadow-md border border-gray-800">
+            <div className="flex flex-col md:flex-row items-center justify-between bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
               {/* Left Side: Avatar & Info */}
               <div className="flex items-center gap-4 mb-4 md:mb-0">
                 <div className="avatar">
-                  <div className="w-14 h-14 rounded-full ring-2 ring-offset-2 ring-offset-[#151b23] ring-blue-400">
+                  <div className="w-14 h-14 rounded-full ring-2 ring-offset-2 ring-offset-white ring-[#7047C7]">
                     <img
                       src={
                         user?.avatar
@@ -202,10 +215,10 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-gray-400 text-sm font-medium">
+                  <span className="text-gray-500 text-sm font-medium">
                     {dummyUser.greeting}
                   </span>
-                  <h2 className="text-white text-xl md:text-2xl font-bold tracking-tight">
+                  <h2 className="text-gray-900 text-xl md:text-2xl font-bold tracking-tight">
                     {user.firstName + " " + user.lastName}
                   </h2>
                 </div>
@@ -215,14 +228,14 @@ const Dashboard = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.push("/dashboard/profile/edit")}
-                  className="btn bg-white hover:bg-gray-200 text-black border-none min-h-[2.5rem] h-[2.5rem] px-6 rounded-lg capitalize font-bold"
+                  className="flex items-center justify-center min-h-[2.5rem] h-[2.5rem] px-6 rounded-full bg-[#F0DE4A] font-bold text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg"
                 >
                   Edit Profile
                 </button>
 
                 <button
                   onClick={() => setLogOutModal(true)}
-                  className="btn btn-outline btn-error min-h-[2.5rem] h-[2.5rem] px-6 rounded-lg capitalize"
+                  className="flex items-center justify-center min-h-[2.5rem] h-[2.5rem] px-6 rounded-full border border-red-200 bg-white font-semibold text-red-500 transition-all duration-300 hover:bg-red-50"
                 >
                   Logout
                 </button>
@@ -233,19 +246,19 @@ const Dashboard = () => {
 
         {/*  Logout Modal */}
         {logOutModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#151b23] border border-gray-800 rounded-2xl p-6 w-[90%] max-w-md shadow-lg">
-              <h3 className="text-white text-lg font-bold mb-2">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md shadow-2xl">
+              <h3 className="text-gray-900 text-lg font-bold mb-2">
                 Confirm Logout
               </h3>
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-gray-500 text-sm mb-6">
                 Are you sure you want to log out? Your current session will end.
               </p>
 
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setLogOutModal(false)}
-                  className="btn bg-gray-700 hover:bg-gray-600 text-white border-none px-5 rounded-lg"
+                  className="rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2.5 font-semibold transition"
                 >
                   Cancel
                 </button>
@@ -253,7 +266,7 @@ const Dashboard = () => {
                 <button
                   onClick={handleLogout}
                   type="submit"
-                  className="btn btn-outline btn-error px-5 rounded-lg"
+                  className="rounded-full border border-red-200 bg-white text-red-500 px-5 py-2.5 font-semibold transition hover:bg-red-50"
                 >
                   Logout
                 </button>
@@ -281,15 +294,15 @@ const Dashboard = () => {
 
         {/* Active Sessions */}
         {isLogin && (
-          <div className="max-w-7xl mx-auto mt-12 bg-[#151b23] border border-gray-800 rounded-2xl p-6 shadow-md">
+          <div className="max-w-7xl mx-auto mt-12 bg-white border border-gray-100 rounded-3xl p-6 shadow-xl">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Active Sessions
               </h2>
               {sessions.length > 1 && (
                 <button
                   onClick={handleLogoutAllOther}
-                  className="btn btn-xs btn-error btn-outline rounded-lg"
+                  className="rounded-full border border-red-200 px-4 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50"
                 >
                   Log Out of All Sessions
                 </button>
@@ -298,7 +311,7 @@ const Dashboard = () => {
 
             {sessionsLoading ? (
               <div className="flex justify-center p-4">
-                <span className="loading loading-spinner loading-md"></span>
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#7047C7]/20 border-t-[#7047C7]" />
               </div>
             ) : sessionError ? (
               <p className="text-red-500 text-sm">{sessionError}</p>
@@ -311,32 +324,32 @@ const Dashboard = () => {
                     key={session.id}
                     className={`flex items-center justify-between p-4 rounded-xl border ${
                       session.isCurrent
-                        ? "bg-[#1d242e] border-blue-500/50"
-                        : "bg-[#10141a] border-gray-800"
+                        ? "bg-[#7047C7]/5 border-[#7047C7]/30"
+                        : "bg-gray-50 border-gray-100"
                     }`}
                   >
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-white">
+                        <span className="font-semibold text-sm text-gray-800">
                           {session.os || "Unknown OS"} • {session.browser || "Unknown Browser"}
                         </span>
                         {session.isCurrent && (
-                          <span className="badge badge-primary badge-xs rounded px-1.5 py-1 text-[10px]">
+                          <span className="rounded-full bg-[#7047C7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7047C7]">
                             This Device
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-500">
                         IP: {session.ipAddress || "Unknown IP"}
                       </span>
-                      <span className="text-[11px] text-gray-500">
+                      <span className="text-[11px] text-gray-400">
                         Last active: {new Date(session.lastUsedAt || session.createdAt).toLocaleString()}
                       </span>
                     </div>
                     {!session.isCurrent && (
                       <button
                         onClick={() => handleRevokeSession(session.id)}
-                        className="btn btn-sm btn-ghost hover:btn-error text-error rounded-lg"
+                        className="rounded-full px-4 py-1.5 text-sm font-semibold text-red-500 transition hover:bg-red-50"
                       >
                         Revoke
                       </button>
@@ -347,14 +360,17 @@ const Dashboard = () => {
             )}
           </div>
         )}
+        </div>
       </div>
     );
   }
 
   // 6 Fallback (should never happen)
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-error"> Something went wrong. Please refresh.</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4">
+      <div className="relative z-10 rounded-3xl bg-white px-8 py-6 shadow-2xl">
+        <p className="text-sm font-semibold text-red-500">Something went wrong. Please refresh.</p>
+      </div>
     </div>
   );
 };

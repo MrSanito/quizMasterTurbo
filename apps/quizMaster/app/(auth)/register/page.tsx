@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import { FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
+import { Play } from "lucide-react";
 import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 import Link from "next/link";
@@ -166,36 +167,57 @@ export default function RegisterPage() {
     return <Loading />;
   }
 
-  return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center relative overflow-hidden px-4 py-8">
-      {/* Decorative Blur Orbs for Rich Aesthetics */}
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-primary/15 rounded-full blur-3xl -z-10 animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/15 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
+  const inputBase =
+    "w-full rounded-xl border bg-white px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-300 focus:ring-4";
 
-      <div className="w-full max-w-md bg-base-200/35 backdrop-blur-xl border border-base-300/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 shadow-sm shadow-primary/5">
-          <FiUser className="text-2xl text-primary" />
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] flex items-center justify-center px-4 py-10">
+      {/* Ambient glow, echoes the hero's palette */}
+      <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-[#F0DE4A]/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-[28rem] h-[28rem] bg-[#B9EEDC]/10 rounded-full blur-3xl" />
+
+      {/* Bottom-left wave cutout, matching the hero section */}
+      <svg
+        className="pointer-events-none absolute bottom-0 left-0 z-0 h-40 w-2/3 text-white/[0.04] md:h-56"
+        viewBox="0 0 500 200"
+        preserveAspectRatio="none"
+        fill="currentColor"
+      >
+        <path d="M0,200 L0,60 C140,140 300,200 500,200 Z" />
+      </svg>
+
+      <div className="relative z-10 w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl flex flex-col items-center">
+        {/* Brand mark, matches the hero logo */}
+        <div className="flex items-center gap-2 mb-5">
+          <svg width="22" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2 L21 7 L12 12 L3 7 Z" fill="#7047C7" opacity="0.95" />
+            <path d="M3 7 L12 12 L12 22 L3 17 Z" fill="#7047C7" opacity="0.6" />
+            <path d="M21 7 L12 12 L12 22 L21 17 Z" fill="#7047C7" opacity="0.8" />
+          </svg>
+          <span className="text-lg font-bold text-[#340C97] tracking-tight">LOGO</span>
         </div>
 
-        <h3 className="text-2xl font-bold text-base-content tracking-tight mb-1 text-center">
+        <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-1 text-center">
           Create Account
         </h3>
-        <p className="text-sm text-base-content/60 mb-6 text-center">
+        <p className="text-sm text-gray-500 mb-6 text-center">
           Sign up to get started with QuizMaster
         </p>
 
         <form onSubmit={handleSubmit} className="w-full space-y-4">
           {/* Name fields */}
           <div className="flex gap-4">
-            <div className="form-control flex-1">
-              <label className="label py-1">
-                <span className="label-text font-semibold text-xs">First Name</span>
+            <div className="flex-1">
+              <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+                First Name
               </label>
               <input
                 type="text"
                 name="firstName"
-                className={`input input-bordered w-full rounded-xl focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
-                  fieldErrors.firstName ? "input-error" : ""
+                className={`${inputBase} ${
+                  fieldErrors.firstName
+                    ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                    : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
                 }`}
                 placeholder="John"
                 value={form.firstName}
@@ -203,19 +225,21 @@ export default function RegisterPage() {
                 disabled={isPending}
               />
               {fieldErrors.firstName && (
-                <span className="label-text-alt text-error mt-1">{fieldErrors.firstName}</span>
+                <span className="mt-1 block text-xs text-red-500">{fieldErrors.firstName}</span>
               )}
             </div>
 
-            <div className="form-control flex-1">
-              <label className="label py-1">
-                <span className="label-text font-semibold text-xs">Last Name</span>
+            <div className="flex-1">
+              <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+                Last Name
               </label>
               <input
                 type="text"
                 name="lastName"
-                className={`input input-bordered w-full rounded-xl focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
-                  fieldErrors.lastName ? "input-error" : ""
+                className={`${inputBase} ${
+                  fieldErrors.lastName
+                    ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                    : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
                 }`}
                 placeholder="Doe"
                 value={form.lastName}
@@ -223,23 +247,23 @@ export default function RegisterPage() {
                 disabled={isPending}
               />
               {fieldErrors.lastName && (
-                <span className="label-text-alt text-error mt-1">{fieldErrors.lastName}</span>
+                <span className="mt-1 block text-xs text-red-500">{fieldErrors.lastName}</span>
               )}
             </div>
           </div>
 
           {/* Username */}
-          <div className="form-control w-full">
-            <label className="label py-1">
-              <span className="label-text font-semibold text-xs flex items-center gap-1">
-                <FiUser /> Username
-              </span>
+          <div>
+            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-gray-600">
+              <FiUser /> Username
             </label>
             <input
               type="text"
               name="username"
-              className={`input input-bordered w-full rounded-xl focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
-                fieldErrors.username ? "input-error" : ""
+              className={`${inputBase} ${
+                fieldErrors.username
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
               }`}
               placeholder="username"
               value={form.username}
@@ -247,31 +271,31 @@ export default function RegisterPage() {
               disabled={isPending}
             />
             {fieldErrors.username && (
-              <span className="label-text-alt text-error mt-1">{fieldErrors.username}</span>
+              <span className="mt-1 block text-xs text-red-500">{fieldErrors.username}</span>
             )}
             {usernameStatus === "checking" && (
-              <span className="label-text-alt text-warning mt-1">Checking availability...</span>
+              <span className="mt-1 block text-xs text-amber-500">Checking availability...</span>
             )}
             {usernameStatus === "available" && (
-              <span className="label-text-alt text-success mt-1">{usernameMessage}</span>
+              <span className="mt-1 block text-xs text-emerald-600">{usernameMessage}</span>
             )}
             {usernameStatus === "taken" && (
-              <span className="label-text-alt text-error mt-1">{usernameMessage}</span>
+              <span className="mt-1 block text-xs text-red-500">{usernameMessage}</span>
             )}
           </div>
 
           {/* Email */}
-          <div className="form-control w-full">
-            <label className="label py-1">
-              <span className="label-text font-semibold text-xs flex items-center gap-1">
-                <FiMail /> Email Address
-              </span>
+          <div>
+            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-gray-600">
+              <FiMail /> Email Address
             </label>
             <input
               type="text"
               name="email"
-              className={`input input-bordered w-full rounded-xl focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
-                fieldErrors.email ? "input-error" : ""
+              className={`${inputBase} ${
+                fieldErrors.email
+                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                  : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
               }`}
               placeholder="name@example.com"
               value={form.email}
@@ -279,23 +303,23 @@ export default function RegisterPage() {
               disabled={isPending}
             />
             {fieldErrors.email && (
-              <span className="label-text-alt text-error mt-1">{fieldErrors.email}</span>
+              <span className="mt-1 block text-xs text-red-500">{fieldErrors.email}</span>
             )}
           </div>
 
           {/* Password */}
-          <div className="form-control w-full">
-            <label className="label py-1">
-              <span className="label-text font-semibold text-xs flex items-center gap-1">
-                <FiLock /> Password
-              </span>
+          <div>
+            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-gray-600">
+              <FiLock /> Password
             </label>
             <div className="relative w-full">
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                className={`input input-bordered w-full rounded-xl pr-12 focus:input-primary bg-base-100/50 border-base-300/30 focus:border-primary/50 focus:bg-base-100/80 transition-all duration-300 ${
-                  fieldErrors.password ? "input-error" : ""
+                className={`${inputBase} pr-12 ${
+                  fieldErrors.password
+                    ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                    : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
                 }`}
                 placeholder="••••••••"
                 value={form.password}
@@ -304,53 +328,54 @@ export default function RegisterPage() {
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 flex items-center px-4 hover:opacity-80 transition"
+                className="absolute inset-y-0 right-0 flex items-center px-4 text-[#7047C7] hover:opacity-70 transition"
                 onClick={toggleEyeHandler}
                 disabled={isPending}
               >
-                {showPassword ? (
-                  <FiEyeOff className="text-primary text-lg" />
-                ) : (
-                  <FiEye className="text-primary text-lg" />
-                )}
+                {showPassword ? <FiEyeOff className="text-lg" /> : <FiEye className="text-lg" />}
               </button>
             </div>
             {fieldErrors.password && (
-              <span className="label-text-alt text-error mt-1">{fieldErrors.password}</span>
+              <span className="mt-1 block text-xs text-red-500">{fieldErrors.password}</span>
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Button, styled after the hero's PLAY TODAY button */}
           <button
             type="submit"
-            className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#F0DE4A] px-6 py-3 font-bold tracking-wide text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isPending || !isFormValid}
           >
             {isPending ? (
-              <span className="loading loading-spinner loading-md"></span>
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
             ) : (
-              "Sign Up"
+              <>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-[#F0DE4A]">
+                  <Play size={11} fill="currentColor" />
+                </span>
+                SIGN UP
+              </>
             )}
           </button>
         </form>
 
         {/* Status Alerts */}
         {success && (
-          <div className="alert alert-success rounded-xl mt-4 py-2 shadow-sm text-sm">
-            <span>Registration email sent! Please check your inbox to verify.</span>
+          <div className="mt-4 w-full rounded-xl border border-emerald-100 bg-[#B9EEDC]/40 px-4 py-2.5 text-sm text-emerald-700 shadow-sm">
+            Registration email sent! Please check your inbox to verify.
           </div>
         )}
         {error && (
-          <div className="alert alert-error rounded-xl mt-4 py-2 shadow-sm text-sm">
-            <span>{error}</span>
+          <div className="mt-4 w-full rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600 shadow-sm">
+            {error}
           </div>
         )}
 
-        <div className="divider opacity-20 my-6 w-full"></div>
+        <div className="my-6 h-px w-full bg-gray-100" />
 
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-gray-500">
           Already have an account?{" "}
-          <Link className="link link-primary font-semibold" href="/login">
+          <Link className="font-semibold text-[#7047C7] hover:text-[#5B32B4]" href="/login">
             Login
           </Link>
         </p>

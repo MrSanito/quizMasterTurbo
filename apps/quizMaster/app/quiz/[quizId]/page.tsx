@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, use } from "react";
 import ClientQuizPlayer from "./ClientQuizPlayer";
 import QuizNotFound from "./components/QuizNotFound";
 import { useUser } from "../../(auth)/context/GetUserContext";
@@ -9,55 +8,40 @@ import Loading from "@/components/Loading";
 import NotLoginComponent from "../../(auth)/components/NotLoginComponent";
 import MaxTryReached from "../../(auth)/components/MaxTryReached";
 
-type QuizPageProps = {
-  params: {
-    quizId: string;
-  };
-};
-
-import { use } from "react";
-
 export default function QuizPage({ params }: { params: Promise<{ quizId: string }> }) {
   const { quizId } = use(params);
-  const a =5;
   const { loading, isLogin, isGuest, isMaxTryReached } = useUser();
   const [quiz, setQuiz] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    //  Don't fetch if auth blocks the page
+    // Don't fetch if auth blocks the page
     if (loading || isMaxTryReached || (!isLogin && !isGuest) || !quizId) return;
 
     const fetchQuiz = async () => {
       try {
-        console.log("trying fetching ")
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/${quizId}`,
-          {
-            cache: "no-store",
-          }
+          { cache: "no-store" }
         );
 
         if (!res.ok) {
-          console.error(" Quiz API failed");
-          setError("Server Took an L ");
+          setError("Server Error");
           return;
         }
 
         const data = await res.json();
 
         if (!data.success || !data.formattedQuiz) {
-          console.warn(" Quiz not found:", quizId);
-          setError("Quiz Broken ");
+          setError("Quiz Not Found");
           return;
         }
 
-        console.log(data.formattedQuiz);
         setQuiz(data.formattedQuiz);
       } catch (err) {
-        console.error(" Error loading quiz:", err);
-        setError("Something went wrong ");
+        console.error("Error loading quiz:", err);
+        setError("Something went wrong");
       } finally {
         setPageLoading(false);
       }
@@ -66,62 +50,66 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
     fetchQuiz();
   }, [quizId, loading, isLogin, isGuest, isMaxTryReached]);
 
-  /* ---------------- GUARDS (AFTER HOOKS) ---------------- */
+  /* ---------------- GUARDS ---------------- */
 
-  // 1 Auth loading
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return <Loading />;
+  if (isMaxTryReached) return <MaxTryReached />;
+  if (!isLogin && !isGuest) return <NotLoginComponent />;
 
-  // 2 Guest blocked
-  if (isMaxTryReached) {
-    return <MaxTryReached />;
-  }
-
-  // 3 Not logged in & not guest
-  if (!isLogin && !isGuest) {
-    return <NotLoginComponent />;
-  }
-
-  // 4 Page data loading
   if (pageLoading) {
     return (
-      <div className="min-h-[80dvh] flex items-center justify-center text-white">
-        Loading quiz... 
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] flex items-center justify-center text-white">
+        <Loading />
       </div>
     );
   }
 
-  // 5 Error states
+  /* ---------------- ERROR STATES ---------------- */
   if (error) {
-    if (error === "Server Took an L ") {
+    if (error === "Server Error") {
       return (
         <QuizNotFound
-          title="Server Took an L "
-          message="Our servers are having a tiny meltdown. Refreshing the page to fix it..."
+          title="Server Connection Issue"
+          message="Our servers are taking a moment. Please refresh the page to try again."
         />
       );
     }
-    if (error === "Quiz Broken ") {
+    if (error === "Quiz Not Found") {
       return (
         <QuizNotFound
-          title="Quiz Broken "
-          message="The quiz data looks corrupted. Reloading to fix the glitch..."
+          title="Quiz Not Found"
+          message="We couldn't locate this quiz. It may have been updated or moved."
         />
       );
     }
     return (
-      <div className="min-h-[80dvh] flex justify-center items-center">
-        <p className="text-red-500">{error}</p>
+      <div className="relative min-h-screen flex justify-center items-center bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4">
+        <p className="text-red-300 font-semibold bg-white/10 px-6 py-3 rounded-full border border-white/20">{error}</p>
       </div>
     );
   }
 
-  // 6 Show quiz
+  /* ---------------- SHOW QUIZ ---------------- */
   if (quiz) {
     return (
-      <div className="min-h-[80dvh]">
-        <ClientQuizPlayer quiz={quiz} />
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4 py-8 flex items-center justify-center">
+        {/* Ambient glow orbs */}
+        <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#F0DE4A]/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#B9EEDC]/10 blur-3xl" />
+
+        {/* Bottom wave cutout */}
+        <svg
+          className="pointer-events-none absolute bottom-0 left-0 z-0 h-40 w-2/3 text-white/[0.04] md:h-56"
+          viewBox="0 0 500 200"
+          preserveAspectRatio="none"
+          fill="currentColor"
+        >
+          <path d="M0,200 L0,60 C140,140 300,200 500,200 Z" />
+        </svg>
+
+        <div className="relative z-10 w-full">
+          <ClientQuizPlayer quiz={quiz} />
+        </div>
       </div>
     );
   }

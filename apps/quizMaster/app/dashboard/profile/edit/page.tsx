@@ -191,29 +191,50 @@ const ProfileEditPage = () => {
 
   // console.log(user.name)
 
+  const inputBase =
+    "w-full rounded-xl border bg-white px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all duration-300 focus:ring-4";
+
   return (
     <Box
       sx={{
+        position: "relative",
         minHeight: "100vh",
+        overflow: "hidden",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        bgcolor: "var(--b1)", //  base-100 (page)
+        background: "linear-gradient(to right, #340C97, #5B32B4, #7047C7)",
         p: 2,
       }}
     >
-      <Stack spacing={3} sx={{ width: "100%", maxWidth: 620 }}>
+      {/* Ambient glow, echoes the hero's palette */}
+      <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#F0DE4A]/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#B9EEDC]/10 blur-3xl" />
+
+      <Stack spacing={3} sx={{ width: "100%", maxWidth: 620, position: "relative", zIndex: 10 }}>
         <Card
           sx={{
             width: "100%",
-            borderRadius: 4,
-            bgcolor: "var(--b2)", //  base-200 (card surface)
-            color: "#fff",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            borderRadius: 6,
+            bgcolor: "#fff",
+            color: "#111827",
+            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.35)",
           }}
         >
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
+          {/* Brand mark, matches the hero logo */}
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+            <svg width="22" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2 L21 7 L12 12 L3 7 Z" fill="#7047C7" opacity="0.95" />
+              <path d="M3 7 L12 12 L12 22 L3 17 Z" fill="#7047C7" opacity="0.6" />
+              <path d="M21 7 L12 12 L12 22 L21 17 Z" fill="#7047C7" opacity="0.8" />
+            </svg>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#340C97", letterSpacing: 0.5 }}>
+              LOGO
+            </Typography>
+          </Stack>
+
+          <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ color: "#111827" }}>
             Edit Profile
           </Typography>
 
@@ -225,11 +246,12 @@ const ProfileEditPage = () => {
                 sx={{
                   width: 95,
                   height: 95,
-                  boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
-                  border: "3px solid var(--b1)",
+                  border: "4px solid #ffffff",
+                  boxShadow:
+                    "0 0 0 3px rgba(112,71,199,0.35), 0 4px 14px rgba(0,0,0,0.12)",
                 }}
               />
-              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+              <Typography variant="body2" sx={{ color: "#6b7280" }}>
                 Choose your avatar
               </Typography>
             </Stack>
@@ -246,7 +268,7 @@ const ProfileEditPage = () => {
                     sx={{
                       border:
                         selectedAvatar === avatar
-                          ? "2px solid #1976d2"
+                          ? "2px solid #7047C7"
                           : "2px solid transparent",
                       borderRadius: "50%",
                       p: 0.5,
@@ -264,12 +286,18 @@ const ProfileEditPage = () => {
             {/* Form Fields */}
             <div className="flex flex-col gap-4">
               {/* Username */}
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend text-lg font-semibold text-white">Username</legend>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+                  Username
+                </label>
                 <input
                   type="text"
                   name="username"
-                  className="input input-primary w-full"
+                  className={`${inputBase} ${
+                    fieldErrors.username
+                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                      : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
+                  }`}
                   placeholder="username"
                   value={form.username}
                   onChange={handleUsername}
@@ -280,34 +308,36 @@ const ProfileEditPage = () => {
                   </p>
                 )}
                 {usernameStatus === "checking" && (
-                  <p className="text-yellow-500 text-sm mt-1">
+                  <p className="text-amber-500 text-sm mt-1">
                     Checking username... 
                   </p>
                 )}
                 {usernameStatus === "available" && (
-                  <p className="text-green-500 text-sm mt-1">{`${form.username} Username available `}</p>
+                  <p className="text-emerald-600 text-sm mt-1">{`${form.username} Username available `}</p>
                 )}
                 {usernameStatus === "taken" && (
                   <p className="text-red-500 text-sm mt-1">{`${form.username} Username already taken `}</p>
                 )}
-              </fieldset>
+              </div>
 
               {/* First Name & Last Name */}
               <div className="flex flex-col md:flex-row gap-4 w-full">
                 <div className="flex-1">
-                  <fieldset className="fieldset w-full">
-                    <legend className="fieldset-legend text-lg font-semibold text-white">
-                      First Name
-                    </legend>
-                    <input
-                      type="text"
-                      name="firstName"
-                      className="input input-primary w-full"
-                      placeholder="Joe"
-                      value={form.firstName}
-                      onChange={handleChange}
-                    />
-                  </fieldset>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    className={`${inputBase} ${
+                      fieldErrors.firstName
+                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                        : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
+                    }`}
+                    placeholder="Joe"
+                    value={form.firstName}
+                    onChange={handleChange}
+                  />
                   {fieldErrors.firstName && (
                     <p className="text-red-500 text-sm mt-1">
                       {fieldErrors.firstName}
@@ -316,19 +346,21 @@ const ProfileEditPage = () => {
                 </div>
 
                 <div className="flex-1">
-                  <fieldset className="fieldset w-full">
-                    <legend className="fieldset-legend text-lg font-semibold text-white">
-                      Last Name
-                    </legend>
-                    <input
-                      type="text"
-                      name="lastName"
-                      className="input input-primary w-full"
-                      placeholder="Doe"
-                      value={form.lastName}
-                      onChange={handleChange}
-                    />
-                  </fieldset>
+                  <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    className={`${inputBase} ${
+                      fieldErrors.lastName
+                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                        : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
+                    }`}
+                    placeholder="Doe"
+                    value={form.lastName}
+                    onChange={handleChange}
+                  />
                   {fieldErrors.lastName && (
                     <p className="text-red-500 text-sm mt-1">
                       {fieldErrors.lastName}
@@ -338,45 +370,60 @@ const ProfileEditPage = () => {
               </div>
 
               {/* Email */}
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend text-lg font-semibold text-white">Email</legend>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+                  Email
+                </label>
                 <input
                   type="text"
                   name="email"
-                  className="input input-primary w-full"
+                  className={`${inputBase} ${
+                    fieldErrors.email
+                      ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                      : "border-gray-200 focus:border-[#7047C7] focus:ring-[#7047C7]/10"
+                  }`}
                   placeholder="email"
                   value={form.email}
                   onChange={handleChange}
                 />
-              </fieldset>
+                {fieldErrors.email && (
+                  <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+                )}
+              </div>
             </div>
             
             <input type="hidden" name="avatar" value={selectedAvatar} />
             <input type="hidden" name="id" value={form.id} />
 
-            {/* Save Button */}
-            <div className="pt-4">
+            {/* Save Button, styled after the hero's PLAY TODAY button */}
+            <div className="pt-6">
               <button
                 type="submit"
-                className="btn btn-primary w-full"
+                className="flex w-full items-center justify-center rounded-full bg-[#F0DE4A] px-6 py-3 font-bold tracking-wide text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={
                   isSaving ||
                   usernameStatus === "checking" ||
                   usernameStatus === "taken"
                 }
               >
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isSaving ? (
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                ) : (
+                  "SAVE CHANGES"
+                )}
               </button>
             </div>
 
             {/* SUCCESS / ERROR Messages */}
             {success && (
-              <p className="text-green-500 text-sm text-center mt-2">
-                Changes Saved Successfully 
-              </p>
+              <div className="mt-4 w-full rounded-xl border border-emerald-100 bg-[#B9EEDC]/40 px-4 py-2.5 text-center text-sm text-emerald-700 shadow-sm">
+                Changes saved successfully!
+              </div>
             )}
             {errorMsg && (
-              <p className="text-red-500 text-sm text-center mt-2">{errorMsg}</p>
+              <div className="mt-4 w-full rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-center text-sm text-red-600 shadow-sm">
+                {errorMsg}
+              </div>
             )}
           </form>
         </CardContent>

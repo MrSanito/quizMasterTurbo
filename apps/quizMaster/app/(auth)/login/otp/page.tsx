@@ -219,43 +219,67 @@ function OtpPageContent() {
   }
 
   return (
-    <div className="flex flex-col min-h-[85vh] justify-center items-center px-4 relative overflow-hidden bg-base-100">
-      {/* Decorative Blur Orbs for Rich Aesthetics */}
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-primary/15 rounded-full blur-3xl -z-10 animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/15 rounded-full blur-3xl -z-10 animate-pulse delay-700"></div>
+    <div className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4 py-10">
+      {/* Ambient glow, echoes the hero's palette */}
+      <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-[#F0DE4A]/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-[28rem] h-[28rem] bg-[#B9EEDC]/10 rounded-full blur-3xl" />
+
+      {/* Bottom-left wave cutout, matching the hero section */}
+      <svg
+        className="pointer-events-none absolute bottom-0 left-0 z-0 h-40 w-2/3 text-white/[0.04] md:h-56"
+        viewBox="0 0 500 200"
+        preserveAspectRatio="none"
+        fill="currentColor"
+      >
+        <path d="M0,200 L0,60 C140,140 300,200 500,200 Z" />
+      </svg>
 
       {!email ? (
-        <div className="w-full max-w-md bg-base-200/35 backdrop-blur-xl border border-base-300/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-warning/10 border border-warning/20 flex items-center justify-center mb-4 shadow-sm shadow-warning/5">
-            <FiArrowLeft className="text-2xl text-warning" />
+        <div className="relative z-10 flex w-full max-w-md flex-col items-center rounded-3xl bg-white p-8 shadow-2xl">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
+            <FiArrowLeft className="text-2xl text-amber-500" />
           </div>
 
-          <h3 className="text-2xl font-bold text-base-content tracking-tight mb-1 text-center">
+          <h3 className="mb-1 text-center text-2xl font-extrabold tracking-tight text-gray-900">
             No Email Found
           </h3>
-          <p className="text-sm text-base-content/60 mb-8 text-center px-2">
+          <p className="mb-8 px-2 text-center text-sm text-gray-500">
             Please return to the login page to verify your credentials.
           </p>
-          <Link href="/login" className="btn btn-primary w-full rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center">
+          <Link
+            href="/login"
+            className="flex w-full items-center justify-center rounded-full bg-[#F0DE4A] px-6 py-3 font-bold tracking-wide text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg"
+          >
             Back to Login
           </Link>
         </div>
       ) : (
-        <div className="w-full max-w-md bg-base-200/35 backdrop-blur-xl border border-base-300/30 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 shadow-sm shadow-primary/5">
-            <FiKey className="text-2xl text-primary" />
+        <div className="relative z-10 flex w-full max-w-md flex-col items-center rounded-3xl bg-white p-8 shadow-2xl">
+          {/* Brand mark, matches the hero logo */}
+          <div className="mb-4 flex items-center gap-2">
+            <svg width="22" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2 L21 7 L12 12 L3 7 Z" fill="#7047C7" opacity="0.95" />
+              <path d="M3 7 L12 12 L12 22 L3 17 Z" fill="#7047C7" opacity="0.6" />
+              <path d="M21 7 L12 12 L12 22 L21 17 Z" fill="#7047C7" opacity="0.8" />
+            </svg>
+            <span className="text-lg font-bold tracking-tight text-[#340C97]">LOGO</span>
           </div>
 
-          <h3 className="text-2xl font-bold text-base-content tracking-tight mb-1 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#7047C7]/20 bg-[#7047C7]/10 shadow-sm">
+            <FiKey className="text-2xl text-[#7047C7]" />
+          </div>
+
+          <h3 className="mb-1 text-center text-2xl font-extrabold tracking-tight text-gray-900">
             Verify OTP
           </h3>
-          <p className="text-sm text-base-content/60 mb-8 text-center px-2">
-            We've sent a 6-digit verification code to <span className="font-semibold text-primary">{email}</span>
+          <p className="mb-8 px-2 text-center text-sm text-gray-500">
+            We've sent a 6-digit verification code to{" "}
+            <span className="font-semibold text-[#7047C7]">{email}</span>
           </p>
 
           <form onSubmit={handleVerify} className="w-full space-y-6">
             {/* 6 Digit Inputs */}
-            <div className="flex justify-between gap-2 max-w-sm mx-auto" onPaste={handlePaste}>
+            <div className="mx-auto flex max-w-sm justify-between gap-2" onPaste={handlePaste}>
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -266,56 +290,59 @@ function OtpPageContent() {
                   onChange={(e) => handleInputChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   disabled={isPending}
-                  className="w-12 h-14 text-center text-2xl font-bold bg-base-100/80 border-2 border-base-300 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-300"
+                  className="h-14 w-12 rounded-2xl border-2 border-gray-200 bg-white text-center text-2xl font-bold text-gray-800 outline-none transition-all duration-300 focus:border-[#7047C7] focus:ring-4 focus:ring-[#7047C7]/10"
                 />
               ))}
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button, styled after the hero's PLAY TODAY button */}
             <button
               type="submit"
-              className="btn btn-primary w-full rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-300"
+              className="mt-6 flex w-full items-center justify-center rounded-full bg-[#F0DE4A] px-6 py-3 font-bold tracking-wide text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isPending || otp.some((digit) => digit === "")}
             >
               {isPending ? (
-                <span className="loading loading-spinner loading-md"></span>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
               ) : (
-                "Verify & Proceed"
+                "VERIFY & PROCEED"
               )}
             </button>
           </form>
 
           {/* Resend Section */}
-          <div className="flex items-center justify-between w-full mt-6 text-sm">
+          <div className="mt-6 flex w-full items-center justify-between text-sm">
             {resendTimer > 0 ? (
-              <span className="opacity-60 flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 text-gray-400">
                 <FiRefreshCw className="animate-spin text-xs" /> Resend OTP in {resendTimer}s
               </span>
             ) : (
               <button
                 onClick={handleResend}
                 disabled={isResending}
-                className="link link-primary font-semibold flex items-center gap-1 hover:opacity-80 transition"
+                className="flex items-center gap-1 font-semibold text-[#7047C7] transition hover:text-[#5B32B4]"
               >
                 <FiRefreshCw /> Resend OTP
               </button>
             )}
 
-            <Link href="/login" className="link opacity-60 hover:opacity-100 flex items-center gap-1 text-xs transition">
+            <Link
+              href="/login"
+              className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-gray-600"
+            >
               <FiArrowLeft /> Back to Login
             </Link>
           </div>
 
           {/* Status Alerts */}
           {success && (
-            <div className="alert alert-success rounded-xl mt-6 py-2 shadow-sm text-sm flex items-center gap-2">
-              <FiCheckCircle className="text-lg animate-bounce" />
+            <div className="mt-6 flex w-full items-center gap-2 rounded-xl border border-emerald-100 bg-[#B9EEDC]/40 px-4 py-2.5 text-sm text-emerald-700 shadow-sm">
+              <FiCheckCircle className="animate-bounce text-lg" />
               <span>Success! Logging you in...</span>
             </div>
           )}
           {error && (
-            <div className="alert alert-error rounded-xl mt-6 py-2 shadow-sm text-sm">
-              <span>{error}</span>
+            <div className="mt-6 w-full rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600 shadow-sm">
+              {error}
             </div>
           )}
         </div>

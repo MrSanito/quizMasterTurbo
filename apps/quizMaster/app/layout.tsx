@@ -28,12 +28,12 @@ export default function RootLayout({ children }) {
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body
         className={`
-          antialiased bg-base-100 text-white min-h-screen`}
+          antialiased bg-[#0d032b] text-white min-h-screen`}
         suppressHydrationWarning
       >
         <UserProvider>
           <Navbar />
-          <main className="container mx-auto px-4 py-8">
+          <main className="w-full">
             {children}
             <ToastContainer
               position="bottom-right"

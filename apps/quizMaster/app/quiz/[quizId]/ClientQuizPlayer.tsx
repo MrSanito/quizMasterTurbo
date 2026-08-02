@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
-import { Clock, ChevronRight, Zap, CheckCircle, ListChecks, Trophy, Play,XCircle  } from "lucide-react";
+import { Clock, ChevronRight, Zap, CheckCircle, ListChecks, Trophy, Play, XCircle, ArrowLeft } from "lucide-react";
 import api from "@/app/lib/api";
 
-
-export default function ClientQuizPlayer({ quiz }) {
+export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
   const router = useRouter();
 
   /* ---------------- AUTH ---------------- */
@@ -20,9 +18,7 @@ export default function ClientQuizPlayer({ quiz }) {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
 
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(
-    null
-  );
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [autoNext, setAutoNext] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,9 +35,7 @@ export default function ClientQuizPlayer({ quiz }) {
   >({});
 
   const [startTime] = useState(() => Date.now());
-  const [questionStartTime, setQuestionStartTime] = useState<number | null>(
-    null
-  );
+  const [questionStartTime, setQuestionStartTime] = useState<number | null>(null);
 
   /* ---------------- NEXT QUESTION ---------------- */
   const handleNextQuestion = useCallback(() => {
@@ -57,7 +51,7 @@ export default function ClientQuizPlayer({ quiz }) {
   /* ---------------- TIME UP ---------------- */
   const handleTimeUp = useCallback(() => {
     const q = quiz.questions[currentQuestionIndex];
-    const correctOption = q.options.find((o) => o.isCorrect)!;
+    const correctOption = q.options.find((o: any) => o.isCorrect)!;
 
     const timeSpent = questionStartTime
       ? Math.floor((Date.now() - questionStartTime) / 1000)
@@ -77,13 +71,7 @@ export default function ClientQuizPlayer({ quiz }) {
     if (autoNext) {
       setTimeout(handleNextQuestion, 2000);
     }
-  }, [
-    quiz,
-    currentQuestionIndex,
-    questionStartTime,
-    autoNext,
-    handleNextQuestion,
-  ]);
+  }, [quiz, currentQuestionIndex, questionStartTime, autoNext, handleNextQuestion]);
 
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
@@ -109,7 +97,7 @@ export default function ClientQuizPlayer({ quiz }) {
 
     const q = quiz.questions[currentQuestionIndex];
     const selectedOption = q.options[optionIndex];
-    const correctOption = q.options.find((o) => o.isCorrect)!;
+    const correctOption = q.options.find((o: any) => o.isCorrect)!;
 
     const timeSpent = Math.floor(
       (Date.now() - (questionStartTime ?? Date.now())) / 1000
@@ -143,9 +131,9 @@ export default function ClientQuizPlayer({ quiz }) {
 
       const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
-      const questionsPayload = quiz.questions.map((q) => {
+      const questionsPayload = quiz.questions.map((q: any) => {
         const a = answers[q._id];
-        const correctOption = q.options.find((o) => o.isCorrect)!;
+        const correctOption = q.options.find((o: any) => o.isCorrect)!;
 
         return {
           questionId: q._id,
@@ -179,7 +167,7 @@ export default function ClientQuizPlayer({ quiz }) {
         throw new Error("attemptId missing");
       }
     } catch (err) {
-      console.error(" Submit failed:", err);
+      console.error("Submit failed:", err);
       alert("Failed to submit quiz");
       setIsSubmitting(false);
     }
@@ -188,64 +176,61 @@ export default function ClientQuizPlayer({ quiz }) {
   /* ---------------- START SCREEN ---------------- */
   if (!started) {
     return (
-      <div className="min-h-[80dvh] flex items-center justify-center p-4 sm:p-6">
-        <div className="card bg-base-200 shadow-2xl w-full max-w-md sm:max-w-lg border border-base-300">
-          <div className="card-body gap-5 sm:gap-6">
-            {/* Title */}
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-primary flex items-center gap-2">
-                 {quiz.title}
-              </h1>
-              <p className="text-sm opacity-70 mt-1">
-                Think fast. Click faster. No mercy.
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="flex flex-row sm:flex-col items-center bg-base-100 rounded-xl p-3 sm:p-4 shadow gap-3 sm:gap-1">
-                <ListChecks className="w-6 h-6 text-info shrink-0 sm:mb-1" />
-                <div className="text-left sm:text-center">
-                  <span className="text-base sm:text-lg font-bold block">
-                    {quiz.questions.length}
-                  </span>
-                  <span className="text-xs opacity-70">Questions</span>
-                </div>
-              </div>
-
-              <div className="flex flex-row sm:flex-col items-center bg-base-100 rounded-xl p-3 sm:p-4 shadow gap-3 sm:gap-1">
-                <Clock className="w-6 h-6 text-warning shrink-0 sm:mb-1" />
-                <div className="text-left sm:text-center">
-                  <span className="text-base sm:text-lg font-bold block">
-                    20s
-                  </span>
-                  <span className="text-xs opacity-70">Per Question</span>
-                </div>
-              </div>
-
-              <div className="flex flex-row sm:flex-col items-center bg-base-100 rounded-xl p-3 sm:p-4 shadow gap-3 sm:gap-1">
-                <Trophy className="w-6 h-6 text-success shrink-0 sm:mb-1" />
-                <div className="text-left sm:text-center">
-                  <span className="text-base sm:text-lg font-bold block">
-                    +4 / -1
-                  </span>
-                  <span className="text-xs opacity-70">Scoring</span>
-                </div>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <button
-              onClick={() => {
-                setStarted(true);
-                setQuestionStartTime(Date.now());
-              }}
-              className="btn btn-primary btn-lg gap-2 group w-full sm:w-auto"
-            >
-              <Play className="w-5 h-5 group-hover:translate-x-1 transition" />
-              Start Quiz
-            </button>
+      <div className="flex items-center justify-center p-4">
+        <div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl border border-gray-100 flex flex-col items-center">
+          {/* Top Title & Info */}
+          <div className="text-center mb-6">
+            <span className="inline-block rounded-full bg-[#340C97]/10 px-3.5 py-1 text-xs font-extrabold text-[#340C97] uppercase tracking-wider mb-2">
+              Ready to play?
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+              {quiz.title}
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">
+              Think fast. Answer accurately. Win daily points!
+            </p>
           </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-3 gap-3 w-full mb-8">
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-3.5 border border-gray-100">
+              <ListChecks className="w-5 h-5 text-[#7047C7] mb-1" />
+              <span className="text-base font-extrabold text-gray-900">
+                {quiz.questions.length}
+              </span>
+              <span className="text-[10px] font-semibold text-gray-500 uppercase">Questions</span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-3.5 border border-gray-100">
+              <Clock className="w-5 h-5 text-amber-500 mb-1" />
+              <span className="text-base font-extrabold text-gray-900">
+                20s
+              </span>
+              <span className="text-[10px] font-semibold text-gray-500 uppercase">Per Question</span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-3.5 border border-gray-100">
+              <Trophy className="w-5 h-5 text-emerald-600 mb-1" />
+              <span className="text-base font-extrabold text-gray-900">
+                +4 / -1
+              </span>
+              <span className="text-[10px] font-semibold text-gray-500 uppercase">Scoring</span>
+            </div>
+          </div>
+
+          {/* Start CTA Button */}
+          <button
+            onClick={() => {
+              setStarted(true);
+              setQuestionStartTime(Date.now());
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#F0DE4A] px-8 py-3.5 font-bold tracking-wide text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black text-[#F0DE4A]">
+              <Play size={11} fill="currentColor" />
+            </span>
+            START QUIZ
+          </button>
         </div>
       </div>
     );
@@ -254,88 +239,87 @@ export default function ClientQuizPlayer({ quiz }) {
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
 
-  /* ---------------- QUIZ UI ---------------- */
+  /* ---------------- PLAYING QUIZ UI ---------------- */
   return (
-    <div className="min-h-[75dvh] flex items-center justify-center px-3 py-4 sm:p-5 bg-base-200/40 font-sans">
-      <div className="w-full max-w-sm sm:max-w-xl rounded-2xl bg-base-100 shadow-xl border border-base-300">
-        <div className="flex flex-col gap-5 sm:gap-6 p-4 sm:p-5 md:p-8">
+    <div className="flex items-center justify-center p-2 sm:p-4">
+      <div className="w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100">
+        <div className="flex flex-col gap-6">
+          
           {/* ================= TOP HEADER ================= */}
-          <div className="flex items-start justify-between w-full">
-            <p className="text-xs sm:text-sm opacity-60 font-medium mt-1">
-              Question {currentQuestionIndex + 1} / {quiz.questions.length}
-            </p>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Question {currentQuestionIndex + 1} of {quiz.questions.length}
+            </span>
 
-            <div className="flex flex-col items-end gap-1.5">
-              <label className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-base-200/60 hover:bg-base-200 transition cursor-pointer">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition cursor-pointer text-xs font-semibold text-gray-600">
                 <Zap
                   className={`w-3.5 h-3.5 ${
-                    autoNext ? "text-warning" : "opacity-40"
+                    autoNext ? "text-amber-500 fill-amber-500" : "text-gray-400"
                   }`}
                 />
-                <span className="text-[11px] font-semibold opacity-70">
-                  Auto Next
-                </span>
+                <span>Auto Next</span>
                 <input
                   type="checkbox"
                   checked={autoNext}
                   onChange={(e) => setAutoNext(e.target.checked)}
-                  className="toggle toggle-xs toggle-primary"
+                  className="w-3.5 h-3.5 accent-[#7047C7] rounded cursor-pointer"
                 />
               </label>
 
-              <div className="flex items-center gap-1 text-[11px] font-bold opacity-60 px-1">
-                <Trophy className="w-3 h-3" />
+              <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#340C97]/10 text-[#340C97] text-xs font-bold">
+                <Trophy className="w-3.5 h-3.5" />
                 <span>{score} pts</span>
               </div>
             </div>
           </div>
 
           {/* ================= TIMER ================= */}
-          <div className="space-y-2">
-            <div className="flex items-end gap-3">
-              <div className="flex items-center gap-1.5 mb-1 opacity-70">
-                <span className="text-xs font-medium">Time Left</span>
-                <Clock className="w-3.5 h-3.5" />
-              </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                Time Remaining
+              </span>
               <span
-                className={`text-3xl sm:text-4xl font-bold leading-none tabular-nums transition-colors ${
-                  timeLeft <= 5 ? "text-error animate-pulse" : ""
+                className={`text-lg font-extrabold tabular-nums ${
+                  timeLeft <= 5 ? "text-red-500 animate-pulse" : "text-[#7047C7]"
                 }`}
               >
-                {timeLeft}
+                {timeLeft}s
               </span>
             </div>
 
-            <div className="w-full h-1.5 rounded-full bg-base-300 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
               <div
-                className={`h-full transition-all duration-1000 ease-linear ${
-                  timeLeft <= 5 ? "bg-error" : "bg-primary"
+                className={`h-full transition-all duration-1000 ease-linear rounded-full ${
+                  timeLeft <= 5 ? "bg-red-500" : "bg-[#7047C7]"
                 }`}
                 style={{ width: `${(timeLeft / 20) * 100}%` }}
               />
             </div>
           </div>
 
-          {/* ================= QUESTION ================= */}
-          <h2 className="text-xl sm:text-2xl font-bold leading-snug">
+          {/* ================= QUESTION TEXT ================= */}
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-snug">
             {currentQuestion.questionText}
           </h2>
 
           {/* ================= OPTIONS ================= */}
-          <div className="space-y-2.5 mt-1">
-            {currentQuestion.options.map((option, index) => {
+          <div className="space-y-3 mt-1">
+            {currentQuestion.options.map((option: any, index: number) => {
               const isSelected = selectedOptionIndex === index;
 
               let stateClass =
-                "bg-base-100 border-base-300 hover:bg-base-200 hover:border-base-content/20 active:scale-[0.99]";
+                "bg-gray-50 border-gray-200 text-gray-800 hover:bg-gray-100 hover:border-gray-300";
 
               if (isAnswered) {
                 if (option.isCorrect) {
-                  stateClass = "bg-success/10 text-success border-success";
+                  stateClass = "bg-emerald-50 text-emerald-800 border-emerald-500 font-bold";
                 } else if (isSelected) {
-                  stateClass = "bg-error/10 text-error border-error";
+                  stateClass = "bg-red-50 text-red-700 border-red-400 font-bold";
                 } else {
-                  stateClass = "bg-base-100 border-base-200 opacity-50";
+                  stateClass = "bg-gray-50 border-gray-100 text-gray-400 opacity-60";
                 }
               }
 
@@ -344,21 +328,19 @@ export default function ClientQuizPlayer({ quiz }) {
                   key={index}
                   disabled={isAnswered || isSubmitting}
                   onClick={() => handleOptionSelect(index)}
-                  className={`w-full flex items-center justify-between p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-200 group ${stateClass} ${
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 text-left text-sm font-semibold transition-all duration-200 ${stateClass} ${
                     isSelected && !isAnswered
-                      ? "border-primary bg-primary/5"
+                      ? "border-[#7047C7] bg-[#7047C7]/5 text-[#340C97]"
                       : ""
                   }`}
                 >
-                  <span className="text-left text-sm sm:text-base font-medium">
-                    {option.text}
-                  </span>
- 
+                  <span className="flex-1 pr-3">{option.text}</span>
+
                   {isAnswered && option.isCorrect && (
-                    <CheckCircle className="w-5 h-5 shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
                   )}
                   {isAnswered && isSelected && !option.isCorrect && (
-                    <XCircle className="w-5 h-5 shrink-0" />
+                    <XCircle className="w-5 h-5 text-red-500 shrink-0" />
                   )}
                 </button>
               );
@@ -367,13 +349,13 @@ export default function ClientQuizPlayer({ quiz }) {
 
           {/* ================= ACTIONS ================= */}
           {isAnswered && (
-            <div className="flex justify-end pt-1 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex justify-end pt-2">
               {!autoNext && !isLastQuestion && (
                 <button
                   onClick={handleNextQuestion}
-                  className="btn btn-primary btn-md gap-2 px-6 rounded-full"
+                  className="flex items-center gap-2 rounded-full bg-[#7047C7] px-6 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-[#5B32B4]"
                 >
-                  Next
+                  Next Question
                   <ChevronRight className="w-4 h-4" />
                 </button>
               )}
@@ -381,11 +363,17 @@ export default function ClientQuizPlayer({ quiz }) {
               {isLastQuestion && (
                 <button
                   onClick={handleSubmitQuiz}
-                  className="btn btn-success btn-md gap-2 px-6 rounded-full text-white"
+                  className="flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-50"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Submitting..." : "Finish"}
-                  {!isSubmitting && <Trophy className="w-4 h-4" />}
+                  {isSubmitting ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  ) : (
+                    <>
+                      Finish Quiz
+                      <Trophy className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               )}
             </div>

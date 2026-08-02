@@ -1,12 +1,13 @@
 "use client";
-import Cta from "@/components/Cta";
-import FeaturedSection from "@/components/FeaturedSection";
-import HeroSection from "@/components/Hero";
+
+import React from "react";
+
 import { useUser } from "@/app/(auth)/context/GetUserContext";
-import Hero from "daisyui/components/hero";
-import Image from "next/image";
 import Loading from "@/components/Loading";
+import HeroSection from "@/components/Hero";
+import FeaturedSection from "@/components/FeaturedSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
+import WinnersSection from "@/components/WinnersSection";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -24,12 +25,14 @@ export default function Home() {
       </div>
 
       <main className="flex-grow">
-        <div className="space-y-0"> {/* Removed gap to let sections handle their own spacing nicely */}
+        <div className="space-y-0">
           <HeroSection />
+
+
+          <WinnersSection />
+
           <FeaturedSection />
           <HowItWorksSection />
-          {/* Add CTA here if needed, consistent with imports */}
-          {/* <Cta /> */}
         </div>
       </main>
 

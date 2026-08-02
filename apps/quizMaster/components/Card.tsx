@@ -29,17 +29,17 @@ const Card = ({
   const SelectedIcon = iconMap[icon] || LuCrown;
 
   return (
-    <div className="card w-full bg-base-100 shadow-sm border border-base-200">
-      <div className="card-body gap-3 sm:gap-4 p-4 sm:p-5">
+    <div className="w-full rounded-2xl bg-white shadow-lg border border-gray-100">
+      <div className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-5">
         
         {/* Header */}
-        <div className="flex items-center gap-2 text-base sm:text-lg font-bold">
-          <SelectedIcon className="text-primary text-lg sm:text-xl" />
+        <div className="flex items-center gap-2 text-base sm:text-lg font-bold text-gray-900">
+          <SelectedIcon className="text-[#7047C7] text-lg sm:text-xl" />
           <h2 className="truncate">{title}</h2>
         </div>
 
         {/* Content */}
-        <h2 className={`${textSize[text]} font-semibold break-words`}>
+        <h2 className={`${textSize[text]} font-semibold break-words text-gray-800`}>
           {content}
         </h2>
 
@@ -48,19 +48,20 @@ const Card = ({
           {server && (
             <div className="flex items-center gap-3">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-error"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
-              <p className="text-sm opacity-70">Coming Soon</p>
+              <p className="text-sm text-gray-500">Coming Soon</p>
             </div>
           )}
 
           {progressBar && (
-            <progress
-              className="progress progress-success w-full"
-              value="88"
-              max="100"
-            />
+            <div className="h-2 w-full rounded-full bg-gray-100">
+              <div
+                className="h-2 rounded-full bg-emerald-500"
+                style={{ width: "88%" }}
+              />
+            </div>
           )}
         </div>
       </div>

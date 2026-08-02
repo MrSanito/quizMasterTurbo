@@ -258,38 +258,38 @@ const FriendRequest = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="bg-[#151b23] border border-gray-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        {/* Decorative subtle background gradient */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        {/* Decorative subtle background gradient, echoes the hero's palette */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#7047C7]/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#F0DE4A]/5 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-100">
           <div>
-            <h2 className="text-white text-2xl font-extrabold tracking-tight flex items-center gap-2">
-              <Users className="text-blue-400 w-7 h-7" />
+            <h2 className="text-gray-900 text-2xl font-extrabold tracking-tight flex items-center gap-2">
+              <Users className="text-[#7047C7] w-7 h-7" />
               Social Hub
             </h2>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-500 text-sm mt-1">
               Connect with fellow quiz takers, challenge them, and view your friends circle.
             </p>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex bg-gray-900 p-1.5 rounded-xl border border-gray-800">
+          <div className="flex bg-gray-50 p-1.5 rounded-xl border border-gray-200">
             <button
               onClick={() => setActiveTab("friends")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === "friends"
-                  ? "bg-blue-500 text-white shadow-md shadow-blue-500/25"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-[#7047C7] text-white shadow-md shadow-[#7047C7]/25"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <Users className="w-4 h-4" />
               Friends
               {friends.length > 0 && (
                 <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full ${
-                  activeTab === "friends" ? "bg-white/20 text-white" : "bg-gray-800 text-gray-400"
+                  activeTab === "friends" ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"
                 }`}>
                   {friends.length}
                 </span>
@@ -300,8 +300,8 @@ const FriendRequest = () => {
               onClick={() => setActiveTab("pending")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === "pending"
-                  ? "bg-blue-500 text-white shadow-md shadow-blue-500/25"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-[#7047C7] text-white shadow-md shadow-[#7047C7]/25"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <Clock className="w-4 h-4" />
@@ -317,8 +317,8 @@ const FriendRequest = () => {
               onClick={() => setActiveTab("add")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === "add"
-                  ? "bg-blue-500 text-white shadow-md shadow-blue-500/25"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-[#7047C7] text-white shadow-md shadow-[#7047C7]/25"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               <UserPlus className="w-4 h-4" />
@@ -330,7 +330,7 @@ const FriendRequest = () => {
         {/* Tab Content Panels */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <span className="loading loading-spinner loading-md text-blue-400"></span>
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#7047C7]/20 border-t-[#7047C7]" />
             <p className="text-gray-500 text-sm mt-3">Loading Social Hub...</p>
           </div>
         ) : (
@@ -345,15 +345,15 @@ const FriendRequest = () => {
                 className="space-y-4"
               >
                 {friends.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-gray-800 rounded-xl bg-gray-900/30">
-                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                    <h3 className="text-gray-300 font-bold text-lg">No friends yet</h3>
+                  <div className="text-center py-12 border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-gray-700 font-bold text-lg">No friends yet</h3>
                     <p className="text-gray-500 text-sm mt-1 max-w-sm mx-auto">
                       Search for users in the "Add Friend" tab to expand your quiz circle.
                     </p>
                     <button
                       onClick={() => setActiveTab("add")}
-                      className="btn bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg mt-4 px-6 btn-sm font-semibold"
+                      className="mt-4 inline-flex items-center rounded-full bg-[#7047C7] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#5B32B4]"
                     >
                       Find Friends
                     </button>
@@ -364,32 +364,32 @@ const FriendRequest = () => {
                       <motion.div
                         key={item.friendshipId}
                         layout
-                        className="bg-gray-900 border border-gray-800/80 rounded-xl p-4 flex items-center justify-between hover:border-gray-700 transition-all shadow-sm"
+                        className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-gray-200 transition-all shadow-sm"
                       >
                         <div className="flex items-center gap-3">
                           <div className="avatar">
-                            <div className="w-12 h-12 rounded-full border border-gray-700">
+                            <div className="w-12 h-12 rounded-full border border-gray-200">
                               <img src={getAvatarUrl(item.user.avatar)} alt="avatar" />
                             </div>
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-white font-bold text-sm tracking-wide">
+                            <span className="text-gray-900 font-bold text-sm tracking-wide">
                               {item.user.firstName || item.user.lastName
                                 ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.trim()
                                 : item.user.email.split("@")[0]}
                             </span>
-                            <span className="text-gray-400 text-xs font-semibold">@{item.user.username}</span>
+                            <span className="text-gray-500 text-xs font-semibold">@{item.user.username}</span>
                           </div>
                         </div>
 
                         <button
                           onClick={() => handleRemoveFriend(item.friendshipId, item.user.username, item.user.id)}
                           disabled={actionLoadingId === item.friendshipId}
-                          className="btn btn-ghost hover:bg-red-500/10 hover:text-red-400 text-gray-400 btn-circle btn-sm transition-all"
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50"
                           title="Remove Friend"
                         >
                           {actionLoadingId === item.friendshipId ? (
-                            <span className="loading loading-spinner loading-xs"></span>
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
                           ) : (
                             <UserMinus className="w-4 h-4" />
                           )}
@@ -412,12 +412,12 @@ const FriendRequest = () => {
               >
                 {/* Incoming Requests */}
                 <div className="space-y-3">
-                  <h3 className="text-white font-semibold text-sm tracking-wider uppercase text-gray-500">
+                  <h3 className="text-gray-500 font-semibold text-sm tracking-wider uppercase">
                     Incoming Requests ({incoming.length})
                   </h3>
 
                   {incoming.length === 0 ? (
-                    <div className="text-center py-6 border border-gray-800 rounded-xl bg-gray-900/10 text-gray-500 text-sm">
+                    <div className="text-center py-6 border border-gray-200 rounded-xl bg-gray-50 text-gray-400 text-sm">
                       No incoming pending requests.
                     </div>
                   ) : (
@@ -425,21 +425,21 @@ const FriendRequest = () => {
                       {incoming.map((item) => (
                         <div
                           key={item.requestId}
-                          className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
+                          className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between shadow-sm"
                         >
                           <div className="flex items-center gap-3">
                             <div className="avatar">
-                              <div className="w-12 h-12 rounded-full border border-gray-700">
+                              <div className="w-12 h-12 rounded-full border border-gray-200">
                                 <img src={getAvatarUrl(item.user.avatar)} alt="avatar" />
                               </div>
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-white font-bold text-sm">
+                              <span className="text-gray-900 font-bold text-sm">
                                 {item.user.firstName || item.user.lastName
                                   ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.trim()
                                   : item.user.email.split("@")[0]}
                               </span>
-                              <span className="text-gray-400 text-xs font-semibold">@{item.user.username}</span>
+                              <span className="text-gray-500 text-xs font-semibold">@{item.user.username}</span>
                             </div>
                           </div>
 
@@ -447,10 +447,10 @@ const FriendRequest = () => {
                             <button
                               onClick={() => handleAcceptRequest(item.requestId)}
                               disabled={actionLoadingId === item.requestId}
-                              className="btn btn-sm bg-green-600 hover:bg-green-700 text-white border-none rounded-lg font-bold"
+                              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                             >
                               {actionLoadingId === item.requestId ? (
-                                <span className="loading loading-spinner loading-xs"></span>
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                               ) : (
                                 <Check className="w-4 h-4" />
                               )}
@@ -459,7 +459,7 @@ const FriendRequest = () => {
                             <button
                               onClick={() => handleDeclineRequest(item.requestId, true)}
                               disabled={actionLoadingId === item.requestId}
-                              className="btn btn-sm bg-gray-800 hover:bg-gray-700 text-gray-300 border-none rounded-lg"
+                              className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-200 disabled:opacity-50"
                             >
                               Decline
                             </button>
@@ -471,13 +471,13 @@ const FriendRequest = () => {
                 </div>
 
                 {/* Outgoing Requests */}
-                <div className="space-y-3 pt-4 border-t border-gray-800/60">
-                  <h3 className="text-white font-semibold text-sm tracking-wider uppercase text-gray-500">
+                <div className="space-y-3 pt-4 border-t border-gray-100">
+                  <h3 className="text-gray-500 font-semibold text-sm tracking-wider uppercase">
                     Sent Requests ({outgoing.length})
                   </h3>
 
                   {outgoing.length === 0 ? (
-                    <div className="text-center py-6 border border-gray-800 rounded-xl bg-gray-900/10 text-gray-500 text-sm">
+                    <div className="text-center py-6 border border-gray-200 rounded-xl bg-gray-50 text-gray-400 text-sm">
                       No pending sent requests.
                     </div>
                   ) : (
@@ -485,31 +485,31 @@ const FriendRequest = () => {
                       {outgoing.map((item) => (
                         <div
                           key={item.requestId}
-                          className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
+                          className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between shadow-sm"
                         >
                           <div className="flex items-center gap-3">
                             <div className="avatar">
-                              <div className="w-12 h-12 rounded-full border border-gray-700">
+                              <div className="w-12 h-12 rounded-full border border-gray-200">
                                 <img src={getAvatarUrl(item.user.avatar)} alt="avatar" />
                               </div>
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-white font-bold text-sm">
+                              <span className="text-gray-900 font-bold text-sm">
                                 {item.user.firstName || item.user.lastName
                                   ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.trim()
                                   : item.user.email.split("@")[0]}
                               </span>
-                              <span className="text-gray-400 text-xs font-semibold">@{item.user.username}</span>
+                              <span className="text-gray-500 text-xs font-semibold">@{item.user.username}</span>
                             </div>
                           </div>
 
                           <button
                             onClick={() => handleDeclineRequest(item.requestId, false)}
                             disabled={actionLoadingId === item.requestId}
-                            className="btn btn-sm bg-gray-800 hover:bg-red-500/15 hover:text-red-400 text-gray-400 border-none rounded-lg"
+                            className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-500 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                           >
                             {actionLoadingId === item.requestId ? (
-                              <span className="loading loading-spinner loading-xs"></span>
+                              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
                             ) : (
                               "Cancel"
                             )}
@@ -534,19 +534,19 @@ const FriendRequest = () => {
                 {/* Search Bar */}
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Search className="h-5 h-5 text-gray-500" />
+                    <Search className="h-5 h-5 text-gray-400" />
                   </span>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by username or email..."
-                    className="w-full bg-gray-900 border border-gray-800 text-white pl-11 pr-4 py-3.5 rounded-xl outline-none focus:border-blue-500 transition-all font-medium placeholder-gray-500 text-sm"
+                    className="w-full bg-white border border-gray-200 text-gray-800 pl-11 pr-4 py-3.5 rounded-xl outline-none focus:border-[#7047C7] focus:ring-4 focus:ring-[#7047C7]/10 transition-all font-medium placeholder-gray-400 text-sm"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-white"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-700"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -556,13 +556,13 @@ const FriendRequest = () => {
                 {/* Search Results */}
                 {searchLoading ? (
                   <div className="flex flex-col items-center justify-center py-8">
-                    <span className="loading loading-spinner loading-sm text-blue-500"></span>
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#7047C7]/20 border-t-[#7047C7]" />
                     <p className="text-gray-500 text-xs mt-2">Searching users...</p>
                   </div>
                 ) : searchQuery.trim() ? (
                   searchResults.length === 0 ? (
                     <div className="text-center py-10 text-gray-500 text-sm">
-                      <UserX className="w-10 h-10 text-gray-600 mx-auto mb-2" />
+                      <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                       No users found matching "{searchQuery}"
                     </div>
                   ) : (
@@ -574,21 +574,21 @@ const FriendRequest = () => {
                         {searchResults.map((user) => (
                           <div
                             key={user.id}
-                            className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between"
+                            className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between shadow-sm"
                           >
                             <div className="flex items-center gap-3">
                               <div className="avatar">
-                                <div className="w-12 h-12 rounded-full border border-gray-700">
+                                <div className="w-12 h-12 rounded-full border border-gray-200">
                                   <img src={getAvatarUrl(user.avatar)} alt="avatar" />
                                 </div>
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-white font-bold text-sm">
+                                <span className="text-gray-900 font-bold text-sm">
                                   {user.firstName || user.lastName
                                     ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
                                     : user.email.split("@")[0]}
                                 </span>
-                                <span className="text-gray-400 text-xs font-semibold">@{user.username}</span>
+                                <span className="text-gray-500 text-xs font-semibold">@{user.username}</span>
                               </div>
                             </div>
 
@@ -598,10 +598,10 @@ const FriendRequest = () => {
                                 <button
                                   onClick={() => handleSendRequest(user.username, user.id)}
                                   disabled={actionLoadingId === user.id}
-                                  className="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg font-bold"
+                                  className="flex items-center gap-1.5 rounded-full bg-[#7047C7] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#5B32B4] disabled:opacity-50"
                                 >
                                   {actionLoadingId === user.id ? (
-                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                                   ) : (
                                     <UserPlus className="w-4 h-4" />
                                   )}
@@ -610,7 +610,7 @@ const FriendRequest = () => {
                               )}
 
                               {user.friendshipStatus === "ACCEPTED" && (
-                                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 text-green-400 text-xs font-bold rounded-lg border border-green-500/20">
+                                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full border border-emerald-200">
                                   <UserRoundCheck className="w-4 h-4" />
                                   Friends
                                 </span>
@@ -620,10 +620,10 @@ const FriendRequest = () => {
                                 <button
                                   onClick={() => user.friendshipId && handleDeclineRequest(user.friendshipId, false)}
                                   disabled={actionLoadingId === user.friendshipId}
-                                  className="btn btn-sm bg-gray-800 hover:bg-red-500/10 hover:text-red-400 text-gray-400 border-none rounded-lg font-bold"
+                                  className="rounded-full bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                                 >
                                   {actionLoadingId === user.friendshipId ? (
-                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
                                   ) : (
                                     "Cancel Request"
                                   )}
@@ -634,10 +634,10 @@ const FriendRequest = () => {
                                 <button
                                   onClick={() => user.friendshipId && handleAcceptRequest(user.friendshipId)}
                                   disabled={actionLoadingId === user.friendshipId}
-                                  className="btn btn-sm bg-green-600 hover:bg-green-700 text-white border-none rounded-lg font-bold"
+                                  className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                                 >
                                   {actionLoadingId === user.friendshipId ? (
-                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                                   ) : (
                                     <Check className="w-4 h-4" />
                                   )}
@@ -652,15 +652,15 @@ const FriendRequest = () => {
                   )
                 ) : (
                   <div className="space-y-4">
-                    <h4 className="text-gray-400 font-extrabold text-sm tracking-wide uppercase pl-1">
+                    <h4 className="text-gray-500 font-extrabold text-sm tracking-wide uppercase pl-1">
                       Discover Players
                     </h4>
                     {discoverLoading ? (
                       <div className="flex flex-col items-center justify-center py-8">
-                        <span className="loading loading-spinner loading-sm text-blue-500"></span>
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#7047C7]/20 border-t-[#7047C7]" />
                       </div>
                     ) : discoverUsers.length === 0 ? (
-                      <div className="text-center py-10 border border-dashed border-gray-800 rounded-xl bg-gray-900/10 text-gray-500 text-sm">
+                      <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl bg-gray-50 text-gray-400 text-sm">
                         No new players to discover at the moment.
                       </div>
                     ) : (
@@ -668,21 +668,21 @@ const FriendRequest = () => {
                         {discoverUsers.map((user) => (
                           <div
                             key={user.id}
-                            className="bg-gray-900 border border-gray-800/80 rounded-xl p-4 flex items-center justify-between hover:border-gray-700 transition-all shadow-sm"
+                            className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-gray-200 transition-all shadow-sm"
                           >
                             <div className="flex items-center gap-3">
                               <div className="avatar">
-                                <div className="w-12 h-12 rounded-full border border-gray-700">
+                                <div className="w-12 h-12 rounded-full border border-gray-200">
                                   <img src={getAvatarUrl(user.avatar)} alt="avatar" />
                                 </div>
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-white font-bold text-sm">
+                                <span className="text-gray-900 font-bold text-sm">
                                   {user.firstName || user.lastName
                                     ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
                                     : user.email.split("@")[0]}
                                 </span>
-                                <span className="text-gray-400 text-xs font-semibold">@{user.username}</span>
+                                <span className="text-gray-500 text-xs font-semibold">@{user.username}</span>
                               </div>
                             </div>
 
@@ -692,10 +692,10 @@ const FriendRequest = () => {
                                 <button
                                   onClick={() => handleSendRequest(user.username, user.id)}
                                   disabled={actionLoadingId === user.id}
-                                  className="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white border-none rounded-lg font-bold"
+                                  className="flex items-center gap-1.5 rounded-full bg-[#7047C7] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#5B32B4] disabled:opacity-50"
                                 >
                                   {actionLoadingId === user.id ? (
-                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                                   ) : (
                                     <UserPlus className="w-4 h-4" />
                                   )}
@@ -707,10 +707,10 @@ const FriendRequest = () => {
                                 <button
                                   onClick={() => user.friendshipId && handleDeclineRequest(user.friendshipId, false)}
                                   disabled={actionLoadingId === user.friendshipId}
-                                  className="btn btn-sm bg-gray-800 hover:bg-red-500/10 hover:text-red-400 text-gray-400 border-none rounded-lg font-bold"
+                                  className="rounded-full bg-gray-100 px-4 py-2 text-sm font-bold text-gray-500 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
                                 >
                                   {actionLoadingId === user.friendshipId ? (
-                                    <span className="loading loading-spinner loading-xs"></span>
+                                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
                                   ) : (
                                     "Cancel Request"
                                   )}
