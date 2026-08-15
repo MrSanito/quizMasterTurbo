@@ -552,6 +552,7 @@ import { logger } from "../utils/logger.js";
       for (const s of sessions) {
         pipeline.del(rtKey(userId, s.familyId, s.id));
         pipeline.srem(familyKey(s.familyId), s.id);
+        pipeline.set(`blacklist:${s.id}`, "1", "EX", 7 * 24 * 60 * 60);
       }
       // Delete unique families
       const uniqueFamilies = [...new Set(sessions.map((s) => s.familyId))];
@@ -582,6 +583,7 @@ import { logger } from "../utils/logger.js";
     const pipeline = redis.pipeline();
     pipeline.del(rtKey(userId, session.familyId, targetId));
     pipeline.srem(familyKey(session.familyId), targetId);
+    pipeline.set(`blacklist:${targetId}`, "1", "EX", 7 * 24 * 60 * 60);
     await pipeline.exec();
 
     await prisma.session.delete({ where: { id: targetId } });
