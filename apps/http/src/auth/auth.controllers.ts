@@ -525,6 +525,7 @@ import { logger } from "../utils/logger.js";
     const pipeline = redis.pipeline();
     pipeline.del(rtKey(userId, familyId, sessionId));
     pipeline.srem(familyKey(familyId), sessionId);
+    pipeline.set(`blacklist:${sessionId}`, "1", "EX", 7 * 24 * 60 * 60);
     await pipeline.exec();
 
     await prisma.session.delete({ where: { id: sessionId } }).catch(() => {

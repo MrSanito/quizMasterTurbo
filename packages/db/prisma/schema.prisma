@@ -1,37 +1,36 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "binary"
 }
 
 datasource db {
   provider = "postgresql"
- }
+}
 
 model User {
-  id                             String        @id @default(cuid())
-  username                       String        @unique
+  id        String   @id @default(cuid())
+  username  String   @unique
   firstName String?
-  lastName String?
-  email                          String        @unique
-  password                       String
-  avatar                         String    @default("avatar1.svg")
-  createdAt                      DateTime      @default(now())
-  updatedAt                      DateTime      @default(now()) @updatedAt
+  lastName  String?
+  email     String   @unique
+  password  String
+  avatar    String   @default("avatar1.svg")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
- sentRequests     FriendRequest[] @relation("SentRequests")
+  sentRequests     FriendRequest[] @relation("SentRequests")
   receivedRequests FriendRequest[] @relation("ReceivedRequests")
 
-    friendshipsA Friendship[] @relation("UserA")
+  friendshipsA Friendship[] @relation("UserA")
   friendshipsB Friendship[] @relation("UserB")
- 
-  QuizAttempt                    QuizAttempt[]
-  hostedRooms Room[]      @relation("RoomHost")
+
+  QuizAttempt QuizAttempt[]
+  hostedRooms Room[]         @relation("RoomHost")
   roomPlayers RoomPlayer[]
   answers     PlayerAnswer[]
   events      RoomEvent[]
   sessions    Session[]
 }
-
 
 enum FriendRequestStatus {
   PENDING
@@ -39,7 +38,6 @@ enum FriendRequestStatus {
   REJECTED
   CANCELLED
 }
-
 
 model FriendRequest {
   id         String              @id @default(cuid())
@@ -57,7 +55,6 @@ model FriendRequest {
   @@index([receiverId, status])
 }
 
-
 model Friendship {
   id      String @id @default(cuid())
   userAId String
@@ -72,10 +69,6 @@ model Friendship {
   @@index([userBId])
 }
 
-
-
-
-
 model Category {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -84,17 +77,16 @@ model Category {
   Quiz      Quiz[]
 }
 
- 
 model Option {
   id         String   @id @default(uuid())
   questionId String
   text       String
   isCorrect  Boolean
-  Question   Question @relation(fields: [questionId], references: [id] , onDelete: Cascade)
+  Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Question {
-  id             String   @id @default(uuid())  
+  id             String   @id @default(uuid())
   quizId         String
   questionText   String
   points         Int
@@ -115,8 +107,7 @@ model Quiz {
   Question    Question[]
   Category    Category      @relation(fields: [categoryId], references: [id])
   QuizAttempt QuizAttempt[]
-  Room Room[]
-
+  Room        Room[]
 }
 
 model QuizAttempt {
@@ -136,7 +127,6 @@ model QuizAttempt {
   @@index([userId])
 }
 
-
 enum FriendStatus {
   PENDING
   ACCEPTED
@@ -152,89 +142,86 @@ enum RoomState {
   ABANDONED
 }
 
-
 model Room {
-  roomName String @unique  
-  quizId String
-quiz   Quiz @relation(fields: [quizId], references: [id])
+  roomName String @unique
+  quizId   String
+  quiz     Quiz   @relation(fields: [quizId], references: [id])
 
-   id          String     @id @default(uuid())
-  hostId      String
-  state       RoomState  @default(CREATED)
-  maxPlayers  Int
-  createdAt   DateTime   @default(now())
-  startedAt   DateTime?
-  endedAt     DateTime?
+  id         String    @id @default(uuid())
+  hostId     String
+  state      RoomState @default(CREATED)
+  maxPlayers Int
+  createdAt  DateTime  @default(now())
+  startedAt  DateTime?
+  endedAt    DateTime?
 
-  host        User       @relation("RoomHost", fields: [hostId], references: [id])
-  players     RoomPlayer[]
-  questions   RoomQuestion[]
-  answers     PlayerAnswer[]
-  events      RoomEvent[]
-    @@index([quizId])
+  host      User           @relation("RoomHost", fields: [hostId], references: [id])
+  players   RoomPlayer[]
+  questions RoomQuestion[]
+  answers   PlayerAnswer[]
+  events    RoomEvent[]
+
+  @@index([quizId])
   @@index([hostId])
-
 }
 
 model RoomPlayer {
-  id               String   @id @default(uuid())
-  pointsEarned     Int      @default(0)
-  avatarSnapshot   String?
-  hasJoinedGame    Boolean  @default(false)
-  gameJoinedAt     DateTime?
+  id             String    @id @default(uuid())
+  pointsEarned   Int       @default(0)
+  avatarSnapshot String?
+  hasJoinedGame  Boolean   @default(false)
+  gameJoinedAt   DateTime?
 
   roomId           String
   userId           String
   usernameSnapshot String
-  score            Int      @default(0)
-  joinedAt         DateTime @default(now())
+  score            Int       @default(0)
+  joinedAt         DateTime  @default(now())
   leftAt           DateTime?
-  isHost           Boolean  @default(false)
+  isHost           Boolean   @default(false)
 
-  room   Room @relation(fields: [roomId], references: [id])
-  user   User @relation(fields: [userId], references: [id])
+  room Room @relation(fields: [roomId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@unique([roomId, userId]) // user can't join same room twice
-   @@index([roomId])
+  @@index([roomId])
   @@index([userId])
 }
 
 model RoomQuestion {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   roomId        String
   questionId    String
   questionOrder Int
   startedAt     DateTime?
   endedAt       DateTime?
 
-  room      Room     @relation(fields: [roomId], references: [id])
-  answers   PlayerAnswer[]
-   @@index([roomId])
+  room    Room           @relation(fields: [roomId], references: [id])
+  answers PlayerAnswer[]
+
+  @@index([roomId])
   @@index([questionId])
 }
 
 model PlayerAnswer {
-  id              String   @id @default(uuid())
-  roomId          String
-  roomQuestionId  String
-  userId          String
-selectedOptionId String
-  isCorrect       Boolean
-  pointsEarned    Int      @default(0)
-  answeredAt      DateTime @default(now())
-  responseTimeMs  Int
-  
+  id               String   @id @default(uuid())
+  roomId           String
+  roomQuestionId   String
+  userId           String
+  selectedOptionId String
+  isCorrect        Boolean
+  pointsEarned     Int      @default(0)
+  answeredAt       DateTime @default(now())
+  responseTimeMs   Int
 
-  room          Room         @relation(fields: [roomId], references: [id])
-  roomQuestion  RoomQuestion @relation(fields: [roomQuestionId], references: [id])
-  user          User         @relation(fields: [userId], references: [id])
+  room         Room         @relation(fields: [roomId], references: [id])
+  roomQuestion RoomQuestion @relation(fields: [roomQuestionId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
 
   @@unique([roomQuestionId, userId])
-
   @@index([roomId])
   @@index([userId])
-    @@index([roomQuestionId])
-
+  @@index([roomQuestionId])
 }
 
 model RoomEvent {
@@ -245,32 +232,32 @@ model RoomEvent {
   payload   Json
   createdAt DateTime @default(now())
 
-  room Room @relation(fields: [roomId], references: [id])
+  room Room  @relation(fields: [roomId], references: [id])
   user User? @relation(fields: [userId], references: [id])
 
   @@index([roomId])
 }
 
 model Session {
-  id                 String   @id  // this IS the sessionId (cuid)
-  sessionToken       String   @unique
-  familyId           String   // groups rotations for one login event
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String @id // this IS the sessionId (cuid)
+  sessionToken String @unique
+  familyId     String // groups rotations for one login event
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt          DateTime @default(now())
-  expiresAt          DateTime
-  lastUsedAt         DateTime @default(now())
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  lastUsedAt DateTime @default(now())
 
   // Device info (from client)
-  ipAddress          String?
-  userAgent          String?
-  deviceType         String?
-  deviceName         String?
-  browser            String?
-  os                 String?
-  country            String?
-  city               String?
+  ipAddress  String?
+  userAgent  String?
+  deviceType String?
+  deviceName String?
+  browser    String?
+  os         String?
+  country    String?
+  city       String?
 
   // PoP
   publicKeyThumbprint String? // SHA-256 of device public key JWK (for PoP)
