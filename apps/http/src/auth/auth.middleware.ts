@@ -22,7 +22,7 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
 
     // ✅ check if token is blacklisted (logged out)
     const isBlacklisted = await redis.get(`blacklist:${decoded.sessionId}`);
-    if (isBlacklisted) {
+    if (isBlacklisted) { 
       return res
         .status(401)
         .json({ success: "false", message: "Token has been revoked" });
