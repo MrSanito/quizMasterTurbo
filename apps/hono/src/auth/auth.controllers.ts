@@ -7,7 +7,7 @@ import {
 	ValidateLoginSchema,
 	ValidateRegisterSchema,
 } from "@repo/types";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import {
 	getForgotPasswordHtml,
