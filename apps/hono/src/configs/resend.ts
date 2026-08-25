@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const sendResendEmail = async ({
 	to,
 	subject,
@@ -11,6 +9,7 @@ export const sendResendEmail = async ({
 	subject: string;
 	html: string;
 }) => {
+	const resend = new Resend(process.env.RESEND_API_KEY || "dummy_key");
 	try {
 		const response = await resend.emails.send({
 			from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
