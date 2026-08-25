@@ -1,6 +1,7 @@
 name = "hono-server"
 main = "src/index.ts"
 compatibility_date = "2026-08-25"
+compatibility_flags = [ "nodejs_compat" ]
 
 # [vars]
 # DATABASE_URL = ""
