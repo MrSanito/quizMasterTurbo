@@ -39,6 +39,8 @@ export const fetchCategories = async (c: any) => {
 			{
 				success: false,
 				message: "Failed to fetch categories",
+				error: error instanceof Error ? error.message : String(error),
+				stack: error instanceof Error ? error.stack : undefined,
 			},
 			500,
 		);
@@ -88,6 +90,8 @@ export const fetchQuizzies = async (c: any) => {
 			{
 				success: false,
 				message: "Failed to fetch quizzes",
+				error: error instanceof Error ? error.message : String(error),
+				stack: error instanceof Error ? error.stack : undefined,
 			},
 			500,
 		);
