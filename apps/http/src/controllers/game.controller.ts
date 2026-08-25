@@ -177,17 +177,17 @@ export const getGameResult = async (req: Request, res: Response) => {
 		});
 
 		// Transform Data for Frontend
-		// @ts-expect-error - Prisma types are sometimes finicky with includes in this setup
+		// @ts-ignore - Prisma types are sometimes finicky with includes in this setup
 		const results = room.players.map((rp: any) => {
 			// Get answers for this player
 			const playerAnswers = allAnswers.filter((a) => a.userId === rp.userId);
 
 			// Map answers to the actual questions (to get text, correct option, etc)
 			// We iterate through the QUIZ questions to maintain order and include skipped ones
-			// @ts-expect-error
+			// @ts-ignore
 			const answersDetail = room.quiz.Question.map((q: any) => {
 				// Find the RoomQuestion ID for this Question ID
-				// @ts-expect-error
+				// @ts-ignore
 				const roomQ = room.questions.find((rq: any) => rq.questionId === q.id);
 				if (!roomQ) return null;
 
