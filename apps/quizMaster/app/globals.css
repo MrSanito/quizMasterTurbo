@@ -3,29 +3,29 @@
 
 html,
 body {
-  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+	font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
 }
 
 /* Toastify mobile width fix - REAL fix */
 @media (max-width: 640px) {
-  .Toastify__toast-container {
-    --toastify-toast-width: 60%;
-    --toastify-toast-max-height: auto;
-  }
+	.Toastify__toast-container {
+		--toastify-toast-width: 60%;
+		--toastify-toast-max-height: auto;
+	}
 
-  .Toastify__toast-container--bottom-right {
-    left: 50% !important;
-    right: auto !important;
-    bottom: 1rem !important;
-    transform: translateX(-50%);
-  }
+	.Toastify__toast-container--bottom-right {
+		left: 50%;
+		right: auto;
+		bottom: 1rem;
+		transform: translateX(-50%);
+	}
 
-  .Toastify__toast {
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: 14px;
-  }
+	.Toastify__toast {
+		margin-left: auto;
+		margin-right: auto;
+		border-radius: 14px;
+	}
 }

@@ -1,16 +1,14 @@
 // import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ToastContainer } from "react-toastify";
 import Navbar from "../components/Navbar";
 import { UserProvider } from "./(auth)/context/GetUserContext";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
 //   subsets: ["latin"],
 // });
-
 
 // const geistMono = Geist_Mono({
 //   variable: "--font-geist-mono",
@@ -18,43 +16,43 @@ import "react-toastify/dist/ReactToastify.css";
 // });
 
 export const metadata = {
-  title: "QuizMaster - Test Your Knowledge",
-  description:
-    "An interactive quiz platform to test your knowledge across various categories",
+	title: "QuizMaster - Test Your Knowledge",
+	description:
+		"An interactive quiz platform to test your knowledge across various categories",
 };
 
 export default function RootLayout({ children }) {
-  return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
-      <body
-        className={`
+	return (
+		<html lang="en" data-theme="dark" suppressHydrationWarning>
+			<body
+				className={`
           antialiased bg-[#0d032b] text-white min-h-screen`}
-        suppressHydrationWarning
-      >
-        <UserProvider>
-          <Navbar />
-          <main className="w-full">
-            {children}
-            <ToastContainer
-              position="bottom-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              pauseOnHover
-              theme="dark"
-              toastStyle={{
-                width: "260px", //  fixed width = predictable
-                maxWidth: "260px",
-                whiteSpace: "nowrap", //  single line
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                borderRadius: "14px",
-              }}
-            />
-          </main>
-        </UserProvider>
-      </body>
-    </html>
-  );
+				suppressHydrationWarning
+			>
+				<UserProvider>
+					<Navbar />
+					<main className="w-full">
+						{children}
+						<ToastContainer
+							position="bottom-right"
+							autoClose={5000}
+							hideProgressBar={false}
+							newestOnTop
+							closeOnClick
+							pauseOnHover
+							theme="dark"
+							toastStyle={{
+								width: "260px", //  fixed width = predictable
+								maxWidth: "260px",
+								whiteSpace: "nowrap", //  single line
+								overflow: "hidden",
+								textOverflow: "ellipsis",
+								borderRadius: "14px",
+							}}
+						/>
+					</main>
+				</UserProvider>
+			</body>
+		</html>
+	);
 }

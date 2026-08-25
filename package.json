@@ -1,45 +1,55 @@
 {
-  "name": "quizMasterTurbo",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "db:deploy": "turbo run db:deploy",
-    "db:generate": "turbo run db:generate",
-    "db:migrate": "turbo run db:migrate",
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
-  },
-  "devDependencies": {
-    "@types/cookie-parser": "^1.4.10",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^25.0.3",
-    "prettier": "^3.7.4"
-  },
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "packageManager": "npm@10.8.2",
-  "dependencies": {
-    "@prisma/client": "7.2.0",
-    "@repo/db": "^0.0.0",
-    "@repo/redis": "^1.0.0",
-    "@types/bcrypt": "^6.0.0",
-    "@types/nodemailer": "^8.0.1",
-    "@types/socket.io": "^3.0.1",
-    "bullmq": "^5.67.3",
-    "dotenv": "^17.2.4",
-    "idb-keyval": "^6.2.6",
-    "ioredis": "^5.9.2",
-    "prisma": "7.2.0",
-    "socket.io": "^4.8.2",
-    "turbo": "^2.7.3",
-    "typescript": "5.9.2"
-  }
+	"name": "quizMasterTurbo",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"lint": "biome lint .",
+		"check": "biome check .",
+		"check:fix": "biome check --write .",
+		"db:deploy": "turbo run db:deploy",
+		"db:generate": "turbo run db:generate",
+		"db:migrate": "turbo run db:migrate",
+		"build": "turbo run build",
+		"dev": "turbo run dev",
+		"check-types": "turbo run check-types",
+		"prepare": "husky"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.10",
+		"@types/cookie-parser": "^1.4.10",
+		"@types/express": "^5.0.6",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/node": "^25.0.3",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.3.0",
+		"prettier": "^3.7.4"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"packageManager": "npm@10.8.2",
+	"dependencies": {
+		"@prisma/client": "7.2.0",
+		"@repo/db": "^0.0.0",
+		"@repo/redis": "^1.0.0",
+		"@types/bcrypt": "^6.0.0",
+		"@types/nodemailer": "^8.0.1",
+		"@types/socket.io": "^3.0.1",
+		"bullmq": "^5.67.3",
+		"dotenv": "^17.2.4",
+		"idb-keyval": "^6.2.6",
+		"ioredis": "^5.9.2",
+		"prisma": "7.2.0",
+		"socket.io": "^4.8.2",
+		"turbo": "^2.7.3",
+		"typescript": "5.9.2"
+	},
+	"lint-staged": {
+		"*": "biome check --write --no-errors-on-unmatched"
+	}
 }

@@ -119,14 +119,14 @@ const BASE_STYLES = `
 `;
 
 export const getOtpHtml = ({ email, otp }: any) => {
-  const digits = String(otp).split("").map(
-    (d) => `<td><span class="otp-digit">${d}</span></td>`
-  );
-  const mid = Math.ceil(digits.length / 2);
-  const firstHalf = digits.slice(0, mid).join("");
-  const secondHalf = digits.slice(mid).join("");
+	const digits = String(otp)
+		.split("")
+		.map((d) => `<td><span class="otp-digit">${d}</span></td>`);
+	const mid = Math.ceil(digits.length / 2);
+	const firstHalf = digits.slice(0, mid).join("");
+	const secondHalf = digits.slice(mid).join("");
 
-  return `<!DOCTYPE html>
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -177,12 +177,12 @@ export const getOtpHtml = ({ email, otp }: any) => {
 };
 
 export const getVerifyEmailHtml = ({ email, token }: any) => {
-  const appName = process.env.APP_NAME || "QuizMaster";
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-  // Verify path is now correctly matching dynamic route /verify/[token]
-  const verifyUrl = `${baseUrl.replace(/\/+$/, "")}/verify/${encodeURIComponent(token)}`;
+	const appName = process.env.APP_NAME || "QuizMaster";
+	const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+	// Verify path is now correctly matching dynamic route /verify/[token]
+	const verifyUrl = `${baseUrl.replace(/\/+$/, "")}/verify/${encodeURIComponent(token)}`;
 
-  return `<!DOCTYPE html>
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -233,12 +233,12 @@ export const getVerifyEmailHtml = ({ email, token }: any) => {
 };
 
 export const getForgotPasswordHtml = ({ email, token }: any) => {
-  const appName = process.env.APP_NAME || "QuizMaster";
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-  // Reset password path matches /reset-password/[token]
-  const resetUrl = `${baseUrl.replace(/\/+$/, "")}/reset-password/${encodeURIComponent(token)}`;
+	const appName = process.env.APP_NAME || "QuizMaster";
+	const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+	// Reset password path matches /reset-password/[token]
+	const resetUrl = `${baseUrl.replace(/\/+$/, "")}/reset-password/${encodeURIComponent(token)}`;
 
-  return `<!DOCTYPE html>
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>

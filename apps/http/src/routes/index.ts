@@ -1,11 +1,10 @@
 import { Router } from "express";
-import categoriesRoutes from "./categories.route.js"
+import newAuthRouter from "../auth/auth.routes.js";
+import friendsRoutes from "../friend/friend.routes.js";
+import categoriesRoutes from "./categories.route.js";
+import gameRoutes from "./game.route.js";
 import quizzesRoutes from "./quizzes.route.js";
 import roomRoutes from "./room.route.js";
-import gameRoutes from "./game.route.js";
-import newAuthRouter from "../auth/auth.routes.js"
-import friendsRoutes from "../friend/friend.routes.js";
-import { isAuthenticated } from "../auth/auth.middleware.js";
 
 const router = Router();
 

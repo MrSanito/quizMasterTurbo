@@ -1,12 +1,15 @@
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@repo/db": ["packages/db/src"],
-      "@repo/redis": ["packages/redis/src"]
-    }
-  },
-  "files": [],
-  "references": [{ "path": "packages/db/" }, { "path": "apps/http" },    { "path": "packages/redis" }
-]
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@repo/db": ["packages/db/src"],
+			"@repo/redis": ["packages/redis/src"]
+		}
+	},
+	"files": [],
+	"references": [
+		{ "path": "packages/db/" },
+		{ "path": "apps/http" },
+		{ "path": "packages/redis" }
+	]
 }

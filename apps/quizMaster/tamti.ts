@@ -10,7 +10,6 @@
 // //  Guest limited routes
 // const quizRoutePrefix = "/quiz";
 
-
 // export async function middleware(request: NextRequest) {
 //   const { pathname } = request.nextUrl;
 //   const res = NextResponse.next();
@@ -31,11 +30,6 @@
 //     }
 //     return res;
 //   }
-
-
-
-
-
 
 //   //  Quiz logic (guest allowed but limited)
 //   if (pathname.startsWith(quizRoutePrefix)) {
@@ -65,9 +59,6 @@
 
 //   return res;
 // }
-
-
-
 
 // export const config = {
 //   matcher: [

@@ -1,19 +1,18 @@
 export interface Player {
-  id: string;
-  name: string;
-  avatar?: string;
+	id: string;
+	name: string;
+	avatar?: string;
 }
 
 export interface JoinRoomPayload {
-  roomId: string;
-  player: Player;
-  avatar: string;
+	roomId: string;
+	player: Player;
+	avatar: string;
 }
 
 export interface AnswerPayload {
-  roomId: string;
-  userId: string;
-  answer: string;
-  timeTaken: number;
+	roomId: string;
+	userId: string;
+	answer: string;
+	timeTaken: number;
 }
- 

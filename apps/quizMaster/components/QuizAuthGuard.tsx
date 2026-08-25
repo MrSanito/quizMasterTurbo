@@ -1,23 +1,23 @@
 "use client";
 
-import { ReactNode } from "react";
- import { useUser } from "../app/(auth)/context/GetUserContext";
-import Loading from "./Loading";
-import NotLoginComponent from "../app/(auth)/components/NotLoginComponent";
+import type { ReactNode } from "react";
 import MaxTryReached from "../app/(auth)/components/MaxTryReached";
+import NotLoginComponent from "../app/(auth)/components/NotLoginComponent";
+import { useUser } from "../app/(auth)/context/GetUserContext";
+import Loading from "./Loading";
 
 export default function QuizAuthGuard({ children }: { children: ReactNode }) {
-  const { loading, isLogin, isGuest, isMaxTryReached } = useUser();
+	const { loading, isLogin, isGuest, isMaxTryReached } = useUser();
 
-  // 1 Auth loading
-  if (loading) return <Loading />;
+	// 1 Auth loading
+	if (loading) return <Loading />;
 
-  // 2 Guest blocked
-  if (isMaxTryReached) return <MaxTryReached />;
+	// 2 Guest blocked
+	if (isMaxTryReached) return <MaxTryReached />;
 
-  // 3 Not logged in & not guest
-  if (!isLogin && !isGuest) return <NotLoginComponent />;
+	// 3 Not logged in & not guest
+	if (!isLogin && !isGuest) return <NotLoginComponent />;
 
-  // 4 Allowed
-  return <>{children}</>;
+	// 4 Allowed
+	return <>{children}</>;
 }

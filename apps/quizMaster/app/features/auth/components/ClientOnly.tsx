@@ -1,16 +1,16 @@
-    // src/components/ClientOnly.tsx
+// src/components/ClientOnly.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 
 export default function ClientOnly({ children }) {
-  const [mounted, setMounted] = useState(false);
+	const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
-  if (!mounted) return null;
+	if (!mounted) return null;
 
-  return <>{children}</>;
+	return <>{children}</>;
 }

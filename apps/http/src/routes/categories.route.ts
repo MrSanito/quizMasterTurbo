@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { fetchCategories ,fetchQuizzies} from "../controllers/categories.controller.js";
-
+import {
+	fetchCategories,
+	fetchQuizzies,
+} from "../controllers/categories.controller.js";
 
 const router = Router();
 
