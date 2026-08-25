@@ -116,12 +116,16 @@ app.onError((err, c) => {
 
 const PORT = Number(process.env.PORT || 3001);
 
-serve(
-	{
-		fetch: app.fetch,
-		port: PORT,
-	},
-	() => {
-		logger.info(`Server running on http://localhost:${PORT}`);
-	},
-);
+if (process.env.NODE_ENV !== "production") {
+	serve(
+		{
+			fetch: app.fetch,
+			port: PORT,
+		},
+		() => {
+			logger.info(`Server running on http://localhost:${PORT}`);
+		},
+	);
+}
+
+export default app;

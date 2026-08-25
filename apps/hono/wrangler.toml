@@ -1,0 +1,26 @@
+name = "hono-server"
+main = "src/index.ts"
+compatibility_date = "2026-08-25"
+
+# [vars]
+# DATABASE_URL = ""
+# REDIS_URL = ""
+# ACCESS_TOKEN_SECRET = ""
+# REFRESH_TOKEN_SECRET = ""
+# RESEND_API_KEY = ""
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+redact_query_string = false
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
