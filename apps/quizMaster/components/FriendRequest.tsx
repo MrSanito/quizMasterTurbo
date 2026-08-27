@@ -12,7 +12,7 @@ import {
 	UserX,
 	X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import api from "@/app/lib/api";
 
@@ -62,7 +62,7 @@ const FriendRequest = () => {
 	const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
 	// Fetch friends and pending requests on load
-	const fetchData = async () => {
+	const fetchData = useCallback(async () => {
 		try {
 			setLoading(true);
 			const res = await api.get("/friends");
@@ -77,9 +77,9 @@ const FriendRequest = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
 
-	const fetchDiscoverUsers = async () => {
+	const fetchDiscoverUsers = useCallback(async () => {
 		try {
 			setDiscoverLoading(true);
 			const res = await api.get("/friends/discover");
@@ -96,7 +96,7 @@ const FriendRequest = () => {
 		} finally {
 			setDiscoverLoading(false);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		fetchData();

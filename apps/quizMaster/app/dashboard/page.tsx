@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";
 import { data } from "@/app/dashboard/data";
@@ -36,7 +36,7 @@ const Dashboard = () => {
 	const [sessionsLoading, setSessionsLoading] = useState(true);
 	const [sessionError, setSessionError] = useState<string | null>(null);
 
-	const fetchSessions = async () => {
+	const fetchSessions = useCallback(async () => {
 		try {
 			setSessionsLoading(true);
 			const res = await api.get("/auth/sessions");
@@ -51,7 +51,7 @@ const Dashboard = () => {
 		} finally {
 			setSessionsLoading(false);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		if (isLogin) {
