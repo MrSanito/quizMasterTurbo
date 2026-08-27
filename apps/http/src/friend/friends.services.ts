@@ -17,7 +17,7 @@ export async function getNonFriends(
 		select: { userAId: true, userBId: true },
 	});
 	const excludeIds = new Set<string>([userId]);
-	friendships.forEach((f) =>
+	friendships.forEach((f: any) =>
 		excludeIds.add(f.userAId === userId ? f.userBId : f.userAId),
 	);
 
@@ -29,7 +29,7 @@ export async function getNonFriends(
 			},
 			select: { senderId: true, receiverId: true },
 		});
-		pending.forEach((p) =>
+		pending.forEach((p: any) =>
 			excludeIds.add(p.senderId === userId ? p.receiverId : p.senderId),
 		);
 	}

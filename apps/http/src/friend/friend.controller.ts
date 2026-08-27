@@ -348,7 +348,7 @@ export const listFriends = TryCatch(async (req: Request, res: Response) => {
 		},
 	});
 
-	const friends = friendships.map((f) => {
+	const friends = friendships.map((f: any) => {
 		const friendUser = f.userAId === userId ? f.userB : f.userA;
 		return {
 			friendshipId: f.id,
@@ -357,13 +357,13 @@ export const listFriends = TryCatch(async (req: Request, res: Response) => {
 		};
 	});
 
-	const incoming = incomingRequests.map((r) => ({
+	const incoming = incomingRequests.map((r: any) => ({
 		requestId: r.id,
 		user: r.sender,
 		createdAt: r.createdAt,
 	}));
 
-	const outgoing = outgoingRequests.map((r) => ({
+	const outgoing = outgoingRequests.map((r: any) => ({
 		requestId: r.id,
 		user: r.receiver,
 		createdAt: r.createdAt,

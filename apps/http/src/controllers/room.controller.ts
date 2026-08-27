@@ -91,12 +91,12 @@ export const getRoomResult = async (req: Request, res: Response) => {
 				.json({ success: false, message: "Room not found" });
 
 		// Fetch actual Question details
-		const questionIds = room.questions.map((rq) => rq.questionId);
+		const questionIds = room.questions.map((rq: any) => rq.questionId);
 		const questionsData = await prisma.question.findMany({
 			where: { id: { in: questionIds } },
 			include: { Option: true },
 		});
-		const questionMap = new Map(questionsData.map((q) => [q.id, q]));
+		const questionMap = new Map<string, any>(questionsData.map((q: any) => [q.id, q]));
 
 		// Fetch Answers
 		const answers = await prisma.playerAnswer.findMany({
@@ -105,14 +105,14 @@ export const getRoomResult = async (req: Request, res: Response) => {
 		});
 
 		// Construct Result Payload
-		const detailedResults = room.players.map((p) => {
+		const detailedResults = room.players.map((p: any) => {
 			const userAnswers = (answers as any[]).filter(
-				(a) => a.userId === p.userId,
+				(a: any) => a.userId === p.userId,
 			);
 
-			const answersDetails = (room.questions as any[]).map((rq) => {
+			const answersDetails = (room.questions as any[]).map((rq: any) => {
 				const qData = questionMap.get(rq.questionId);
-				const userAnswer = userAnswers.find((a) => a.roomQuestionId === rq.id);
+				const userAnswer = userAnswers.find((a: any) => a.roomQuestionId === rq.id);
 				const correctOption = qData?.Option.find((o: any) => o.isCorrect);
 				const selectedOption = qData?.Option.find(
 					(o: any) => o.id === userAnswer?.selectedOptionId,
@@ -311,7 +311,7 @@ export const startRoom = async (req: Request, res: Response) => {
 		await redisClient.expire(`${roomKey}:state`, 3600); //  TTL
 
 		// Push Questions
-		const questions = room.quiz.Question.map((q) => JSON.stringify(q));
+		const questions = room.quiz.Question.map((q: any) => JSON.stringify(q));
 		if (questions.length > 0) {
 			logger.info(
 				` [RoomController] Pushing ${questions.length} questions to Redis for ${roomId}`,
@@ -363,7 +363,7 @@ export const startRoom = async (req: Request, res: Response) => {
 		});
 
 		// Also include anyone already in DB (host, etc) just in case
-		room.players.forEach((p) => {
+		room.players.forEach((p: any) => {
 			if (!playerScores[p.userId]) playerScores[p.userId] = "0";
 		});
 
@@ -429,7 +429,7 @@ export const finalizeRoom = async (req: Request, res: Response) => {
 			include: { Option: true },
 		});
 
-		const questionMap = new Map(questionsData.map((q) => [q.id, q]));
+		const questionMap = new Map<string, any>(questionsData.map((q: any) => [q.id, q]));
 
 		for (const [index, rq] of (roomQuestions as any[]).entries()) {
 			const answersMap = await redisClient.hgetall(
@@ -441,9 +441,9 @@ export const finalizeRoom = async (req: Request, res: Response) => {
 
 			for (const [userId, selectedText] of Object.entries(answersMap)) {
 				const selectedOption = fullQuestion.Option.find(
-					(o) => o.text === selectedText,
+					(o: any) => o.text === selectedText,
 				);
-				const correctOption = fullQuestion.Option.find((o) => o.isCorrect);
+				const correctOption = fullQuestion.Option.find((o: any) => o.isCorrect);
 
 				const isCorrect = selectedText === correctOption?.text;
 

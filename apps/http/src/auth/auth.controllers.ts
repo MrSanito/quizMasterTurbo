@@ -545,7 +545,7 @@ export const getAllSessions = TryCatch(async (req: Request, res: Response) => {
 	});
 
 	// Tag which one is the current session
-	const withCurrent = sessions.map((s) => ({
+	const withCurrent = sessions.map((s: any) => ({
 		...s,
 		isCurrent: s.id === currentSessionId,
 	}));
@@ -591,9 +591,9 @@ export const logoutAll = TryCatch(async (req: Request, res: Response) => {
 			pipeline.set(`blacklist:${s.id}`, "1", "EX", 7 * 24 * 60 * 60);
 		}
 		// Delete unique families
-		const uniqueFamilies = [...new Set(sessions.map((s) => s.familyId))];
+		const uniqueFamilies = [...new Set(sessions.map((s: any) => s.familyId))];
 		for (const fid of uniqueFamilies) {
-			pipeline.del(familyKey(fid));
+			pipeline.del(familyKey(fid as string));
 		}
 		pipeline.del(userCacheKey(userId)); // clear user cache too
 		await pipeline.exec();
