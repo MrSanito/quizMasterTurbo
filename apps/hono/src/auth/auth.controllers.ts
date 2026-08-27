@@ -225,7 +225,9 @@ export const login = async (c: any) => {
 export const verifyLoginOTP = async (c: any) => {
 	const body = await c.req.json();
 	const ip = getClientIp(c);
+
 	const rateKey = `login-otp-rate:${ip}:${body.email}`;
+	
 	const attempts = await redis.incr(rateKey);
 	if (attempts === 1) await redis.expire(rateKey, 5 * 60);
 	if (attempts > 5) {

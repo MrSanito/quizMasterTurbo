@@ -12,6 +12,17 @@ logger.info(` PID: ${process.pid}`);
 
 const app = new Hono();
 
+app.onError((err, c) => {
+	logger.error(err, "--------- this is the error");
+	return c.json(
+		{
+			success: false,
+			message: err.message,
+		},
+		500,
+	);
+});
+
 // Global Logger Middleware
 app.use("*", async (c, next) => {
 	logger.info(` Incoming Request: ${c.req.method} ${c.req.url}`);
@@ -113,16 +124,7 @@ app.get("/test", (c) => {
 });
 
 // Global Error Handler
-app.onError((err, c) => {
-	logger.error(err, "--------- this is the error");
-	return c.json(
-		{
-			success: false,
-			message: err.message,
-		},
-		500,
-	);
-});
+
 
 const PORT = Number(process.env.PORT || 3001);
 
