@@ -1,28 +1,28 @@
 const BASE_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { 
-    background-color: #0b0c10; 
+    background-color: #0d032b; 
     color: #f1f3f9; 
     -webkit-text-size-adjust: 100%; 
     -ms-text-size-adjust: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
   table { border-collapse: collapse; }
-  .wrapper { width: 100%; background-color: #0b0c10; padding: 40px 10px; }
+  .wrapper { width: 100%; background-color: #0d032b; padding: 40px 10px; }
   .container { 
     width: 100%; 
     max-width: 540px; 
-    background: rgba(22, 24, 33, 0.95); 
-    border: 1px solid rgba(255, 255, 255, 0.06); 
+    background: rgba(26, 17, 59, 0.95); 
+    border: 1px solid rgba(255, 255, 255, 0.08); 
     border-radius: 24px; 
     overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.55);
   }
   .card-body { padding: 48px 36px; }
   .accent-bar { 
     width: 48px; 
     height: 4px; 
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6); 
+    background: linear-gradient(90deg, #5B32B4, #7047C7); 
     border-radius: 2px; 
     margin-bottom: 32px; 
   }
@@ -30,7 +30,7 @@ const BASE_STYLES = `
     font-size: 12px; 
     letter-spacing: 4px; 
     text-transform: uppercase;
-    color: #3b82f6; 
+    color: #F0DE4A; 
     margin-bottom: 24px; 
     font-weight: 700;
   }
@@ -44,7 +44,7 @@ const BASE_STYLES = `
   }
   .body-text { 
     font-size: 15px; 
-    color: rgba(241, 243, 249, 0.7); 
+    color: rgba(241, 243, 249, 0.8); 
     line-height: 1.6; 
     margin-bottom: 36px; 
   }
@@ -55,13 +55,13 @@ const BASE_STYLES = `
     width: 48px; 
     height: 56px; 
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08); 
+    border: 1px solid rgba(240, 222, 74, 0.25); 
     border-radius: 12px; 
     text-align: center;
     line-height: 54px; 
     font-size: 26px; 
     font-weight: 800; 
-    color: #3b82f6;
+    color: #F0DE4A;
     font-family: 'SF Mono', Consolas, Menlo, monospace;
   }
   .otp-sep { 
@@ -74,11 +74,11 @@ const BASE_STYLES = `
   }
   .muted { 
     font-size: 13px; 
-    color: rgba(241, 243, 249, 0.45); 
+    color: rgba(241, 243, 249, 0.55); 
     line-height: 1.6; 
     margin-bottom: 8px; 
   }
-  .muted-accent { color: #8b5cf6; font-weight: 600; }
+  .muted-accent { color: #F0DE4A; font-weight: 600; }
   .divider { 
     height: 1px; 
     background: rgba(255, 255, 255, 0.08); 
@@ -86,27 +86,28 @@ const BASE_STYLES = `
   }
   .footer { 
     font-size: 11px; 
-    color: rgba(241, 243, 249, 0.3); 
+    color: rgba(241, 243, 249, 0.35); 
     letter-spacing: 0.5px; 
     text-align: center; 
   }
   .btn { 
     display: inline-block; 
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6); 
+    background: #F0DE4A; 
     border: none;
-    border-radius: 12px;
+    border-radius: 24px;
     padding: 14px 32px; 
     font-size: 15px; 
-    font-weight: 600;
-    color: #ffffff !important; 
-    letter-spacing: 0.2px; 
+    font-weight: 700;
+    color: #0d032b !important; 
+    letter-spacing: 0.5px; 
     text-decoration: none;
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 10px 20px rgba(240, 222, 74, 0.2);
     transition: all 0.2s ease;
+    text-transform: uppercase;
   }
   .link { 
     font-size: 12px; 
-    color: rgba(139, 92, 246, 0.8); 
+    color: #F0DE4A; 
     word-break: break-all;
     font-family: 'SF Mono', Consolas, Menlo, monospace; 
     text-decoration: none; 
