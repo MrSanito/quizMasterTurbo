@@ -48,29 +48,19 @@ const BASE_STYLES = `
     line-height: 1.6; 
     margin-bottom: 36px; 
   }
-  .otp-row { margin: 32px 0; }
-  .otp-wrap { display: inline-flex; align-items: center; gap: 8px; }
-  .otp-digit { 
+  .otp-row { margin: 32px 0; text-align: center; }
+  .otp-code { 
     display: inline-block; 
-    width: 48px; 
-    height: 56px; 
+    padding: 14px 28px; 
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(240, 222, 74, 0.25); 
     border-radius: 12px; 
-    text-align: center;
-    line-height: 54px; 
-    font-size: 26px; 
+    font-size: 32px; 
     font-weight: 800; 
     color: #F0DE4A;
     font-family: 'SF Mono', Consolas, Menlo, monospace;
-  }
-  .otp-sep { 
-    display: inline-block; 
-    width: 12px; 
-    height: 2px; 
-    background: rgba(255, 255, 255, 0.15);
-    vertical-align: middle; 
-    margin: 0 4px; 
+    letter-spacing: 6px;
+    text-align: center;
   }
   .muted { 
     font-size: 13px; 
@@ -115,18 +105,11 @@ const BASE_STYLES = `
   @media only screen and (max-width:600px) {
     .container { border-radius: 16px!important; }
     .card-body { padding: 32px 20px!important; }
-    .otp-digit { width: 40px!important; height: 48px!important; font-size: 22px!important; line-height: 46px!important; border-radius: 8px!important; }
+    .otp-code { font-size: 26px!important; letter-spacing: 4px!important; padding: 10px 20px!important; }
   }
 `;
 
 export const getOtpHtml = ({ email, otp }: any) => {
-	const digits = String(otp)
-		.split("")
-		.map((d) => `<td><span class="otp-digit">${d}</span></td>`);
-	const mid = Math.ceil(digits.length / 2);
-	const firstHalf = digits.slice(0, mid).join("");
-	const secondHalf = digits.slice(mid).join("");
-
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,15 +133,9 @@ export const getOtpHtml = ({ email, otp }: any) => {
       <strong style="color:#ffffff;font-weight:600">${email}</strong>.
     </p>
 
-    <!-- OTP digits -->
+    <!-- OTP code -->
     <div class="otp-row">
-      <table role="presentation" border="0" cellspacing="0" cellpadding="0">
-      <tr>
-        ${firstHalf}
-        <td><span class="otp-sep" aria-hidden="true">&nbsp;</span></td>
-        ${secondHalf}
-      </tr>
-      </table>
+      <span class="otp-code">${otp}</span>
     </div>
 
     <p class="muted">
