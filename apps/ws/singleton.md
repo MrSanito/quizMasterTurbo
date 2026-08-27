@@ -9,44 +9,47 @@
 
 ## 📑 Table of Contents
 
-1. [Executive Summary & Current Codebase Audit](#1-executive-summary--current-codebase-audit)
-2. [Complete Gap Analysis & Identified Vulnerabilities](#2-complete-gap-analysis--identified-vulnerabilities)
-   - [2.1 Severe Concurrency & State Inconsistencies](#21-severe-concurrency--state-inconsistencies)
-   - [2.2 Memory Leaks & Redis Anti-Patterns](#22-memory-leaks--redis-anti-patterns)
-   - [2.3 Lack of Type Safety & Fragile Handlers](#23-lack-of-type-safety--fragile-handlers)
-   - [2.4 Horizontal Scaling & Clustering Bottlenecks](#24-horizontal-scaling--clustering-bottlenecks)
-3. [The Singleton Pattern: Strategy, Libraries & Implementation](#3-the-singleton-pattern-strategy-libraries--implementation)
-   - [3.1 Why Singleton Pattern in WebSocket Services?](#31-why-singleton-pattern-in-websocket-services)
-   - [3.2 Recommended Libraries & Tools](#32-recommended-libraries--tools)
-   - [3.3 Singleton 1: `RedisManager` (Connection Pooling & Pub/Sub)](#33-singleton-1-redismanager-connection-pooling--pubsub)
-   - [3.4 Singleton 2: `SocketServer` (Typed Gateway & Lifecycle)](#34-singleton-2-socketserver-typed-gateway--lifecycle)
-   - [3.5 Singleton 3: `GameEngine` (Authoritative Game State Machine)](#35-singleton-3-gameengine-authoritative-game-state-machine)
-   - [3.6 Singleton 4: `QueueManager` (BullMQ Producer)](#36-singleton-4-queuemanager-bullmq-producer)
-4. [Proposed Directory Restructuring](#4-proposed-directory-restructuring)
-5. [Step-by-Step Visual Diagrams: How the Live Game Works](#5-step-by-step-visual-diagrams-how-the-live-game-works)
-   - [Step 1: Room Creation & Question Pre-Loading](#step-1-room-creation--question-pre-loading)
-   - [Step 2: Player Connects & Joins Lobby](#step-2-player-connects--joins-lobby)
-   - [Step 3: Host Starts Game & Synchronized Countdown](#step-3-host-starts-game--synchronized-countdown)
-   - [Step 4: Active Question Delivery & Timing Sync](#step-4-active-question-delivery--timing-sync)
-   - [Step 5: Player Submits Answer (Atomic Lua Script)](#step-5-player-submits-answer-atomic-lua-script)
-   - [Step 6: Question Conclusion, Answer Reveal & Leaderboard](#step-6-question-conclusion-answer-reveal--leaderboard)
-   - [Step 7: Next Question Loop vs Game Finalization](#step-7-next-question-loop-vs-game-finalization)
-   - [Step 8: Asynchronous Database Persistence via BullMQ](#step-8-asynchronous-database-persistence-via-bullmq)
-   - [Step 9: Mid-Game Player Reconnection & State Catch-Up](#step-9-mid-game-player-reconnection--state-catch-up)
-6. [Redis Data Structures & Key Schemas](#6-redis-data-structures--key-schemas)
-7. [Full Implementation Code Reference](#7-full-implementation-code-reference)
-   - [7.1 Strongly-Typed Events (`events.types.ts`)](#71-strongly-typed-events-eventstypests)
-   - [7.2 Production `RedisManager.ts`](#72-production-redismanagerts)
-   - [7.3 Atomic Lua Script (`submit_answer.lua`)](#73-atomic-lua-script-submit_answerlua)
-   - [7.4 Production `SocketServer.ts`](#74-production-socketserverts)
-   - [7.5 Production `GameEngine.ts`](#75-production-gameenginets)
-8. [Migration & Action Checklist](#8-migration--action-checklist)
+- [🚀 QuizMaster Turbo — WebSocket Engine Architecture \& Singleton Deep Dive](#-quizmaster-turbo--websocket-engine-architecture--singleton-deep-dive)
+	- [📑 Table of Contents](#-table-of-contents)
+	- [1. Executive Summary \& Current Codebase Audit](#1-executive-summary--current-codebase-audit)
+		- [Current File Structure](#current-file-structure)
+	- [2. Complete Gap Analysis \& Identified Vulnerabilities](#2-complete-gap-analysis--identified-vulnerabilities)
+		- [2.1 Severe Concurrency \& State Inconsistencies](#21-severe-concurrency--state-inconsistencies)
+		- [2.2 Memory Leaks \& Redis Anti-Patterns](#22-memory-leaks--redis-anti-patterns)
+		- [2.3 Lack of Type Safety \& Fragile Handlers](#23-lack-of-type-safety--fragile-handlers)
+		- [2.4 Horizontal Scaling \& Clustering Bottlenecks](#24-horizontal-scaling--clustering-bottlenecks)
+	- [3. The Singleton Pattern: Strategy, Libraries \& Implementation](#3-the-singleton-pattern-strategy-libraries--implementation)
+		- [3.1 Why Singleton Pattern in WebSocket Services?](#31-why-singleton-pattern-in-websocket-services)
+		- [3.2 Recommended Libraries \& Tools](#32-recommended-libraries--tools)
+		- [3.3 Singleton 1: `RedisManager` (Connection Pooling \& Pub/Sub)](#33-singleton-1-redismanager-connection-pooling--pubsub)
+		- [3.4 Singleton 2: `SocketServer` (Typed Gateway \& Lifecycle)](#34-singleton-2-socketserver-typed-gateway--lifecycle)
+		- [3.5 Singleton 3: `GameEngine` (Authoritative Game State Machine)](#35-singleton-3-gameengine-authoritative-game-state-machine)
+		- [3.6 Singleton 4: `APIService` (HTTP API Results Saver)](#36-singleton-4-apiservice-http-api-results-saver)
+	- [4. Proposed Directory Restructuring](#4-proposed-directory-restructuring)
+	- [5. Step-by-Step Visual Diagrams: How the Live Game Works](#5-step-by-step-visual-diagrams-how-the-live-game-works)
+		- [Step 1: Room Creation \& Question Pre-Loading](#step-1-room-creation--question-pre-loading)
+		- [Step 2: Player Connects \& Joins Lobby](#step-2-player-connects--joins-lobby)
+		- [Step 3: Host Starts Game \& Synchronized Countdown](#step-3-host-starts-game--synchronized-countdown)
+		- [Step 4: Active Question Delivery \& Timing Sync](#step-4-active-question-delivery--timing-sync)
+		- [Step 5: Player Submits Answer (Atomic Lua Script)](#step-5-player-submits-answer-atomic-lua-script)
+		- [Step 6: Question Conclusion, Answer Reveal \& Leaderboard](#step-6-question-conclusion-answer-reveal--leaderboard)
+		- [Step 7: Next Question Loop vs Game Finalization](#step-7-next-question-loop-vs-game-finalization)
+		- [Step 8: API-Based Database Persistence via APIService](#step-8-api-based-database-persistence-via-apiservice)
+		- [Step 9: Mid-Game Player Reconnection \& State Catch-Up](#step-9-mid-game-player-reconnection--state-catch-up)
+	- [6. Redis Data Structures \& Key Schemas](#6-redis-data-structures--key-schemas)
+	- [7. Full Implementation Code Reference](#7-full-implementation-code-reference)
+		- [7.1 Strongly-Typed Events (`events.types.ts`)](#71-strongly-typed-events-eventstypests)
+		- [7.2 Production `RedisManager.ts`](#72-production-redismanagerts)
+		- [7.3 Atomic Lua Script (`submit_answer.lua`)](#73-atomic-lua-script-submit_answerlua)
+		- [7.4 Production `SocketServer.ts`](#74-production-socketserverts)
+		- [7.5 Production `GameEngine.ts`](#75-production-gameenginets)
+	- [8. Migration \& Action Checklist](#8-migration--action-checklist)
 
 ---
 
 ## 1. Executive Summary & Current Codebase Audit
 
-The `apps/ws` package serves as the real-time synchronization engine of QuizMaster Turbo. It manages player lobbies, coordinates quiz games, accepts real-time answer submissions, calculates scores, and dispatches completion events to BullMQ for database persistence.
+The `apps/ws` package serves as the real-time synchronization engine of QuizMaster Turbo. It manages player lobbies, coordinates quiz games, accepts real-time answer submissions, calculates scores, and persists results directly via the main HTTP API server.
 
 ### Current File Structure
 
@@ -67,7 +70,6 @@ apps/ws/
 │   └── services/
 │       ├── redis.service.ts       # Re-exports redisClient from @repo/redis
 │       ├── lobby.service.ts       # Redis HSET/HDEL for lobby players; contains blocking KEYS
-│       ├── queue.service.ts       # BullMQ Queue instance with duplicate Redis connection
 │       └── game.service.ts        # 470+ lines monolithic file mixing timers, state, grading, locks
 ```
 
@@ -115,11 +117,9 @@ apps/ws/
    > [!WARNING]
    > `redis.keys()` is an $O(N)$ synchronous blocking command. On a production Redis instance with thousands of active keys, this freezes all incoming requests across all services (HTTP, WS, Worker), causing latency spikes and dropped socket connections.
 
-2. **Scattered Connection Instantiation & Duplicate Clients:**
-   - `packages/redis/src/index.ts` instantiates one `ioredis` instance.
-   - `services/redis.service.ts` re-exports it.
-   - `services/queue.service.ts` spins up a **second separate `ioredis` client** using raw `new Redis(...)`.
-   - This leads to connection exhaustion on cloud Redis providers (e.g. Upstash / Redis Cloud / AWS ElastiCache) with tight connection caps.
+2. **Eliminated Connection Overhead (No Database Client in WebSocket Engine):**
+   - We completely avoid running a database client or Prisma in the WebSocket process.
+   - Database operations are decoupled and performed by calling the HTTP API server's `/api/v1/game/save` endpoint, saving database connection pools for the main server.
 
 3. **Incomplete TTL Expirations:**
    - TTLs (`expire(key, 3600)`) are applied sequentially after write operations. If a process dies between `hset` and `expire`, keys remain in Redis indefinitely as zombie data.
@@ -162,7 +162,7 @@ In a real-time event-driven architecture, services must maintain **exactly one a
 - **Socket Server Gateway (`SocketServer`):** Manages rooms, middleware, and broadcast channels.
 - **Connection Pools (`RedisManager`):** Prevents connection leaks, manages primary client, pub/sub subscriber, and pub/sub publisher singletons.
 - **Game Engine Coordinator (`GameEngine`):** Centralizes game state transitions, timer handles, scoring rules, and lock acquisitions.
-- **Background Queue (`QueueManager`):** Centralizes BullMQ job dispatching with shared connection configuration.
+- **API Client (`APIService`):** Centralizes HTTP REST API requests to persist finished game results to the main database server.
 
 ### 3.2 Recommended Libraries & Tools
 
@@ -171,7 +171,7 @@ In a real-time event-driven architecture, services must maintain **exactly one a
 | **`ioredis`** | Redis Client | Native support for clusters, sentinel, pipelines, and Lua scripting. |
 | **`@socket.io/redis-adapter`** | Horizontal Scaling | Broadcasts socket events seamlessly across multiple WS server instances via Redis Pub/Sub. |
 | **`zod`** | Schema Validation | Validates incoming socket payloads at runtime with TypeScript type inference. |
-| **`bullmq`** | Distributed Queue | Industrial-grade Redis-backed queue with exponential backoff and job telemetry. |
+| **`global fetch`** | HTTP Client | Built-in Node.js global fetch for lightweight REST API requests. |
 | **Native TypeScript Singleton Class** | Structural Pattern | Standard `private static instance`, zero external runtime dependency, complete control over initialization and teardown. |
 
 ---
@@ -218,9 +218,9 @@ Manages:
 
 ---
 
-### 3.6 Singleton 4: `QueueManager` (BullMQ Producer)
+### 3.6 Singleton 4: `APIService` (HTTP API Results Saver)
 
-Encapsulates BullMQ queue creation and job dispatching (`game-finished`, `game-analytics`), reusing the shared Redis connection configuration to avoid connection spikes.
+Encapsulates REST API client calls, sending structured POST requests to `/api/v1/game/save` on the HTTP server to record game sessions, player scores, and detailed answers.
 
 ---
 
@@ -238,7 +238,7 @@ apps/ws/
 │   │   ├── RedisManager.ts            # Singleton: Redis connections & Lua scripts
 │   │   ├── SocketServer.ts            # Singleton: Typed Socket.IO server & Adapter
 │   │   ├── GameEngine.ts              # Singleton: Authoritative Game Loop & Logic
-│   │   └── QueueManager.ts            # Singleton: BullMQ Queue Producer
+│   │   ├── APIService.ts              # Singleton: HTTP API Client / Results Saver
 │   ├── handlers/                      # Socket connection & disconnect routing
 │   │   ├── connection.handler.ts      # (Fixed typo) Connection entry point
 │   │   └── disconnect.handler.ts      # Granular disconnect & reconnection handling
@@ -458,34 +458,34 @@ sequenceDiagram
         GE->>Redis: Calculate Full Final Leaderboard (1st to Nth)
         GE->>Clients: io.to("ROOM_99").emit("game:finished", { results: fullLeaderboard })
         Note over Clients: UI displays Grand Podium (1st, 2nd, 3rd place celebrations)
-        GE->>GE: Dispatch Persistence Job -> [Proceeds to Step 8]
+        GE->>GE: Save Results via HTTP API -> [Proceeds to Step 8]
     end
 ```
 
 ---
 
-### Step 8: Asynchronous Database Persistence via BullMQ
+### Step 8: API-Based Database Persistence via APIService
 
-**What happens:** `GameEngine` adds a job to BullMQ. A background worker picks up the job, aggregates player results from Redis, performs a single fast batch insert into PostgreSQL, and cleans up the temporary Redis keys.
+**What happens:** When the game concludes, `GameEngine` reads final scores, player answers, and timing metadata from Redis. It calls `APIService` to post this structured game payload to the HTTP Server (`POST /api/v1/game/save`), which executes the PostgreSQL transactions, and then cleans up transient Redis keys.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant GE as 🧠 GameEngine
-    participant QM as 📦 QueueManager
-    participant BullMQ as 📬 BullMQ Queue ("game-events")
-    participant Worker as ⚙️ Background Worker (apps/worker)
-    participant Redis as 🔴 Redis
+    participant APIService as 🌐 APIService
+    participant HTTPServer as 💻 HTTP Server (Express)
     participant DB as 🗄️ PostgreSQL
+    participant Redis as 🔴 Redis
 
-    GE->>QM: addGameFinishedJob("ROOM_99")
-    QM->>BullMQ: Queue.add("game-finished", { roomId: "ROOM_99" }, attempts: 3)
-    BullMQ-->>Worker: Worker picks up "game-finished" job
-    Worker->>Redis: Read final scores, player answers, and timing metadata
-    Worker->>DB: prisma.$transaction([Save GameSession, Save PlayerScores, Save Answers])
-    DB-->>Worker: Transaction Committed
-    Worker->>Redis: DEL room:ROOM_99:* (Clean up transient in-memory keys)
-    Worker-->>BullMQ: Job Marked as COMPLETED
+    GE->>GE: finalizeGame("ROOM_99")
+    GE->>Redis: Read final scores, player answers, and timing metadata
+    GE->>APIService: APIService.getInstance().saveGameResults(roomId, data)
+    APIService->>HTTPServer: POST /api/v1/game/save { roomId, results }
+    HTTPServer->>DB: prisma.$transaction([Save GameSession, Save PlayerScores, Save Answers])
+    DB-->>HTTPServer: Transaction Committed
+    HTTPServer-->>APIService: 200 OK (Success)
+    APIService-->>GE: Persistence Success
+    GE->>Redis: DEL room:ROOM_99:* (Clean up transient in-memory keys)
 ```
 
 ---
@@ -889,7 +889,7 @@ export class SocketServer {
 
 import { RedisManager } from "./RedisManager.js";
 import { SocketServer } from "./SocketServer.js";
-import { QueueManager } from "./QueueManager.js";
+import { APIService } from "./APIService.js";
 import type { LeaderboardEntry } from "../types/events.types.js";
 
 const QUESTION_TIME = 15; // Seconds
@@ -1113,11 +1113,31 @@ export class GameEngine {
 		io.to(roomId).emit("game:finished", { results: fullLeaderboard });
 
 		try {
-			await QueueManager.getInstance().addGameFinishedJob(roomId);
-			console.log(`📦 [GameEngine] Dispatched background persistence job for ${roomId}`);
+			// Retrieve all necessary game metadata, answers, and scores from Redis
+			const [scores, players, questions] = await Promise.all([
+				redis.hgetall(`${roomKey}:scores`),
+				redis.hgetall(`${roomKey}:players`),
+				redis.lrange(`${roomKey}:questions`, 0, -1),
+			]);
+
+			// Format data and post to API Server
+			await APIService.getInstance().saveGameResults(roomId, {
+				scores,
+				players,
+				questions,
+			});
+			console.log(`💾 [GameEngine] Successfully saved game results for ${roomId} via HTTP API`);
 		} catch (err) {
-			console.error(`🔴 [GameEngine] Failed to dispatch job for ${roomId}:`, err);
+			console.error(`🔴 [GameEngine] Failed to save game results via API for ${roomId}:`, err);
 		}
+
+		// Cleanup transient Redis keys
+		await redis.del(
+			`${roomKey}:state`,
+			`${roomKey}:questions`,
+			`${roomKey}:players`,
+			`${roomKey}:scores`
+		);
 
 		setTimeout(async () => {
 			await redis.del(`${roomKey}:loop_lock`);
@@ -1164,7 +1184,7 @@ export class GameEngine {
   - Implement `src/core/RedisManager.ts` (manages `client`, `subClient`, `pubClient`).
   - Implement `src/core/SocketServer.ts` with Redis Adapter integration.
   - Implement `src/core/GameEngine.ts` to coordinate game state transitions.
-  - Implement `src/core/QueueManager.ts` sharing `RedisManager` connection options.
+  - Implement `src/core/APIService.ts` for saving results via the HTTP API.
 
 - [ ] **Step 3: Atomic Lua Script Integration**
   - Add `src/lua/submit_answer.lua` for atomic grading and prevent multiple submissions.

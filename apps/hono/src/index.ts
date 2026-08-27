@@ -15,6 +15,16 @@ const app = new Hono();
 // Global Logger Middleware
 app.use("*", async (c, next) => {
 	logger.info(` Incoming Request: ${c.req.method} ${c.req.url}`);
+	
+	// Copy Cloudflare Worker env bindings to process.env for Node-compatibility package support
+	if (c.env) {
+		for (const [key, value] of Object.entries(c.env)) {
+			if (typeof value === "string") {
+				process.env[key] = value;
+			}
+		}
+	}
+	
 	await next();
 });
 

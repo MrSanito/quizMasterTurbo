@@ -6,16 +6,17 @@ let prismaInstance: PrismaClient | null = null;
 
 export const getPrisma = (): PrismaClient => {
 	if (!prismaInstance) {
-		let connectionString = `${process.env.DATABASE_URL}`;
+		const rawUrl = process.env.DATABASE_URL;
+		if (!rawUrl || rawUrl === "undefined") {
+			throw new Error("DATABASE_URL environment variable is missing, empty, or undefined during initialization.");
+		}
+
+		let connectionString = rawUrl;
 		
 		// Clean up connection string: strip unsupported channel_binding parameter
 		connectionString = connectionString.replace(/([?&])channel_binding=[^&]*/g, "$1");
 		// Remove trailing ? or & if left behind
 		connectionString = connectionString.replace(/[?&]$/g, "");
-
-		if (!process.env.DATABASE_URL) {
-			console.warn("WARNING: DATABASE_URL is not set at the time of database connection initialization.");
-		}
 		
 		// Configure WebSocket constructor when running under Node.js (for local dev)
 		if (typeof globalThis.WebSocket === "undefined") {

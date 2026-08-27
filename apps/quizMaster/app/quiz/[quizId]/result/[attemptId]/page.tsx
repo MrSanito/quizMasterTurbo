@@ -100,8 +100,8 @@ export default function ClientQuizResult() {
 		const fetchResult = async () => {
 			try {
 				const authPayload = isLogin
-					? { userId: user.id }
-					: { guestId: guest.id };
+					? { userId: user?.id }
+					: { guestId: guest?.id };
 
 				const res = await api.get(
 					`${process.env.NEXT_PUBLIC_API_BASE_URL}/quizzes/result/${attemptId}`,
@@ -149,8 +149,8 @@ export default function ClientQuizResult() {
 		isLogin,
 		isGuest,
 		isMaxTryReached,
-		user.id,
-		guest.id,
+		user?.id,
+		guest?.id,
 	]);
 
 	/* ================= GUARDS ================= */
