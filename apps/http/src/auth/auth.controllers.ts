@@ -41,6 +41,7 @@ export const register = TryCatch(async (req: Request, res: Response) => {
 		return res.status(409).json(parsed.error);
 	}
 
+	console.log(parsed.data)
 	logger.info("successfully pasrsed");
 
 	const { email, firstName, lastName, password, username } = parsed.data;
