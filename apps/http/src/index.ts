@@ -12,8 +12,31 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import router from "./routes/index.js";
 
-// Load OpenAPI spec
-const swaggerDocument = YAML.load(path.join(process.cwd(), "openapi.yaml"));
+import fs from "node:fs";
+
+// Load OpenAPI spec with fallback paths to support both local dev and production/monorepo start directories
+let swaggerDocument: any;
+const possiblePaths = [
+	path.join(process.cwd(), "openapi.yaml"),
+	path.join(process.cwd(), "apps/http/openapi.yaml"),
+	path.join(__dirname, "../../../", "openapi.yaml")
+];
+
+for (const p of possiblePaths) {
+	try {
+		if (fs.existsSync(p)) {
+			swaggerDocument = YAML.load(p);
+			logger.info(`Loaded OpenAPI spec from: ${p}`);
+			break;
+		}
+	} catch (err) {
+		logger.error(err, `Error checking or loading OpenAPI spec from: ${p}`);
+	}
+}
+
+if (!swaggerDocument) {
+	logger.warn("Could not locate or load openapi.yaml from any expected paths.");
+}
 
 // This points to the .env at the root of quizmasterturbo
 logger.info(` PID: ${process.pid}`);
@@ -45,7 +68,9 @@ app.use(
 app.use("/api/v1", router);
 
 // swagger ui docs
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+if (swaggerDocument) {
+	app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+}
 
 const PORT = process.env.PORT || 3001;
 
