@@ -9,6 +9,7 @@ import roomRoutes from "./room.route.js";
 
 const apiRouter = new Hono();
 
+// Error handling for API router
 apiRouter.onError((err, c) => {
 	logger.error(err, "--------- this is the error in apiRouter");
 	return c.json(

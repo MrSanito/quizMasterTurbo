@@ -13,9 +13,10 @@ import {
 	getForgotPasswordHtml,
 	getOtpHtml,
 	getVerifyEmailHtml,
-} from "../configs/email";
-import { sendResendEmail } from "../configs/resend";
+} from "../configs/email.js";
+import { sendResendEmail } from "../configs/resend.js";
 import { logger } from "../utils/logger.js";
+import { catchAsync } from "../utils/catchAsync.js";
 import {
 	computeJwkThumbprint,
 	familyKey,
@@ -26,7 +27,7 @@ import {
 	userCacheKey,
 	verifyDpopProof,
 	verifyRefreshToken,
-} from "./auth.services";
+} from "./auth.services.js";
 
 const _BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS ?? 12);
 const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
@@ -47,7 +48,7 @@ function getClientIp(c: any) {
 	return c.req.header("x-forwarded-for") || "127.0.0.1";
 }
 
-export const register = async (c: any) => {
+export const register = catchAsync(async (c: any) => {
 	const body = await c.req.json();
 	const parsed = RegisterSchema.safeParse(body);
 
@@ -130,9 +131,9 @@ export const register = async (c: any) => {
 		},
 		200,
 	);
-};
+});
 
-export const verify = async (c: any) => {
+export const verify = catchAsync(async (c: any) => {
 	const tokenParam = c.req.param("token");
 	const unvalidated = {
 		token: String(tokenParam ?? "")
@@ -180,9 +181,9 @@ export const verify = async (c: any) => {
 		},
 		201,
 	);
-};
+});
 
-export const login = async (c: any) => {
+export const login = catchAsync(async (c: any) => {
 	const body = await c.req.json();
 	const parsed = LoginSchema.safeParse(body);
 
@@ -220,9 +221,9 @@ export const login = async (c: any) => {
 	}
 
 	return c.json({ success: true, message: "OTP sent to your email" }, 200);
-};
+});
 
-export const verifyLoginOTP = async (c: any) => {
+export const verifyLoginOTP = catchAsync(async (c: any) => {
 	const body = await c.req.json();
 	const ip = getClientIp(c);
 
@@ -317,9 +318,9 @@ export const verifyLoginOTP = async (c: any) => {
 	});
 
 	return c.json({ success: true, message: "Login successful" }, 200);
-};
+});
 
-export const checkUsername = async (c: any) => {
+export const checkUsername = catchAsync(async (c: any) => {
 	const body = await c.req.json();
 	const { username } = body;
 
@@ -350,9 +351,9 @@ export const checkUsername = async (c: any) => {
 		},
 		200,
 	);
-};
+});
 
-export const refreshTokenController = async (c: any) => {
+export const refreshTokenController = catchAsync(async (c: any) => {
 	const refreshToken = getCookie(c, "refreshToken");
 	logger.info({ refreshToken }, "refresh token : ");
 	if (!refreshToken) {
@@ -413,24 +414,28 @@ export const refreshTokenController = async (c: any) => {
 			logger.info({ storedJwk }, "storedJwk");
 			logger.info({ dpopProof }, "dpopProof");
 			if (storedJwk) {
-				const popValid = await verifyDpopProof({
-					proofJwt: dpopProof,
-					publicKeyJwk: JSON.parse(storedJwk),
-					expectedMethod: "POST",
-					expectedUrl: `${BASE_URL}/api/v1/auth/refresh`,
-					jtiCache: {
-						has: async (jti) => {
-							const exists = await redis.exists(`dpop-jti:${jti}`);
-							return exists === 1;
+				try {
+					const popValid = await verifyDpopProof({
+						proofJwt: dpopProof,
+						publicKeyJwk: JSON.parse(storedJwk),
+						expectedMethod: "POST",
+						expectedUrl: `${BASE_URL}/api/v1/auth/refresh`,
+						jtiCache: {
+							has: async (jti) => {
+								const exists = await redis.exists(`dpop-jti:${jti}`);
+								return exists === 1;
+							},
+							set: async (jti) => {
+								await redis.set(`dpop-jti:${jti}`, "1", "EX", 60);
+							},
 						},
-						set: async (jti) => {
-							await redis.set(`dpop-jti:${jti}`, "1", "EX", 60);
-						},
-					},
-				});
+					});
 
-				if (!popValid) {
-					return c.json({ success: false, message: "PoP proof invalid" }, 401);
+					if (!popValid) {
+						return c.json({ success: false, message: "PoP proof invalid" }, 401);
+					}
+				} catch (e) {
+					logger.error(e, "DPoP validation error in refresh token controller");
 				}
 			}
 		}
@@ -468,9 +473,9 @@ export const refreshTokenController = async (c: any) => {
 	});
 
 	return c.json({ success: true, message: "Token refreshed" }, 200);
-};
+});
 
-export const validateUser = async (c: any) => {
+export const validateUser = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 
@@ -514,9 +519,9 @@ export const validateUser = async (c: any) => {
 		5 * 60,
 	);
 	return c.json({ success: true, user: formattedUser }, 200);
-};
+});
 
-export const getAllSessions = async (c: any) => {
+export const getAllSessions = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId, sessionId: currentSessionId } = userPayload;
 
@@ -545,9 +550,9 @@ export const getAllSessions = async (c: any) => {
 	}));
 
 	return c.json({ success: true, sessions: withCurrent }, 200);
-};
+});
 
-export const logout = async (c: any) => {
+export const logout = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId, sessionId, familyId } = userPayload;
 
@@ -561,9 +566,9 @@ export const logout = async (c: any) => {
 
 	clearAuthCookies(c);
 	return c.json({ success: true, message: "Logged out" }, 200);
-};
+});
 
-export const logoutAll = async (c: any) => {
+export const logoutAll = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 
@@ -591,9 +596,9 @@ export const logoutAll = async (c: any) => {
 
 	clearAuthCookies(c);
 	return c.json({ success: true, message: "All sessions revoked" }, 200);
-};
+});
 
-export const revokeSession = async (c: any) => {
+export const revokeSession = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const targetId = c.req.param("sessionId");
@@ -612,9 +617,9 @@ export const revokeSession = async (c: any) => {
 	await prisma.session.delete({ where: { id: targetId } });
 
 	return c.json({ success: true, message: "Session revoked" }, 200);
-};
+});
 
-export const editUser = async (c: any) => {
+export const editUser = catchAsync(async (c: any) => {
 	const body = await c.req.json();
 	const { id, firstName, lastName, username, email, avatar } = body;
 
@@ -649,9 +654,9 @@ export const editUser = async (c: any) => {
 		},
 		200,
 	);
-};
+});
 
-export const forgotPassword = async (c: any) => {
+export const forgotPassword = catchAsync(async (c: any) => {
 	const body = await c.req.json();
 	const { email } = body;
 
@@ -672,4 +677,4 @@ export const forgotPassword = async (c: any) => {
 		},
 		200,
 	);
-};
+});

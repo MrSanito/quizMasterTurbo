@@ -1,7 +1,8 @@
 import { FriendRequestStatus, prisma } from "@repo/db";
-import * as friendService from "./friends.services";
+import * as friendService from "./friends.services.js";
+import { catchAsync } from "../utils/catchAsync.js";
 
-export const discoverFriends = async (c: any) => {
+export const discoverFriends = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const search = c.req.query("search");
@@ -17,9 +18,9 @@ export const discoverFriends = async (c: any) => {
 			excludePending === undefined ? undefined : excludePending === "true",
 	});
 	return c.json(result, 200);
-};
+});
 
-export const sendRequest = async (c: any) => {
+export const sendRequest = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const { username, receiverId } = await c.req.json();
@@ -115,9 +116,9 @@ export const sendRequest = async (c: any) => {
 	});
 
 	return c.json({ success: true, friendRequest: newRequest }, 201);
-};
+});
 
-export const listReceivedRequests = async (c: any) => {
+export const listReceivedRequests = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const requests = await prisma.friendRequest.findMany({
@@ -135,9 +136,9 @@ export const listReceivedRequests = async (c: any) => {
 		},
 	});
 	return c.json(requests, 200);
-};
+});
 
-export const listSentRequests = async (c: any) => {
+export const listSentRequests = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const requests = await prisma.friendRequest.findMany({
@@ -155,9 +156,9 @@ export const listSentRequests = async (c: any) => {
 		},
 	});
 	return c.json(requests, 200);
-};
+});
 
-export const acceptRequest = async (c: any) => {
+export const acceptRequest = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const requestIdParam = c.req.param("id");
@@ -221,9 +222,9 @@ export const acceptRequest = async (c: any) => {
 		{ success: true, friendRequest: updatedRequest, friendship },
 		200,
 	);
-};
+});
 
-export const rejectRequest = async (c: any) => {
+export const rejectRequest = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const requestIdParam = c.req.param("id");
@@ -266,9 +267,9 @@ export const rejectRequest = async (c: any) => {
 	});
 
 	return c.json({ success: true, friendRequest: updatedRequest }, 200);
-};
+});
 
-export const cancelRequest = async (c: any) => {
+export const cancelRequest = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const requestIdParam = c.req.param("id");
@@ -311,9 +312,9 @@ export const cancelRequest = async (c: any) => {
 	});
 
 	return c.json({ success: true, friendRequest: updatedRequest }, 200);
-};
+});
 
-export const listFriends = async (c: any) => {
+export const listFriends = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 
@@ -413,9 +414,9 @@ export const listFriends = async (c: any) => {
 		},
 		200,
 	);
-};
+});
 
-export const removeFriend = async (c: any) => {
+export const removeFriend = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const friendIdParam = c.req.param("friendId");
@@ -481,9 +482,9 @@ export const removeFriend = async (c: any) => {
 	]);
 
 	return c.json({ success: true, message: "Friend removed successfully" }, 200);
-};
+});
 
-export const friendshipStatus = async (c: any) => {
+export const friendshipStatus = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 	const targetUserId = c.req.param("userId");
@@ -531,4 +532,4 @@ export const friendshipStatus = async (c: any) => {
 	}
 
 	return c.json({ status: "NONE" }, 200);
-};
+});
