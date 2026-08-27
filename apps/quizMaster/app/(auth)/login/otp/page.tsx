@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { FiArrowLeft, FiCheckCircle, FiKey, FiRefreshCw } from "react-icons/fi";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import api from "@/app/lib/api";
@@ -133,7 +133,7 @@ function OtpPageContent() {
 	};
 
 	// Handle direct verification form submit
-	const handleVerify = async (e?: React.FormEvent) => {
+	const handleVerify = useCallback(async (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
 		const otpCode = otp.join("");
 		if (otpCode.length !== 6) {
@@ -207,6 +207,9 @@ function OtpPageContent() {
 				router.replace("/dashboard");
 			} else {
 				setError(res.data?.message || "Verification failed");
+				// Clear OTP on error so it doesn't auto-submit again immediately
+				setOtp(new Array(6).fill(""));
+				inputRefs[0].current?.focus();
 			}
 		} catch (err: any) {
 			console.error("OTP verification error:", err);
@@ -214,17 +217,20 @@ function OtpPageContent() {
 				err.response?.data?.message ||
 				"Invalid OTP code or connection refused.";
 			setError(msg);
+			// Clear OTP on error so it doesn't auto-submit again immediately
+			setOtp(new Array(6).fill(""));
+			inputRefs[0].current?.focus();
 		} finally {
 			setIsPending(false);
 		}
-	};
+	}, [email, otp, refreshAuth, router]);
 
-	// Auto-submit once all 6 digits are entered
+	// Auto-submit once all 6 digits are entered and no submission is pending
 	useEffect(() => {
-		if (otp.every((digit) => digit !== "")) {
+		if (otp.every((digit) => digit !== "") && !isPending) {
 			handleVerify();
 		}
-	}, [otp, handleVerify]);
+	}, [otp, isPending, handleVerify]);
 
 	// Handle OTP resend
 	const handleResend = async () => {
