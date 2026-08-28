@@ -50,6 +50,9 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 		null,
 	);
 
+	const currentQuestion = quiz.questions[currentQuestionIndex];
+	const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
+
 	/* ---------------- NEXT QUESTION ---------------- */
 	const handleNextQuestion = useCallback(() => {
 		if (currentQuestionIndex < quiz.questions.length - 1) {
@@ -80,17 +83,22 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 		}));
 
 		setIsAnswered(true);
-
-		if (autoNext) {
-			setTimeout(handleNextQuestion, 2000);
-		}
 	}, [
 		quiz,
 		currentQuestionIndex,
 		questionStartTime,
-		autoNext,
 		handleNextQuestion,
 	]);
+
+	/* ---------------- AUTO NEXT TRIGGER ---------------- */
+	useEffect(() => {
+		if (autoNext && isAnswered && !isLastQuestion) {
+			const timer = setTimeout(() => {
+				handleNextQuestion();
+			}, 2000);
+			return () => clearTimeout(timer);
+		}
+	}, [autoNext, isAnswered, isLastQuestion, handleNextQuestion]);
 
 	/* ---------------- TIMER ---------------- */
 	useEffect(() => {
@@ -137,10 +145,6 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 		setScore((prev) =>
 			selectedOption.text === correctOption.text ? prev + 4 : prev - 1,
 		);
-
-		if (autoNext) {
-			setTimeout(handleNextQuestion, 2000);
-		}
 	};
 
 	/* ---------------- SUBMIT QUIZ ---------------- */
@@ -258,9 +262,6 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 			</div>
 		);
 	}
-
-	const currentQuestion = quiz.questions[currentQuestionIndex];
-	const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
 
 	/* ---------------- PLAYING QUIZ UI ---------------- */
 	return (
