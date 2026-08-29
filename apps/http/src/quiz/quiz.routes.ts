@@ -4,12 +4,13 @@ import {
 	getQuizHistory,
 	getQuizResultByAttemptId,
 	submitQuiz,
-} from "../controllers/quizzes.controller.js";
+} from "./quiz.controllers.js";
 
 const router = Router();
-router.get("/history/", getQuizHistory);
-router.get("/result/:attemptId", getQuizResultByAttemptId);
 
+router.get("/history", getQuizHistory);
+router.get("/attempt/:attemptId", getQuizResultByAttemptId);
+router.get("/result/:attemptId", getQuizResultByAttemptId); // Frontend result route
 router.get("/:quizId", getQuiz);
 router.post("/:quizId/submit", submitQuiz);
 

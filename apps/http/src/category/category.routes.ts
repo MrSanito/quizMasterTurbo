@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
 	fetchCategories,
 	fetchQuizzies,
-} from "../controllers/categories.controller.js";
+} from "./category.controllers.js";
 
 const router = Router();
 

@@ -167,7 +167,13 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 				};
 			});
 
-			const authPayload = isLogin ? { userId: user.id } : { guestId: guest.id };
+			const authPayload = isLogin && user?.id
+				? { userId: user.id }
+				: guest?.id
+					? { guestId: guest.id }
+					: user?.id
+						? { userId: user.id }
+						: {};
 
 			const res = await api.post(
 				`/quizzes/${quiz._id}/submit`,
@@ -187,9 +193,9 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 			} else {
 				throw new Error("attemptId missing");
 			}
-		} catch (err) {
-			console.error("Submit failed:", err);
-			alert("Failed to submit quiz");
+		} catch (err: any) {
+			console.error("Submit failed:", err.response?.data || err);
+			alert("Failed to submit quiz: " + (err.response?.data?.message || err.message));
 			setIsSubmitting(false);
 		}
 	};

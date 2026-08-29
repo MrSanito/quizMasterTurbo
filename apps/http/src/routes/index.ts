@@ -1,19 +1,19 @@
 import { Router } from "express";
 import newAuthRouter from "../auth/auth.routes.js";
-import friendsRoutes from "../friend/friend.routes.js";
-import categoriesRoutes from "./categories.route.js";
-import gameRoutes from "./game.route.js";
-import quizzesRoutes from "./quizzes.route.js";
-import roomRoutes from "./room.route.js";
+import categoryRoutes from "../category/category.routes.js";
+import friendRoutes from "../friend/friend.routes.js";
+import gameRoutes from "../game/game.routes.js";
+import quizRoutes from "../quiz/quiz.routes.js";
+import roomRoutes from "../room/room.routes.js";
 
 const router = Router();
 
-// /api/auth/...
+// Feature routes
 router.use("/auth", newAuthRouter);
-router.use("/categories/", categoriesRoutes);
-router.use("/quizzes/", quizzesRoutes);
-router.use("/room/", roomRoutes);
-router.use("/game/", gameRoutes);
-router.use("/", friendsRoutes);
+router.use("/categories", categoryRoutes);
+router.use("/quizzes", quizRoutes);
+router.use("/room", roomRoutes);
+router.use("/game", gameRoutes);
+router.use("/", friendRoutes);
 
 export default router;

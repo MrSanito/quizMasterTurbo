@@ -1,7 +1,11 @@
-import { randomUUID } from "node:crypto";
-import { prisma } from "@repo/db";
 import type { Request, Response } from "express";
 import { logger } from "../utils/logger.js";
+import {
+	getQuizHistoryService,
+	getQuizResultByAttemptService,
+	getQuizService,
+	submitQuizService,
+} from "./quiz.services.js";
 
 /* ================= GET QUIZ ================= */
 
@@ -9,7 +13,6 @@ export const getQuiz = async (
 	req: Request<{ quizId: string }>,
 	res: Response,
 ) => {
-	logger.info("get quiz");
 	const { quizId } = req.params;
 
 	if (!quizId) {
@@ -20,71 +23,20 @@ export const getQuiz = async (
 	}
 
 	try {
-		const quiz = await prisma.quiz.findUnique({
-			where: { id: quizId },
-			select: {
-				id: true,
-				quizNumber: true,
-				title: true,
-				categoryId: true,
-				timeLimit: true,
-				Question: {
-					select: {
-						id: true,
-						questionText: true,
-						points: true,
-						negativePoints: true,
-						Option: {
-							select: {
-								id: true,
-								text: true,
-								isCorrect: true,
-							},
-						},
-					},
-				},
-			},
-		});
-
-		if (!quiz) {
+		const formattedQuiz = await getQuizService(quizId);
+		if (!formattedQuiz) {
 			return res.status(404).json({
 				success: false,
 				message: "Quiz not found",
 			});
 		}
 
-		function shuffleArray<T>(array: T[]): T[] {
-			return [...array].sort(() => Math.random() - 0.5);
-		}
-
-		const formattedQuiz = {
-			_id: quiz.id,
-			quizNumber: quiz.quizNumber,
-			title: quiz.title,
-			categoryId: quiz.categoryId,
-			timeLimit: quiz.timeLimit,
-			totalPoints: quiz.Question.reduce((sum: number, q: any) => sum + q.points, 0),
-			questions: quiz.Question.map((q: any) => ({
-				_id: q.id,
-				questionText: q.questionText,
-				points: q.points,
-				negativePoints: q.negativePoints,
-				options: shuffleArray(
-					q.Option.map((o: any) => ({
-						_id: o.id,
-						text: o.text,
-						isCorrect: o.isCorrect,
-					})),
-				),
-			})),
-		};
-
 		return res.status(200).json({
 			success: true,
 			formattedQuiz,
 		});
 	} catch (err) {
-		console.error(" getQuiz error:", err);
+		console.error("getQuiz error:", err);
 		return res.status(500).json({
 			success: false,
 			message: "Failed to fetch quiz",
@@ -111,58 +63,54 @@ export const submitQuiz = async (
 		const { quizId } = req.params;
 		const { score, total, timeTaken, questions, userId, guestId } = req.body;
 
+		logger.info({ quizId, score, total, timeTaken, userId, guestId }, "Submitting quiz attempt");
+
 		if (
 			typeof score !== "number" ||
 			typeof total !== "number" ||
 			typeof timeTaken !== "number" ||
 			!Array.isArray(questions)
 		) {
+			logger.warn({ body: req.body }, "Invalid quiz submit payload");
 			return res.status(400).json({
 				success: false,
-				message: "Invalid payload",
+				message: "Invalid payload: score, total, timeTaken must be numbers and questions must be an array",
 			});
 		}
 
 		if ((userId && guestId) || (!userId && !guestId)) {
+			logger.warn({ userId, guestId }, "Must provide exactly one of userId or guestId");
 			return res.status(400).json({
 				success: false,
 				message: "Either userId or guestId is required",
 			});
 		}
 
-		const attempt = await prisma.quizAttempt.create({
-			data: {
-				id: randomUUID(),
-				quizId,
-				userId: userId ?? null,
-				guestId: guestId ?? null,
-				score,
-				total,
-				timeTaken,
-				questions,
-			},
+		const attempt = await submitQuizService({
+			quizId,
+			score,
+			total,
+			timeTaken,
+			questions,
+			userId,
+			guestId,
 		});
+
+		logger.info({ attemptId: attempt.id }, "Quiz submitted successfully");
 
 		return res.status(201).json({
 			success: true,
 			attemptId: attempt.id,
 		});
-	} catch (err) {
-		console.error(" Quiz submit error:", err);
+	} catch (err: any) {
+		console.error("Quiz submit error:", err);
 		return res.status(500).json({
 			success: false,
 			message: "Failed to submit quiz",
+			error: err?.message,
 		});
 	}
 };
-
-/* ================= RESULT / HISTORY PLACEHOLDERS ================= */
-
-export const resultOfQuiz = (_req: Request, _res: Response) => {
-	logger.info("lalal");
-};
-
-export const historyQuiz = async (_req: Request, _res: Response) => {};
 
 /* ================= RESULT BY ATTEMPT ================= */
 
@@ -193,52 +141,20 @@ export const getQuizResultByAttemptId = async (
 				throw new Error();
 			}
 		} catch {
-			logger.info(res);
 			return res.status(400).json({
 				success: false,
 				message: "Invalid auth format",
 			});
 		}
 
-		const attempt = await prisma.quizAttempt.findUnique({
-			where: { id: attemptId },
-			include: {
-				Quiz: {
-					select: {
-						title: true,
-						quizNumber: true,
-						categoryId: true,
-						Question: {
-							select: {
-								id: true,
-								questionText: true,
-								Option: {
-									select: {
-										text: true,
-										isCorrect: true,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		});
-
-		if (!attempt) {
+		const result = await getQuizResultByAttemptService(attemptId, authContext);
+		if (result.error === "NOT_FOUND") {
 			return res.status(404).json({
 				success: false,
 				message: "Quiz attempt not found",
 			});
 		}
-
-		const isUserMatch =
-			authContext.userId && attempt.userId === authContext.userId;
-
-		const isGuestMatch =
-			authContext.guestId && attempt.guestId === authContext.guestId;
-
-		if (!isUserMatch && !isGuestMatch) {
+		if (result.error === "FORBIDDEN") {
 			return res.status(403).json({
 				success: false,
 				message: "Access denied: this attempt is not yours",
@@ -247,10 +163,10 @@ export const getQuizResultByAttemptId = async (
 
 		return res.status(200).json({
 			success: true,
-			attempt,
+			attempt: result.attempt,
 		});
 	} catch (err) {
-		console.error(" Fetch attempt error:", err);
+		console.error("Fetch attempt error:", err);
 		return res.status(500).json({
 			success: false,
 			message: "Failed to fetch quiz result",
@@ -274,35 +190,14 @@ export const getQuizHistory = async (req: Request, res: Response) => {
 			});
 		}
 
-		const where =
-			viewerType === "user" ? { userId: viewerId } : { guestId: viewerId };
-
-		const attempts = await prisma.quizAttempt.findMany({
-			where,
-			orderBy: { createdAt: "desc" },
-			take: 10,
-			select: {
-				id: true,
-				score: true,
-				total: true,
-				timeTaken: true,
-				createdAt: true,
-				Quiz: {
-					select: {
-						id: true,
-						title: true,
-						categoryId: true,
-					},
-				},
-			},
-		});
+		const attempts = await getQuizHistoryService(viewerId, viewerType);
 
 		return res.status(200).json({
 			success: true,
 			attempts,
 		});
 	} catch (err) {
-		console.error(" History fetch error:", err);
+		console.error("History fetch error:", err);
 		return res.status(500).json({
 			success: false,
 			message: "Failed to fetch quiz history",
