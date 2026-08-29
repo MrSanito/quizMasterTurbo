@@ -216,12 +216,17 @@ const GamePage = () => {
 		if (!user || !roomId) return;
 
 		// Connect
-		socketRef.current = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
-			transports: ["websocket"],
+		const socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
+			transports: ["websocket", "polling"],
+			withCredentials: true,
 			query: { roomId, userId: user.id }, // Pass initial params if needed
 		});
 
-		const socket = socketRef.current;
+		socket.on("connect_error", (err) => {
+			console.error("❌ Game Socket Auth / Connection Error:", err.message);
+		});
+
+		socketRef.current = socket;
 
 		// Listeners
 		socket.on("connect", () => {

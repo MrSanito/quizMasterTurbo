@@ -1,6 +1,6 @@
+import "./config.js";
 import http from "node:http";
 import express from "express";
-import "./config.js";
 import { setupSocket } from "./socket.js";
 
 const app = express(); //  attach express
