@@ -1,3 +1,4 @@
+import { redisClient } from "@repo/redis";
 import { startGameLoop } from "../services/game.service.js";
 import { joinLobby, leaveLobby } from "../services/lobby.service.js";
 import type { JoinRoomPayload } from "../types/socket.types.js";
@@ -30,6 +31,24 @@ export function lobbyEvents(io: any, socket: any) {
 	});
 
 	socket.on("lobby:letsstart", async ({ roomId }: any) => {
+
+		const originalRoomId = roomId;
+
+		const data = await redisClient.hget(`room:${roomId}`, "hostId");
+
+		if(!data) {
+			return;
+		}
+
+		const isHost =  data === socket.data.playerId;
+
+		if (!isHost) {
+			io.to(socket.id).emit("lobby:error", {
+				message: "You are not authorized to start the game",
+			});
+		}
+
+
 		console.log(` Host triggered start for room ${roomId}`);
 
 		// 1. Notify everyone to redirect

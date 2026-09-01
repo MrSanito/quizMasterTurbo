@@ -46,10 +46,9 @@ const CreatePage = () => {
 		try {
 			setStep("loading");
 
-			const res = await api.post("/room/createRoom", {
+			const res = await api.post("/room/create", {
 				hostId: user.id,
 				roomName,
-				categoryId: selectedCategory,
 				quizId: selectedQuiz,
 			});
 
@@ -80,17 +79,14 @@ const CreatePage = () => {
 		const fetchCategories = async () => {
 			try {
 				const res = await api.get(`/categories`);
-
 				setCategories(res.data.categories ?? res.data);
-				console.log(categories);
 			} catch (err) {
-				console.error(" Failed to fetch categories", err);
-			} finally {
+				console.error("Failed to fetch categories", err);
 			}
 		};
 
 		fetchCategories();
-	}, [loading, isLogin, isGuest, isMaxTryReached, categories]);
+	}, [loading, isLogin, isGuest, isMaxTryReached]);
 
 	useEffect(() => {
 		if (!selectedCategory) {
@@ -102,19 +98,14 @@ const CreatePage = () => {
 		const fetchQuizzes = async () => {
 			try {
 				const res = await api.get(`/categories/${selectedCategory}/quizzes`);
-				console.log(res.data.quizzes);
-				setQuiz(res.data.quizzes);
-				console.log(quiz);
+				setQuiz(res.data.quizzes || []);
 			} catch (err) {
-				console.error(" Failed to fetch quizzes", err);
-			} finally {
+				console.error("Failed to fetch quizzes", err);
 			}
 		};
 
 		fetchQuizzes();
-
-		console.log("ooo ballle ball de shawa shawa");
-	}, [selectedCategory, quiz]);
+	}, [selectedCategory]);
 
 	const handleCopyLink = async () => {
 		const link = `${window.location.origin}/room/${roomName}/lobby/`;

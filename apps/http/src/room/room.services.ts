@@ -7,6 +7,14 @@ export async function createRoomService(data: {
 	roomName: string;
 	quizId: string;
 }) {
+	await redisClient.hset(`room:${data.roomName}`, {
+		hostId: data.hostId,
+		quizId: data.quizId,
+		createdAt: new Date(),
+		expiry: new Date(Date.now() + 3600000),
+		state: "CREATED",
+		maxPlayers: 10,
+	});
 	return await prisma.room.create({
 		data: {
 			roomName: data.roomName,
@@ -20,6 +28,8 @@ export async function createRoomService(data: {
 			},
 		},
 	});
+
+	 
 }
 
 export async function getRoomByNameService(roomName: string) {
