@@ -12,4 +12,19 @@ services:
       - key: NODE_ENV
         value: production
 
-
+  # WebSocket Service
+  - type: web
+    name: quizmaster-ws
+    env: node
+    plan: free
+    buildCommand: npm install && npx turbo run build --filter=ws...
+    startCommand: npm start --workspace=apps/ws
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
