@@ -10,7 +10,8 @@ if (!redisInstance) {
 		retryStrategy(times) {
 			return Math.min(times * 50, 2000);
 		},
-	}); 
+	});
+}
 
 redisInstance.on("connect", () => {
 	console.log(" Redis connected");
