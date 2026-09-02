@@ -26,6 +26,7 @@ interface Guest {
 
 interface UserContextValue {
 	user: User | null;
+	accessToken: string | null;
 	isLogin: boolean;
 	isGuest: boolean;
 	isMaxTryReached: boolean;
@@ -56,6 +57,7 @@ const STORAGE_KEYS = {
 
 const UserContext = createContext<UserContextValue>({
 	user: null,
+	accessToken: null,
 	isLogin: false,
 	isGuest: false,
 	isMaxTryReached: false,
@@ -100,6 +102,7 @@ function safeSetItem(key: string, value: string): void {
 export function UserProvider({ children }: { children: React.ReactNode }) {
 	// -- auth state --
 	const [user, setUser] = useState<User | null>(null);
+	const [accessToken, setAccessToken] = useState<string | null>(null);
 	const [isLogin, setIsLogin] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [authChecked, setAuthChecked] = useState(false);
@@ -135,17 +138,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
 			if (res.data?.success) {
 				setUser(res.data.user);
+				setAccessToken(res.data.accessToken || null);
 				setIsLogin(true);
 				setIsGuest(false);
 				setIsMaxTryReached(false);
 			} else {
 				setUser(null);
+				setAccessToken(null);
 				setIsLogin(false);
 			}
 		} catch {
 			if (requestId !== requestIdRef.current) return;
 			// Interceptor already tried refreshing and it still failed.
 			setUser(null);
+			setAccessToken(null);
 			setIsLogin(false);
 		} finally {
 			if (requestId === requestIdRef.current) {
@@ -206,6 +212,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
 	const value: UserContextValue = {
 		user,
+		accessToken,
 		isLogin,
 		isGuest,
 		isMaxTryReached,

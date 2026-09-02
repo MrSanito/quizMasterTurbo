@@ -8,29 +8,37 @@ export const authMiddleware = async (
   next: (err?: Error) => void
 ) => {
   try {
-    // 1. Get token
-    let token =
+    // 1. Get token from auth payload, query, or authorization header
+    let token: string | undefined =
       socket.handshake.auth?.token ||
-      socket.handshake.headers?.authorization;
+      (typeof socket.handshake.query?.token === "string"
+        ? socket.handshake.query.token
+        : undefined) ||
+      (typeof socket.handshake.headers?.authorization === "string"
+        ? socket.handshake.headers.authorization
+        : undefined);
 
     // Remove "Bearer "
     if (token?.startsWith("Bearer ")) {
       token = token.slice(7).trim();
     }
 
-    // 2. Fallback to cookie
+    // 2. Fallback to cookie if present
     if (!token && socket.handshake.headers?.cookie) {
-      const cookies = Object.fromEntries(
-        socket.handshake.headers.cookie
-          .split(";")
-          .map((c) => c.trim().split("="))
-          .map(([key, ...value]) => [
-            key,
-            decodeURIComponent(value.join("=")),
-          ])
-      );
-
-      token = cookies.accessToken;
+      try {
+        const cookies = Object.fromEntries(
+          socket.handshake.headers.cookie
+            .split(";")
+            .map((c) => c.trim().split("="))
+            .map(([key, ...value]) => [
+              key,
+              decodeURIComponent(value.join("=")),
+            ])
+        );
+        token = cookies.accessToken;
+      } catch (cookieErr) {
+        console.warn("Failed to parse handshake cookie:", cookieErr);
+      }
     }
 
     // 3. Make sure token exists

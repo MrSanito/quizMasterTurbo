@@ -45,7 +45,7 @@ const LoginRequired = () => (
 
 const RoomLobbyPage = () => {
 	const router = useRouter();
-	const { user, loading, isLogin, isGuest, isMaxTryReached } = useUser();
+	const { user, loading, isLogin, isGuest, isMaxTryReached, accessToken } = useUser();
 	const { roomId } = useParams<{ roomId: string }>();
 	const [startingStatus, setStartingStatus] = useState<boolean>(false);
 	const [copied, setCopied] = useState(false);
@@ -112,31 +112,27 @@ const RoomLobbyPage = () => {
 			}
 		: null;
 
-	/* Create socket once */
+	/* Connect & listen */
 	useEffect(() => {
+		if (!roomId || !player || !isLogin) return;
+
 		const socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
 			transports: ["websocket", "polling"],
 			withCredentials: true,
-			autoConnect: false,
-		});
-
-		socket.on("connect_error", (err) => {
-			console.error("❌ Socket Connection / Auth Error:", err.message);
+			auth: {
+				token: accessToken,
+			},
+			query: {
+				roomId,
+				token: accessToken || "",
+			},
 		});
 
 		socketRef.current = socket;
 
-		return () => {
-			socket.disconnect();
-		};
-	}, []);
-
-	/* Connect & listen */
-	useEffect(() => {
-		if (!roomId || !player) return;
-
-		const socket = socketRef.current;
-		socket.connect();
+		socket.on("connect_error", (err) => {
+			console.error("❌ Socket Connection / Auth Error:", err.message);
+		});
 
 		const onConnect = () => {
 			console.log("connected to ws");
@@ -178,11 +174,12 @@ const RoomLobbyPage = () => {
 		socket.on("lobby:startingRoom", onLetStart);
 
 		return () => {
+			socket.off("connect", onConnect);
 			socket.off("lobby:players", onPlayers);
 			socket.off("lobby:startingRoom", onLetStart);
 			socket.disconnect();
 		};
-	}, [roomId, player?.id]);
+	}, [roomId, player?.id, isLogin, accessToken]);
 
 	useEffect(() => {
 		if (loading || isMaxTryReached || !isLogin || !roomId || !user?.id) return;

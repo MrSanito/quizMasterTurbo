@@ -273,7 +273,7 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 	}
 
 	const refreshToken = generateRefreshToken(user.id, sessionId, familyId);
-	generateAccessToken(user.id, sessionId, familyId, c); // sets cookie
+	const accessToken = generateAccessToken(user.id, sessionId, familyId, c); // sets cookie
 
 	const TTL = 7 * 24 * 60 * 60; // 7 days in seconds
 
@@ -317,7 +317,7 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 		},
 	});
 
-	return c.json({ success: true, message: "Login successful" }, 200);
+	return c.json({ success: true, accessToken, message: "Login successful" }, 200);
 });
 
 export const checkUsername = catchAsync(async (c: any) => {
@@ -453,7 +453,7 @@ export const refreshTokenController = catchAsync(async (c: any) => {
 		TTL,
 	);
 
-	generateAccessToken(userId, sessionId, familyId, c);
+	const newAccessToken = generateAccessToken(userId, sessionId, familyId, c);
 	const isProd = process.env.NODE_ENV === "production";
 	setCookie(c, "refreshToken", newRefreshToken, {
 		path: "/",
@@ -472,7 +472,7 @@ export const refreshTokenController = catchAsync(async (c: any) => {
 		},
 	});
 
-	return c.json({ success: true, message: "Token refreshed" }, 200);
+	return c.json({ success: true, accessToken: newAccessToken, message: "Token refreshed" }, 200);
 });
 
 export const validateUser = catchAsync(async (c: any) => {
@@ -480,8 +480,9 @@ export const validateUser = catchAsync(async (c: any) => {
 	const { userId } = userPayload;
 
 	const cached = await redis.get(userCacheKey(userId));
+	const currentAccessToken = getCookie(c, "accessToken");
 	if (cached) {
-		return c.json({ success: true, user: JSON.parse(cached) }, 200);
+		return c.json({ success: true, user: JSON.parse(cached), accessToken: currentAccessToken }, 200);
 	}
 
 	const user = await prisma.user.findUnique({
@@ -518,7 +519,7 @@ export const validateUser = catchAsync(async (c: any) => {
 		"EX",
 		5 * 60,
 	);
-	return c.json({ success: true, user: formattedUser }, 200);
+	return c.json({ success: true, user: formattedUser, accessToken: currentAccessToken }, 200);
 });
 
 export const getAllSessions = catchAsync(async (c: any) => {

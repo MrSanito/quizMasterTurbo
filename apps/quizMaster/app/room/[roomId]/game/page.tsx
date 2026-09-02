@@ -189,7 +189,7 @@ const FinalScreen = ({ leaderboard }: { leaderboard: LeaderboardItem[] }) => (
 
 const GamePage = () => {
 	const router = useRouter();
-	const { user, loading, isLogin } = useUser();
+	const { user, loading, isLogin, accessToken } = useUser();
 	const { roomId } = useParams<{ roomId: string }>();
 
 	// Socket & State
@@ -213,13 +213,16 @@ const GamePage = () => {
 
 	// 1. Init Socket
 	useEffect(() => {
-		if (!user || !roomId) return;
+		if (!user || !roomId || !isLogin) return;
 
 		// Connect
 		const socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
 			transports: ["websocket", "polling"],
 			withCredentials: true,
-			query: { roomId, userId: user.id }, // Pass initial params if needed
+			auth: {
+				token: accessToken,
+			},
+			query: { roomId, userId: user.id, token: accessToken || "" },
 		});
 
 		socket.on("connect_error", (err) => {
@@ -389,7 +392,7 @@ const GamePage = () => {
 		return () => {
 			socket.disconnect();
 		};
-	}, [roomId, user, router.replace]);
+	}, [roomId, user?.id, isLogin, accessToken, router.replace]);
 
 	// State for instant feedback
 	const [instantFeedback, setInstantFeedback] = useState<{
