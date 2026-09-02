@@ -679,3 +679,20 @@ export const forgotPassword = catchAsync(async (c: any) => {
 		200,
 	);
 });
+
+export const generateWsTicket = catchAsync(async (c: any) => {
+	const userPayload = c.get("user");
+	const { userId, sessionId } = userPayload;
+
+	const ticket = crypto.randomUUID();
+	// 30 seconds ephemeral single-use ticket
+	await redis.set(
+		`ws-ticket:${ticket}`,
+		JSON.stringify({ userId, sessionId }),
+		"EX",
+		30,
+	);
+
+	return c.json({ success: true, ticket }, 200);
+});
+

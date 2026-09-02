@@ -7,6 +7,7 @@ import { io } from "socket.io-client";
 import "react-toastify/dist/ReactToastify.css";
 import { Trophy } from "lucide-react";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
+import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 import RealTimeQuizPlayer from "@/components/RealTimeQuizPlayer";
 
@@ -215,35 +216,52 @@ const GamePage = () => {
 	useEffect(() => {
 		if (!user || !roomId || !isLogin) return;
 
-		// Connect
-		const socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
-			transports: ["websocket", "polling"],
-			withCredentials: true,
-			auth: {
-				token: accessToken,
-			},
-			query: { roomId, userId: user.id, token: accessToken || "" },
-		});
+		let socket: any = null;
+		let isCancelled = false;
 
-		socket.on("connect_error", (err) => {
-			console.error("❌ Game Socket Auth / Connection Error:", err.message);
-		});
+		const initSocket = async () => {
+			let ticket: string | null = null;
+			try {
+				const ticketRes = await api.post("/auth/ws-ticket");
+				if (ticketRes.data?.success) {
+					ticket = ticketRes.data.ticket;
+				}
+			} catch (err) {
+				console.warn("Could not fetch WS single-use ticket, using fallback:", err);
+			}
 
-		socketRef.current = socket;
+			if (isCancelled) return;
 
-		// Listeners
-		socket.on("connect", () => {
-			console.log(" Connected to Game Socket");
-			socket.emit("game:join", {
-				roomId,
-				player: {
-					id: user.id,
-					name:
-						`${user.firstName} ${user.lastName}` || user.username || "Guest",
-					avatar: user.avatar,
+			// Connect
+			socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
+				transports: ["websocket", "polling"],
+				withCredentials: true,
+				auth: {
+					ticket: ticket || undefined,
+					token: accessToken || undefined,
 				},
+				query: { roomId, userId: user.id },
 			});
-		});
+
+			socketRef.current = socket;
+
+			socket.on("connect_error", (err: any) => {
+				console.error("❌ Game Socket Auth / Connection Error:", err.message);
+			});
+
+			// Listeners
+			socket.on("connect", () => {
+				console.log(" Connected to Game Socket");
+				socket.emit("game:join", {
+					roomId,
+					player: {
+						id: user.id,
+						name:
+							`${user.firstName} ${user.lastName}` || user.username || "Guest",
+						avatar: user.avatar,
+					},
+				});
+			});
 
 		// SYNC: Restores state on reconnect
 		socket.on("game:sync", (data: any) => {
@@ -388,9 +406,15 @@ const GamePage = () => {
 				}, 2000);
 			}
 		});
+		};
+
+		initSocket();
 
 		return () => {
-			socket.disconnect();
+			isCancelled = true;
+			if (socket) {
+				socket.disconnect();
+			}
 		};
 	}, [roomId, user?.id, isLogin, accessToken, router.replace]);
 

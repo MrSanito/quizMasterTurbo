@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import type { Socket } from "socket.io";
-
 import { redis } from "../services/redis.service.js";
 
 export const authMiddleware = async (
@@ -8,22 +7,57 @@ export const authMiddleware = async (
   next: (err?: Error) => void
 ) => {
   try {
-    // 1. Get token from auth payload, query, or authorization header
+    // 1. Check for single-use ticket first (Gold Standard)
+    const ticket =
+      socket.handshake.auth?.ticket ||
+      (typeof socket.handshake.query?.ticket === "string"
+        ? socket.handshake.query.ticket
+        : undefined);
+
+    if (ticket) {
+      // Atomically retrieve and delete ticket (single-use redemption)
+      let ticketData: string | null = null;
+      if (typeof redis.getdel === "function") {
+        ticketData = await redis.getdel(`ws-ticket:${ticket}`);
+      } else {
+        ticketData = await redis.get(`ws-ticket:${ticket}`);
+        if (ticketData) {
+          await redis.del(`ws-ticket:${ticket}`);
+        }
+      }
+
+      if (!ticketData) {
+        return next(new Error("Invalid or expired authentication ticket"));
+      }
+
+      const decoded = JSON.parse(ticketData) as {
+        userId: string;
+        sessionId: string;
+      };
+
+      // Check if session is blacklisted
+      if (decoded.sessionId) {
+        const isBlacklisted = await redis.get(`blacklist:${decoded.sessionId}`);
+        if (isBlacklisted) {
+          return next(new Error("Token has been revoked"));
+        }
+      }
+
+      socket.data.user = decoded;
+      return next();
+    }
+
+    // 2. Fallback to direct token
     let token: string | undefined =
       socket.handshake.auth?.token ||
-      (typeof socket.handshake.query?.token === "string"
-        ? socket.handshake.query.token
-        : undefined) ||
       (typeof socket.handshake.headers?.authorization === "string"
         ? socket.handshake.headers.authorization
         : undefined);
 
-    // Remove "Bearer "
     if (token?.startsWith("Bearer ")) {
       token = token.slice(7).trim();
     }
 
-    // 2. Fallback to cookie if present
     if (!token && socket.handshake.headers?.cookie) {
       try {
         const cookies = Object.fromEntries(
@@ -41,26 +75,21 @@ export const authMiddleware = async (
       }
     }
 
-    // 3. Make sure token exists
     if (!token) {
-      return next(new Error("Authentication token required"));
+      return next(new Error("Authentication ticket or token required"));
     }
 
-    // 4. Get secret
     const secret = process.env.ACCESS_TOKEN_SECRET;
-
     if (!secret) {
       console.error("ACCESS_TOKEN_SECRET is not configured");
       return next(new Error("Server authentication configuration error"));
     }
 
-    // 5. Verify JWT
     const decoded = jwt.verify(token, secret) as {
       userId: string;
       sessionId: string;
     };
 
-    // 6. Check Redis blacklist
     const isBlacklisted = await redis.get(
       `blacklist:${decoded.sessionId}`
     );
@@ -69,16 +98,13 @@ export const authMiddleware = async (
       return next(new Error("Token has been revoked"));
     }
 
-    // 7. Attach user to socket
     socket.data.user = decoded;
-
-    // 8. Continue
-    next();
+    return next();
   } catch (err: any) {
-    next(
+    return next(
       new Error(
-        "Unauthorized: " + (err.message || "Invalid or expired token")
+        "Unauthorized: " + (err.message || "Invalid or expired credentials")
       )
     );
   }
-};
+};

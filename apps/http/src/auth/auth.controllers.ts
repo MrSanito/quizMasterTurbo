@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { prisma } from "@repo/db";
 import redis from "@repo/redis";
 import {
@@ -310,3 +311,19 @@ export const forgotPassword = TryCatch(async (req: Request, res: Response) => {
 		message: "Reset password email sent successfully",
 	});
 });
+
+export const generateWsTicket = TryCatch(async (req: Request, res: Response) => {
+	const { userId, sessionId } = req.user;
+
+	const ticket = crypto.randomUUID();
+	// 30 seconds ephemeral single-use ticket
+	await redis.set(
+		`ws-ticket:${ticket}`,
+		JSON.stringify({ userId, sessionId }),
+		"EX",
+		30,
+	);
+
+	return res.status(200).json({ success: true, ticket });
+});
+

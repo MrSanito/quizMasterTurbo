@@ -3,6 +3,7 @@ import {
 	checkUsername,
 	editUser,
 	forgotPassword,
+	generateWsTicket,
 	getAllSessions,
 	login,
 	logout,
@@ -23,6 +24,7 @@ router.post("/verify/:token", verify);
 router.post("/login", login);
 router.post("/verifyLoginOTP", verifyLoginOTP);
 router.post("/me", isAuthenticated, validateUser);
+router.post("/ws-ticket", isAuthenticated, generateWsTicket);
 router.post("/check_username", checkUsername);
 router.post("/refresh", refreshTokenController);
 router.post("/logout", isAuthenticated, logout);
@@ -32,3 +34,4 @@ router.get("/sessions", isAuthenticated, getAllSessions);
 router.post("/edit", isAuthenticated, editUser);
 router.post("/forgot_password", forgotPassword);
 export default router;
+

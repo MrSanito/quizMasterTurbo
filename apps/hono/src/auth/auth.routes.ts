@@ -3,6 +3,7 @@ import {
 	checkUsername,
 	editUser,
 	forgotPassword,
+	generateWsTicket,
 	getAllSessions,
 	login,
 	logout,
@@ -23,6 +24,7 @@ authRouter.post("/verify/:token", verify);
 authRouter.post("/login", login);
 authRouter.post("/verifyLoginOTP", verifyLoginOTP);
 authRouter.post("/me", isAuthenticated, validateUser);
+authRouter.post("/ws-ticket", isAuthenticated, generateWsTicket);
 authRouter.post("/check_username", checkUsername);
 authRouter.post("/refresh", refreshTokenController);
 authRouter.post("/logout", isAuthenticated, logout);
@@ -33,3 +35,4 @@ authRouter.post("/edit", isAuthenticated, editUser);
 authRouter.post("/forgot_password", forgotPassword);
 
 export default authRouter;
+

@@ -116,68 +116,90 @@ const RoomLobbyPage = () => {
 	useEffect(() => {
 		if (!roomId || !player || !isLogin) return;
 
-		const socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
-			transports: ["websocket", "polling"],
-			withCredentials: true,
-			auth: {
-				token: accessToken,
-			},
-			query: {
-				roomId,
-				token: accessToken || "",
-			},
-		});
+		let socket: any = null;
+		let isCancelled = false;
 
-		socketRef.current = socket;
-
-		socket.on("connect_error", (err) => {
-			console.error("❌ Socket Connection / Auth Error:", err.message);
-		});
-
-		const onConnect = () => {
-			console.log("connected to ws");
-			setSocketId(socket.id);
-			socket.emit("lobby:join", { roomId, player });
-			socket.emit("set_location", "lobby");
-		};
-
-		const onPlayers = (data: any) => {
-			let list: any[] = [];
-			if (!data) return;
-
-			if (Array.isArray(data)) {
-				list = data;
-			} else if (Array.isArray(data.players)) {
-				list = data.players;
-			} else {
-				list = Object.entries(data).map(([id, value]: any) => {
-					const parsed = JSON.parse(value);
-					return {
-						id,
-						name: parsed.username,
-						avatar: parsed.avatar,
-						socketId: parsed.socketId,
-						score: parsed.score,
-					};
-				});
+		const initSocket = async () => {
+			let ticket: string | null = null;
+			try {
+				const ticketRes = await api.post("/auth/ws-ticket");
+				if (ticketRes.data?.success) {
+					ticket = ticketRes.data.ticket;
+				}
+			} catch (err) {
+				console.warn("Could not fetch WS single-use ticket, using fallback:", err);
 			}
 
-			setPlayers(list);
+			if (isCancelled) return;
+
+			socket = io(process.env.NEXT_PUBLIC_WS_BASE_URL!, {
+				transports: ["websocket", "polling"],
+				withCredentials: true,
+				auth: {
+					ticket: ticket || undefined,
+					token: accessToken || undefined,
+				},
+				query: {
+					roomId,
+				},
+			});
+
+			socketRef.current = socket;
+
+			socket.on("connect_error", (err: any) => {
+				console.error("❌ Socket Connection / Auth Error:", err.message);
+			});
+
+			const onConnect = () => {
+				console.log("connected to ws");
+				setSocketId(socket.id);
+				socket.emit("lobby:join", { roomId, player });
+				socket.emit("set_location", "lobby");
+			};
+
+			const onPlayers = (data: any) => {
+				let list: any[] = [];
+				if (!data) return;
+
+				if (Array.isArray(data)) {
+					list = data;
+				} else if (Array.isArray(data.players)) {
+					list = data.players;
+				} else {
+					list = Object.entries(data).map(([id, value]: any) => {
+						const parsed = JSON.parse(value);
+						return {
+							id,
+							name: parsed.username,
+							avatar: parsed.avatar,
+							socketId: parsed.socketId,
+							score: parsed.score,
+						};
+					});
+				}
+
+				setPlayers(list);
+			};
+
+			const onLetStart = () => {
+				router.push(`/room/${roomId}/game`);
+			};
+
+			socket.on("connect", onConnect);
+			socket.on("lobby:players", onPlayers);
+			socket.on("lobby:startingRoom", onLetStart);
 		};
 
-		const onLetStart = () => {
-			router.push(`/room/${roomId}/game`);
-		};
-
-		socket.on("connect", onConnect);
-		socket.on("lobby:players", onPlayers);
-		socket.on("lobby:startingRoom", onLetStart);
+		initSocket();
 
 		return () => {
-			socket.off("connect", onConnect);
-			socket.off("lobby:players", onPlayers);
-			socket.off("lobby:startingRoom", onLetStart);
-			socket.disconnect();
+			isCancelled = true;
+			if (socket) {
+				socket.off("connect");
+				socket.off("lobby:players");
+				socket.off("lobby:startingRoom");
+				socket.disconnect();
+			}
 		};
 	}, [roomId, player?.id, isLogin, accessToken]);
 

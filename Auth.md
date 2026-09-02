@@ -45,6 +45,16 @@ To prevent unauthorized clients from using stolen tokens, the auth system suppor
 ### 3. Access Token Blacklisting
 Because Access Tokens are stateless, they normally remain valid until expiration. When a user logs out via `/logout`, the system blacklists the Access Token (`blacklist:${accessToken}`) in Redis for its remaining lifespan (7 days), and the `isAuthenticated` middleware blocks any request bearing a blacklisted token.
 
+### 4. Ephemeral Single-Use WebSocket Ticket Pattern
+To securely authenticate WebSocket connections across decoupled subdomains/origins without exposing tokens in URL query strings or exposing long-lived credentials to client-side scripts:
+* **The Problem**: WebSockets bypass standard CORS, and modern browsers block cross-origin `httpOnly` cookies from being sent in WebSocket handshake upgrades to different domains. Placing raw JWTs in query parameters (`?token=...`) is an anti-pattern (CWE-598) that leaks secrets into reverse proxy logs, server access logs, and browser history.
+* **The Solution**: 
+  1. The authenticated frontend makes a short HTTP request: `POST /api/v1/auth/ws-ticket` (authenticated by the existing `httpOnly` session cookie).
+  2. The API creates a high-entropy, cryptographically random single-use ticket (UUIDv4) and stores it in Redis under `ws-ticket:${ticket}` mapping to `{ userId, sessionId }` with a **strict 30-second TTL**.
+  3. The client connects to Socket.IO passing the ticket strictly inside the handshake payload: `io(WS_URL, { auth: { ticket } })`.
+  4. The WebSocket server redeems the ticket atomically using `redis.getdel(`ws-ticket:${ticket}`)` (single-use redemption). If invalid or already consumed, the connection is instantly rejected.
+  5. If valid, the user context is attached to `socket.data.user`, and connection proceeds. Replay attacks are impossible because the ticket is deleted immediately on first use.
+
 ---
 
 ## ⚡ Redis Key Registry
@@ -55,6 +65,7 @@ Because Access Tokens are stateless, they normally remain valid until expiration
 | `verifyKey:${verifyToken}` | Temporary registration data container (holds hashed password & details until verified) | 300 seconds (5 mins) |
 | `otp:${email}` | Login OTP code | 300 seconds (5 mins) |
 | `login-otp-rate:${ip}:${email}` | Wrong OTP attempts tracker (max 5 attempts) | 300 seconds (5 mins) |
+| `ws-ticket:${ticketId}` | Ephemeral single-use WebSocket connection ticket | 30 seconds |
 | `rt:${userId}:${familyId}:${sessionId}` | Active refresh token storage | 7 days |
 | `family:${familyId}` | Redis Set of session IDs in the same login family | 7 days |
 | `pubkey:${sessionId}` | Cached JWK public key for DPoP verification | 7 days |
@@ -234,3 +245,14 @@ All auth routes are prefixed with `/api/v1/auth` (or as configured in the main E
   1. Generates a random UUID token.
   2. Stores mapping `verifyKey:${token} -> email` in Redis with 1-hour expiry.
   3. Dispatches password recovery email using Resend with the recovery link.
+
+---
+
+### 13. Generate WebSocket Connection Ticket
+* **Endpoint**: `POST /ws-ticket`
+* **Authentication**: Requires valid authenticated session (`isAuthenticated` middleware).
+* **Process**:
+  1. Extracts `{ userId, sessionId }` from the verified request context.
+  2. Generates a high-entropy random UUIDv4 ticket.
+  3. Saves ticket to Redis under `ws-ticket:${ticket}` with a 30-second TTL.
+  4. Returns `{ success: true, ticket }` to the client for immediate single-use redemption during Socket.IO handshake.
