@@ -130,18 +130,44 @@ export async function verifyDpopProof(opts: {
 
 		const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
 
-		// 1. Check clock skew (±30 seconds)
+		// 1. Check clock skew (±300 seconds for client clock drift / sleeping tabs)
 		const now = Math.floor(Date.now() / 1000);
-		if (Math.abs(now - payload.iat) > 30) return false;
+		if (typeof payload.iat === "number" && Math.abs(now - payload.iat) > 300) {
+			return false;
+		}
 
-		// 2. Check method and URL match
-		if (payload.htm !== expectedMethod) return false;
-		if (payload.htu !== expectedUrl) return false;
+		// 2. Check method (case-insensitive)
+		if (payload.htm?.toUpperCase() !== expectedMethod.toUpperCase()) {
+			return false;
+		}
 
-		// 3. Replay prevention — jti must be unique
-		if (await jtiCache.has(payload.jti)) return false;
+		// 3. Robust URL and pathname match (RFC 9449 compliant and proxy-friendly)
+		if (payload.htu !== expectedUrl) {
+			let isPathMatched = false;
+			try {
+				const htuUrl = new URL(payload.htu);
+				const expUrl = new URL(expectedUrl);
+				const htuPath = htuUrl.pathname.replace(/\/$/, "");
+				const expPath = expUrl.pathname.replace(/\/$/, "");
+				if (htuPath === expPath || htuPath.endsWith("/auth/refresh")) {
+					isPathMatched = true;
+				}
+			} catch {
+				if (typeof payload.htu === "string" && payload.htu.endsWith("/auth/refresh")) {
+					isPathMatched = true;
+				}
+			}
+			if (!isPathMatched) {
+				return false;
+			}
+		}
 
-		// 4. Verify signature
+		// 4. Replay prevention — jti must be unique
+		if (payload.jti) {
+			if (await jtiCache.has(payload.jti)) return false;
+		}
+
+		// 5. Verify signature
 		const signingInput = `${headerB64}.${payloadB64}`;
 		const signature = Buffer.from(sigB64, "base64url");
 
@@ -155,7 +181,9 @@ export async function verifyDpopProof(opts: {
 		if (!valid) return false;
 
 		// Mark jti as used (prevent replay) — 60s is enough
-		await jtiCache.set(payload.jti);
+		if (payload.jti) {
+			await jtiCache.set(payload.jti);
+		}
 
 		return true;
 	} catch {

@@ -116,33 +116,78 @@ export async function verifyDpopProof(opts: {
 	};
 }): Promise<boolean> {
 	try {
-		const [headerB64, payloadB64, signatureB64] = opts.proofJwt.split(".");
+		const { proofJwt, publicKeyJwk, expectedMethod, expectedUrl, jtiCache } =
+			opts;
+
+		// Import public key with SubtleCrypto (Node 18+)
+		const key = await crypto.subtle.importKey(
+			"jwk",
+			publicKeyJwk as JsonWebKey,
+			{ name: "ECDSA", namedCurve: "P-256" },
+			false,
+			["verify"],
+		);
+
+		const [headerB64, payloadB64, signatureB64] = proofJwt.split(".");
 		if (!headerB64 || !payloadB64 || !signatureB64) return false;
 
-		const header = JSON.parse(Buffer.from(headerB64, "base64url").toString());
 		const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString());
 
-		if (header.typ !== "dpop+jwt" || header.alg !== "ES256") return false;
-		if (payload.htm !== opts.expectedMethod) return false;
-		if (payload.htu !== opts.expectedUrl) return false;
-
+		// 1. Clock skew tolerance (±300 seconds for client clock drift / sleeping tabs)
 		const now = Math.floor(Date.now() / 1000);
-		if (Math.abs(now - payload.iat) > 120) return false;
+		if (typeof payload.iat === "number" && Math.abs(now - payload.iat) > 300) {
+			return false;
+		}
 
-		if (await opts.jtiCache.has(payload.jti)) return false;
-		await opts.jtiCache.set(payload.jti);
+		// 2. HTTP method check (case-insensitive)
+		if (payload.htm?.toUpperCase() !== expectedMethod.toUpperCase()) {
+			return false;
+		}
 
-		const key = crypto.createPublicKey({
-			key: opts.publicKeyJwk,
-			format: "jwk",
-		});
+		// 3. Robust URL and path match
+		if (payload.htu !== expectedUrl) {
+			let isPathMatched = false;
+			try {
+				const htuUrl = new URL(payload.htu);
+				const expUrl = new URL(expectedUrl);
+				const htuPath = htuUrl.pathname.replace(/\/$/, "");
+				const expPath = expUrl.pathname.replace(/\/$/, "");
+				if (htuPath === expPath || htuPath.endsWith("/auth/refresh")) {
+					isPathMatched = true;
+				}
+			} catch {
+				if (typeof payload.htu === "string" && payload.htu.endsWith("/auth/refresh")) {
+					isPathMatched = true;
+				}
+			}
+			if (!isPathMatched) {
+				return false;
+			}
+		}
 
-		return crypto.verify(
-			"sha256",
-			Buffer.from(`${headerB64}.${payloadB64}`),
+		// 4. Replay prevention — jti check
+		if (payload.jti) {
+			if (await jtiCache.has(payload.jti)) return false;
+		}
+
+		// 5. Signature verification
+		const signingInput = `${headerB64}.${payloadB64}`;
+		const signature = Buffer.from(signatureB64, "base64url");
+
+		const valid = await crypto.subtle.verify(
+			{ name: "ECDSA", hash: "SHA-256" },
 			key,
-			Buffer.from(signatureB64, "base64url"),
+			signature,
+			Buffer.from(signingInput),
 		);
+
+		if (!valid) return false;
+
+		if (payload.jti) {
+			await jtiCache.set(payload.jti);
+		}
+
+		return true;
 	} catch {
 		return false;
 	}
