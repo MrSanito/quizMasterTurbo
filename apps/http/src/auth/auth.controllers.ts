@@ -132,7 +132,7 @@ export const verifyLoginOTP = TryCatch(async (req: Request, res: Response) => {
 	if (!parsed.success) return res.status(400).json(parsed.error);
 
 	try {
-		await verifyLoginOtpService(
+		const result = await verifyLoginOtpService(
 			{
 				...parsed.data,
 				ip: req.ip,
@@ -142,7 +142,11 @@ export const verifyLoginOTP = TryCatch(async (req: Request, res: Response) => {
 		);
 		await redis.del(rateKey);
 
-		return res.status(200).json({ success: true, message: "Login successful" });
+		return res.status(200).json({
+			success: true,
+			accessToken: result?.accessToken,
+			message: "Login successful",
+		});
 	} catch (err: any) {
 		if (err.message === "USER_NOT_FOUND") {
 			return res.status(404).json({ success: false, message: "User not found" });
@@ -195,8 +199,12 @@ export const refreshTokenController = TryCatch(async (req: Request, res: Respons
 	const dpopProof = req.headers["dpop-proof"] as string | undefined;
 
 	try {
-		await refreshSessionService(refreshToken, dpopProof, res);
-		return res.status(200).json({ success: true, message: "Token refreshed" });
+		const result = await refreshSessionService(refreshToken, dpopProof, res);
+		return res.status(200).json({
+			success: true,
+			accessToken: result?.accessToken,
+			message: "Token refreshed",
+		});
 	} catch (err: any) {
 		if (err.message === "EXPIRED_TOKEN") {
 			return res.status(401).json({ success: false, message: "Session expired. Please log in." });
@@ -224,7 +232,9 @@ export const validateUser = TryCatch(async (req: Request, res: Response) => {
 		return res.status(404).json({ success: false, message: "User not found" });
 	}
 
-	return res.status(200).json({ success: true, user });
+	const token = req.cookies?.accessToken;
+
+	return res.status(200).json({ success: true, user, accessToken: token });
 });
 
 // ─── Get All Active Sessions ─────────────────────────────────────────────────

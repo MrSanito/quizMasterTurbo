@@ -274,7 +274,7 @@ export async function verifyLoginOtpService(
 	}
 
 	const refreshToken = generateRefreshToken(user.id, sessionId, familyId);
-	generateAccessToken(user.id, sessionId, familyId, res);
+	const accessToken = generateAccessToken(user.id, sessionId, familyId, res);
 
 	const pipeline = redis.pipeline();
 	pipeline.set(rtKey(user.id, familyId, sessionId), refreshToken, "EX", TTL);
@@ -314,6 +314,8 @@ export async function verifyLoginOtpService(
 			publicKeyThumbprint: publicKeyThumbprint ?? null,
 		},
 	});
+
+	return { user, accessToken };
 }
 
 export async function refreshSessionService(
@@ -378,7 +380,7 @@ export async function refreshSessionService(
 	const newRefreshToken = generateRefreshToken(userId, sessionId, familyId);
 
 	await redis.set(rtKey(userId, familyId, sessionId), newRefreshToken, "EX", TTL);
-	generateAccessToken(userId, sessionId, familyId, res);
+	const accessToken = generateAccessToken(userId, sessionId, familyId, res);
 
 	const isProd = process.env.NODE_ENV === "production";
 	res.cookie("refreshToken", newRefreshToken, {
@@ -396,6 +398,8 @@ export async function refreshSessionService(
 			lastUsedAt: new Date(),
 		},
 	});
+
+	return { accessToken };
 }
 
 export async function getUserProfileService(userId: string) {
