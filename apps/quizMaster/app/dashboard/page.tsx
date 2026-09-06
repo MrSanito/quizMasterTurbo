@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import QuizPlayerHistory from "@/app/dashboard/Components/QuizPlayerHistory";
 import { data } from "@/app/dashboard/data";
@@ -63,13 +65,14 @@ const Dashboard = () => {
 		try {
 			const res = await api.post(`/auth/revoke/${sessionId}`);
 			if (res.data?.success) {
+				toast.success("Session revoked successfully");
 				fetchSessions();
 			} else {
-				alert(res.data?.message || "Failed to revoke session");
+				toast.error(res.data?.message || "Failed to revoke session");
 			}
-		} catch (err) {
+		} catch (err: any) {
 			console.error("Failed to revoke session", err);
-			alert("Error revoking session");
+			toast.error(err.response?.data?.message || "Error revoking session");
 		}
 	};
 
@@ -84,16 +87,17 @@ const Dashboard = () => {
 		try {
 			const res = await api.post("/auth/logoutall");
 			if (res.data?.success) {
+				toast.success("All sessions revoked");
 				if (refreshAuth) {
 					await refreshAuth();
 				}
 				router.push("/login");
 			} else {
-				alert(res.data?.message || "Failed to revoke all sessions");
+				toast.error(res.data?.message || "Failed to revoke all sessions");
 			}
-		} catch (err) {
+		} catch (err: any) {
 			console.error("Failed to revoke all sessions", err);
-			alert("Error revoking sessions");
+			toast.error(err.response?.data?.message || "Error revoking sessions");
 		}
 	};
 
@@ -148,6 +152,7 @@ const Dashboard = () => {
 	if (isGuest) {
 		return (
 			<div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4 py-10">
+				<ToastContainer position="top-center" theme="colored" />
 				{/* Ambient glow, echoes the hero's palette */}
 				<div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#F0DE4A]/10 blur-3xl" />
 				<div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#B9EEDC]/10 blur-3xl" />
@@ -173,6 +178,7 @@ const Dashboard = () => {
 		};
 		return (
 			<div className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-4 py-6">
+				<ToastContainer position="top-center" theme="colored" />
 				{/* Ambient glow, echoes the hero's palette */}
 				<div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-[#F0DE4A]/10 blur-3xl" />
 				<div className="pointer-events-none absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-[#B9EEDC]/10 blur-3xl" />

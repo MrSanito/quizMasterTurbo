@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Node.js Architecture — Sync vs Async Execution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     TOKENS — edit colors / fonts here, everything else follows
+     ============================================================ */
+  :root{
+    --bg: #0a0f1c;
+    --panel: #101828;
+    --panel-alt: #0c1422;
+    --line: #223047;
+    --line-soft: #182338;
+    --text: #e7ecf5;
+    --text-dim: #8b98ac;
+    --text-faint: #5c6a80;
+
+    --c-sync:      #38bdf8;  /* V8 call stack / synchronous execution   */
+    --c-bridge:    #a78bfa;  /* Node.js bindings / C++ layer            */
+    --c-timer:     #fbbf24;  /* Timers                                  */
+    --c-pool:      #fb923c;  /* libuv thread pool                       */
+    --c-kernel:    #2dd4bf;  /* OS kernel async I/O                     */
+    --c-loop:      #34d399;  /* libuv event loop                        */
+    --c-micro:     #fb7185; /* microtask queues                        */
+
+    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 40px),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height:1.5;
+    padding: 32px 20px 80px;
+  }
+  code, .mono{ font-family: var(--font-mono); }
+
+  a{ color: var(--c-sync); }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  .page-head{ max-width:1180px; margin:0 auto 28px; }
+  .page-head h1{
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    font-weight:700;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .page-head p{
+    color: var(--text-dim);
+    margin:0 0 22px;
+    max-width: 62ch;
+    font-size:0.98rem;
+  }
+
+  .controls-row{
+    display:flex; flex-wrap:wrap; gap:18px 28px; align-items:center;
+    justify-content:space-between;
+    border-top:1px solid var(--line-soft);
+    border-bottom:1px solid var(--line-soft);
+    padding: 14px 0;
+  }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:10px 18px; }
+  .legend-item{ display:flex; align-items:center; gap:7px; font-size:0.82rem; color:var(--text-dim); }
+  .legend-dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+
+  .path-toggle{ display:flex; gap:6px; }
+  .path-toggle button{
+    font-family: var(--font-body);
+    font-size:0.82rem;
+    color: var(--text-dim);
+    background: var(--panel);
+    border:1px solid var(--line);
+    padding:6px 12px;
+    border-radius:3px;
+    cursor:pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .path-toggle button:hover{ color:var(--text); border-color:var(--text-faint); }
+  .path-toggle button.active{
+    color:#04121c; background:var(--text); border-color:var(--text);
+    font-weight:600;
+  }
+  .path-toggle button:focus-visible, .accordion-toggle:focus-visible, .path-toggle button:focus{
+    outline: 2px solid var(--c-sync); outline-offset:2px;
+  }
+
+  /* ============================================================
+     MAIN FLOW DIAGRAM
+     ============================================================ */
+  .flow-scroll{ max-width:1200px; margin: 30px auto 0; overflow-x:auto; overflow-y:visible; padding-bottom:12px; }
+  .diagram-flow{
+    position:relative;
+    width: 1180px;
+    margin: 0 auto;
+    padding: 6px 6px 20px;
+    overflow:visible;
+  }
+  .diagram-flow svg.connectors{
+    position:absolute; left:0; top:0; width:100%;
+    z-index:1; pointer-events:none;
+    overflow:visible;
+  }
+  .diagram-flow svg.connectors path{ transition: opacity .25s ease, filter .25s ease; }
+
+  .box{
+    position:relative; z-index:2;
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding: 12px 14px;
+    transition: opacity .25s ease, filter .25s ease;
+  }
+  .box h3{ margin:0 0 4px; font-size:0.95rem; font-weight:600; }
+  .box .sub{ font-size:0.76rem; color:var(--text-dim); line-height:1.35; }
+  .box code{ font-size:0.74rem; color:var(--text); background:var(--panel-alt); padding:1px 5px; border-radius:2px; }
+
+  /* dim non-active path when a filter is on */
+  .diagram-flow.mode-sync  [data-path="async"]{ opacity:0.15; filter:grayscale(1); }
+  .diagram-flow.mode-async [data-path="sync"]{  opacity:0.15; filter:grayscale(1); }
+  .ref-grid.mode-sync  [data-path="async"]{ opacity:0.2; filter:grayscale(1); }
+  .ref-grid.mode-async [data-path="sync"]{  opacity:0.2; filter:grayscale(1); }
+
+  /* ---- row: entry point ---- */
+  .row-entry{ display:flex; justify-content:center; margin-bottom:52px; }
+  #js-code{ width:520px; text-align:center; border-color:var(--text-faint); }
+  #js-code h3{ font-size:1.02rem; }
+  .code-pair{ display:flex; gap:10px; margin-top:10px; justify-content:center; }
+  .code-pair code{ display:block; text-align:left; padding:6px 8px; font-size:0.72rem; }
+  .code-pair .sync-ex{ border:1px solid color-mix(in srgb, var(--c-sync) 50%, transparent); }
+  .code-pair .async-ex{ border:1px solid color-mix(in srgb, var(--c-bridge) 50%, transparent); }
+
+  /* ---- row: sync lane + bindings ---- */
+  .row-split{ display:flex; gap:32px; margin-bottom:48px; align-items:flex-start; }
+  .sync-lane{ width:230px; flex:none; }
+  .async-lane{ flex:1; min-width:0; }
+
+  #call-stack{ border-color: var(--c-sync); }
+  .stack-plates{ margin: 10px 0 8px; display:flex; flex-direction:column-reverse; gap:4px; }
+  .stack-plates span{
+    display:block; height:9px; border-radius:2px;
+    background: color-mix(in srgb, var(--c-sync) 35%, var(--panel-alt));
+    border:1px solid color-mix(in srgb, var(--c-sync) 60%, transparent);
+  }
+  .stack-plates span:nth-child(1){ width:60%; }
+  .stack-plates span:nth-child(2){ width:80%; }
+  .stack-plates span:nth-child(3){ width:100%; }
+
+  #bindings{ border-color: var(--c-bridge); margin-bottom:20px; }
+
+  .lane-row{ display:flex; gap:14px; flex-wrap:nowrap; }
+  .lane-row .box{ flex:1 1 0; min-width:0; padding:10px 12px; }
+  #lane-immediate{ border-color: var(--c-loop); }
+  #lane-timer{ border-color: var(--c-timer); }
+  #lane-pool{ border-color: var(--c-pool); }
+  #lane-kernel{ border-color: var(--c-kernel); }
+
+  .workers{ display:flex; gap:4px; margin:8px 0 6px; }
+  .workers span{
+    flex:1; height:18px; border-radius:999px;
+    background: color-mix(in srgb, var(--c-pool) 30%, var(--panel-alt));
+    border:1px solid color-mix(in srgb, var(--c-pool) 60%, transparent);
+    font-size:0.58rem; display:flex; align-items:center; justify-content:center;
+    color: var(--text-dim);
+  }
+
+  /* ---- event loop ring ---- */
+  .row-loop{ display:flex; justify-content:center; margin-bottom:48px; margin-top:12px; position:relative; }
+  .loop-ring{
+    position:relative; width:620px; height:620px; flex:none;
+    border-radius:50%;
+    border: 2px dashed color-mix(in srgb, var(--c-loop) 30%, transparent);
+    overflow:visible;
+  }
+  .loop-center{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    text-align:center; width:150px;
+    z-index:3;
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:8px 12px;
+  }
+  .loop-center .tag{ font-size:0.65rem; color:var(--c-loop); letter-spacing:.02em; margin-bottom:2px; }
+  .loop-center strong{ font-size:0.98rem; display:block; }
+  .loop-center span.sub{ font-size:0.7rem; color:var(--text-dim); }
+
+  .phase{
+    position:absolute;
+    width:156px;
+    text-align:center; padding:8px 10px;
+    border-color: color-mix(in srgb, var(--c-loop) 65%, var(--line));
+    z-index:2;
+  }
+  .phase h4{ margin:0 0 3px; font-size:0.82rem; font-weight:600; }
+  .phase p{ margin:0; font-size:0.68rem; color:var(--text-dim); line-height:1.3; }
+  .phase .n{ font-size:0.62rem; color:var(--c-loop); font-family:var(--font-mono); }
+
+  #phase-poll{ width:176px; }
+
+  /* ---- microtasks row ---- */
+  .row-micro{ display:flex; justify-content:center; margin-bottom:12px; }
+  #micro{ border-color: var(--c-micro); width:640px; }
+  .micro-lines{ display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+  .micro-line{ display:flex; align-items:center; gap:10px; }
+  .micro-line .lbl{ font-size:0.72rem; color:var(--text-dim); width:150px; flex:none; }
+  .queue{ display:flex; gap:5px; flex:1; }
+  .queue span{
+    padding:3px 10px; border-radius:999px; font-size:0.68rem;
+    background: color-mix(in srgb, var(--c-micro) 22%, var(--panel-alt));
+    border:1px solid color-mix(in srgb, var(--c-micro) 55%, transparent);
+    color: var(--text-dim);
+  }
+
+  /* ============================================================
+     REFERENCE CARDS
+     ============================================================ */
+  .ref-head{ max-width:1180px; margin: 64px auto 18px; }
+  .ref-head h2{ font-size:1.2rem; margin:0 0 4px; }
+  .ref-head p{ color:var(--text-dim); font-size:0.9rem; margin:0; }
+
+  .ref-grid{
+    max-width:1180px; margin:0 auto; display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+    gap:14px;
+  }
+  .ref-card{
+    background:var(--panel); border:1px solid var(--line); border-left-width:3px;
+    border-radius:3px; padding:16px 18px;
+  }
+  .ref-card h3{ margin:0 0 8px; font-size:0.92rem; display:flex; align-items:center; gap:8px; }
+  .ref-card h3 .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .ref-card p{ margin:0 0 8px; font-size:0.83rem; color:var(--text-dim); }
+  .ref-card p:last-child{ margin-bottom:0; }
+  .ref-card .ex{ font-size:0.72rem; }
+
+  /* ============================================================
+     TRACE-THROUGH EXAMPLE
+     ============================================================ */
+  .trace{ max-width:1180px; margin: 56px auto 0; }
+  .trace h2{ font-size:1.2rem; margin:0 0 4px; }
+  .trace > p{ color:var(--text-dim); font-size:0.9rem; margin:0 0 18px; }
+  .trace-grid{ display:grid; grid-template-columns: 1.1fr 1fr; gap:22px; }
+  @media (max-width:860px){ .trace-grid{ grid-template-columns:1fr; } }
+
+  pre.code-block{
+    background:var(--panel-alt); border:1px solid var(--line); border-radius:3px;
+    padding:16px 18px; font-family:var(--font-mono); font-size:0.78rem; line-height:1.7;
+    overflow-x:auto; margin:0;
+  }
+  pre.code-block .c1{ color:var(--text-faint); }
+
+  .trace-steps{ list-style:none; margin:0; padding:0; counter-reset:step; }
+  .trace-steps li{
+    counter-increment:step; position:relative; padding:6px 0 6px 30px; font-size:0.83rem;
+    color:var(--text-dim); border-bottom:1px solid var(--line-soft);
+  }
+  .trace-steps li:last-child{ border-bottom:none; }
+  .trace-steps li::before{
+    content: counter(step); position:absolute; left:0; top:6px;
+    width:20px; height:20px; border-radius:50%; background:var(--panel-alt);
+    border:1px solid var(--text-faint); color:var(--text);
+    font-family:var(--font-mono); font-size:0.68rem; display:flex; align-items:center; justify-content:center;
+  }
+  .trace-steps b{ color:var(--text); font-weight:600; }
+  .gotcha{
+    margin-top:16px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--c-timer) 55%, var(--line));
+    border-radius:3px; font-size:0.82rem; color:var(--text-dim); background: color-mix(in srgb, var(--c-timer) 8%, transparent);
+  }
+  .gotcha b{ color:var(--c-timer); }
+
+  footer{ max-width:1180px; margin:60px auto 0; color:var(--text-faint); font-size:0.78rem; border-top:1px solid var(--line-soft); padding-top:16px; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <div class="page-head">
+    <h1>Node.js: how sync and async code actually get handled</h1>
+    <p>One flow, seven layers. Follow a call from your code down through V8, the C++ bindings, libuv, the thread pool, the kernel, and back up through the microtask queues.</p>
+
+    <div class="controls-row">
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-sync)"></span>V8 · Call Stack (sync)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-bridge)"></span>Node.js Bindings (C++)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-timer)"></span>Timers</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-pool)"></span>Thread Pool</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-kernel)"></span>OS Kernel I/O</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-loop)"></span>Event Loop</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--c-micro)"></span>Microtask Queues</div>
+      </div>
+      <div class="path-toggle" role="group" aria-label="Isolate a path">
+        <button type="button" class="active" data-mode="all">Show all</button>
+        <button type="button" data-mode="sync">Sync path only</button>
+        <button type="button" data-mode="async">Async path only</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN FLOW DIAGRAM ================= -->
+  <div class="flow-scroll">
+  <div class="diagram-flow" id="diagram">
+    <svg class="connectors" id="svg"></svg>
+
+    <!-- entry point -->
+    <div class="row-entry">
+      <div class="box" id="js-code" data-path="both">
+        <h3>Your JavaScript Code</h3>
+        <div class="sub">Same job, two ways of asking for it</div>
+        <div class="code-pair">
+          <code class="sync-ex">const d = fs.readFileSync(f)</code>
+          <code class="async-ex">fs.readFile(f, cb)</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- sync lane + async bindings -->
+    <div class="row-split">
+      <div class="sync-lane" data-path="sync">
+        <div class="box" id="call-stack">
+          <h3>V8 Call Stack</h3>
+          <div class="stack-plates"><span></span><span></span><span></span></div>
+          <div class="sub">LIFO, one frame at a time. Runs top‑to‑bottom and <b>blocks</b> everything else — timers, I/O, even rendering — until it's empty.</div>
+        </div>
+      </div>
+
+      <div class="async-lane" data-path="async">
+        <div class="box" id="bindings">
+          <h3>Node.js Bindings <span class="sub">(C++ layer)</span></h3>
+          <div class="sub">Translates the JS call into a libuv request and returns control to your code <b>immediately</b> — nothing here blocks the call stack.</div>
+        </div>
+
+        <div class="lane-row">
+          <div class="box" id="lane-immediate">
+            <h4 style="margin:0 0 4px;font-size:0.88rem;">setImmediate()</h4>
+            <div class="sub">Direct to <b>check</b> phase.<br>Skips I/O &amp; worker queues.</div>
+          </div>
+          <div class="box" id="lane-timer">
+            <h4 style="margin:0 0 4px;font-size:0.88rem;">Timers</h4>
+            <div class="sub"><code>setTimeout</code> · <code>setInterval</code><br>libuv min-heap by expiry.</div>
+          </div>
+          <div class="box" id="lane-pool">
+            <h4 style="margin:0 0 4px;font-size:0.88rem;">libuv Thread Pool</h4>
+            <div class="workers"><span>W1</span><span>W2</span><span>W3</span><span>W4</span></div>
+            <div class="sub">4 threads. Handles <code>fs.*</code>, <code>crypto</code>, <code>dns.lookup</code>, <code>zlib</code>.</div>
+          </div>
+          <div class="box" id="lane-kernel">
+            <h4 style="margin:0 0 4px;font-size:0.88rem;">OS Kernel — Async I/O</h4>
+            <div class="sub"><code>epoll</code> · <code>kqueue</code> · <code>IOCP</code>.<br>Sockets, pipes, HTTP — non-blocking.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- event loop ring -->
+    <div class="row-loop" data-path="async">
+      <div class="loop-ring" id="loop-ring">
+        <div class="loop-center">
+          <div class="tag">libuv</div>
+          <strong>Event Loop</strong>
+          <span class="sub">6 phases · repeats every tick</span>
+        </div>
+        <div class="box phase" id="phase-timers"><span class="n">① </span><h4>Timers</h4><p>Runs callbacks whose timer has expired.</p></div>
+        <div class="box phase" id="phase-pending"><span class="n">② </span><h4>Pending callbacks</h4><p>I/O callbacks deferred from the previous tick.</p></div>
+        <div class="box phase" id="phase-idle"><span class="n">③ </span><h4>Idle, prepare</h4><p>Internal-only housekeeping for libuv.</p></div>
+        <div class="box phase" id="phase-poll"><span class="n">④ </span><h4>Poll</h4><p>Fetches new I/O events &amp; executes callbacks.</p></div>
+        <div class="box phase" id="phase-check"><span class="n">⑤ </span><h4>Check</h4><p>Runs <code>setImmediate()</code> callbacks.</p></div>
+        <div class="box phase" id="phase-close"><span class="n">⑥ </span><h4>Close callbacks</h4><p>Runs close events, e.g. <code>socket.on('close')</code>.</p></div>
+      </div>
+    </div>
+
+    <!-- microtasks -->
+    <div class="row-micro" data-path="both">
+      <div class="box" id="micro">
+        <h3>Microtask Queues</h3>
+        <div class="sub" style="margin-bottom:2px;">Fully drained after <b>every</b> callback and between <b>every</b> phase — before the loop moves on or control returns to your code.</div>
+        <div class="micro-lines">
+          <div class="micro-line"><span class="lbl">① process.nextTick</span><div class="queue"><span>cb</span><span>cb</span><span>cb</span></div></div>
+          <div class="micro-line"><span class="lbl">② Promise jobs</span><div class="queue"><span>.then</span><span>await</span><span>.catch</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ================= COMPONENT REFERENCE CARDS ================= -->
+  <div class="ref-head">
+    <h2>Every component, one card each</h2>
+    <p>For revision — the same layers as above, explained a bit deeper.</p>
+  </div>
+  <div class="ref-grid" id="ref-grid">
+    <div class="ref-card" style="border-left-color:var(--c-sync)" data-path="sync">
+      <h3><span class="dot" style="background:var(--c-sync)"></span>V8 Engine</h3>
+      <p>Compiles and executes your JS. Holds the <b>call stack</b> (what's running right now), the <b>heap</b> (object memory), and the garbage collector.</p>
+      <p>Only one thing runs on the call stack at a time — this is why a slow synchronous loop freezes your whole app, including timers that are already "due".</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--c-bridge)" data-path="async">
+      <h3><span class="dot" style="background:var(--c-bridge)"></span>Node.js Bindings (C++)</h3>
+      <p>The bridge between your JS and libuv. When you call an async API, this layer files the request with libuv and hands control back to V8 right away.</p>
+      <p class="ex">Built with V8's C++ API + <code>node-api</code>/internal bindings.</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--c-timer)" data-path="async">
+      <h3><span class="dot" style="background:var(--c-timer)"></span>Timers</h3>
+      <p>libuv keeps a min-heap of pending timers sorted by expiry time. On every loop tick it fires everything whose time has passed — never earlier, but possibly a bit later than requested.</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--c-pool)" data-path="async">
+      <h3><span class="dot" style="background:var(--c-pool)"></span>Thread Pool</h3>
+      <p>Real OS threads (4 by default) for work that's blocking at the OS level and has no async syscall. This is why heavy <code>crypto.pbkdf2</code> calls can queue up behind each other.</p>
+      <p class="ex">Raise it with <code>UV_THREADPOOL_SIZE</code> (max 1024), set before Node starts.</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--c-kernel)" data-path="async">
+      <h3><span class="dot" style="background:var(--c-kernel)"></span>OS Kernel Async I/O</h3>
+      <p>Network sockets, pipes and TTYs are natively non-blocking at the OS level, so libuv just asks the kernel to notify it when data's ready — no worker thread spent waiting.</p>
+      <p><code>dns.lookup()</code> is the odd one out: it uses the C library's blocking <code>getaddrinfo</code>, so it runs on the thread pool, not here.</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--c-loop)" data-path="async">
+      <h3><span class="dot" style="background:var(--c-loop)"></span>The Event Loop</h3>
+      <p>A fixed cycle of 6 phases: <b>timers → pending callbacks → idle/prepare → poll → check → close callbacks</b>, then back to timers. Each phase has its own callback queue and runs it to completion (or until a limit) before moving on.</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--c-micro)" data-path="both">
+      <h3><span class="dot" style="background:var(--c-micro)"></span>Microtask Queues</h3>
+      <p><code>process.nextTick()</code> callbacks always run first, then Promise reactions (<code>.then/.catch/.finally</code>, resumed <code>await</code>). Both queues are drained <b>completely</b> — including anything newly added — after every callback and between every phase.</p>
+    </div>
+    <div class="ref-card" style="border-left-color:var(--text-faint)" data-path="both">
+      <h3><span class="dot" style="background:var(--text-faint)"></span>Ordering gotcha</h3>
+      <p><code>setTimeout(fn, 0)</code> vs <code>setImmediate()</code> at the top level: <b>not guaranteed</b> — depends on process startup timing.</p>
+      <p>Inside an I/O callback it's fixed: <code>setImmediate()</code> always wins, because you're already past the timers phase for that tick and check comes right after poll.</p>
+    </div>
+  </div>
+
+  <!-- ================= TRACE-THROUGH EXAMPLE ================= -->
+  <div class="trace">
+    <h2>Trace it through one snippet</h2>
+    <p>The same rules, applied line by line.</p>
+    <div class="trace-grid">
+      <pre class="code-block"><span class="c1">// app.js</span>
+console.log('1: start');
+
+setTimeout(() =&gt; console.log('2: timeout'), 0);
+
+setImmediate(() =&gt; console.log('3: immediate'));
+
+Promise.resolve()
+  .then(() =&gt; console.log('4: promise'));
+
+process.nextTick(() =&gt;
+  console.log('5: nextTick'));
+
+fs.readFile(__filename, () =&gt;
+  console.log('6: fs callback'));
+
+console.log('7: end');</pre>
+      <ol class="trace-steps">
+        <li><b>1</b> and <b>7</b> run first — plain synchronous code, straight down the call stack.</li>
+        <li>Stack empties → microtasks drain: <b>5</b> (nextTick) before <b>4</b> (promise), always.</li>
+        <li>Loop enters <b>timers</b> phase → <b>2</b> fires (its 0ms has already elapsed).</li>
+        <li><code>fs.readFile</code> was handed to the thread pool at line 1 — it finishes in the background and its callback (<b>6</b>) is queued for the <b>poll</b> phase whenever the OS thread signals completion.</li>
+        <li>Loop reaches <b>check</b> phase → <b>3</b> fires.</li>
+        <li>Every one of these steps is followed by a full microtask drain before the next line of the loop runs.</li>
+      </ol>
+    </div>
+    <div class="gotcha"><b>Note —</b> steps 2, 3 and 6 race against real OS timing, so their exact order can shift between runs; 1, 7, 5, 4 never do.</div>
+  </div>
+
+  <footer>Built for revision, not for production architecture decisions — always check the <a href="https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick" target="_blank" rel="noopener">Node.js docs</a> when it matters.</footer>
+
+<script>
+(function(){
+  const container = document.getElementById('diagram');
+  const svg = document.getElementById('svg');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  const colors = {
+    sync: getVar('--c-sync'), bridge: getVar('--c-bridge'), timer: getVar('--c-timer'),
+    pool: getVar('--c-pool'), kernel: getVar('--c-kernel'), loop: getVar('--c-loop'), micro: getVar('--c-micro')
+  };
+  const bgColor = getVar('--bg');
+
+  function ensureMarkers(){
+    svg.querySelectorAll('defs').forEach(d=>d.remove());
+    const defs = document.createElementNS(NS,'defs');
+    Object.entries(colors).forEach(([key,col])=>{
+      const marker = document.createElementNS(NS,'marker');
+      marker.setAttribute('id','arrow-'+key);
+      marker.setAttribute('markerWidth','8'); marker.setAttribute('markerHeight','8');
+      marker.setAttribute('refX','6'); marker.setAttribute('refY','3');
+      marker.setAttribute('orient','auto-start-reverse');
+      const path = document.createElementNS(NS,'path');
+      path.setAttribute('d','M0,0 L6,3 L0,6 Z');
+      path.setAttribute('fill', col);
+      marker.appendChild(path);
+      defs.appendChild(marker);
+    });
+    svg.appendChild(defs);
+  }
+
+  function anchor(el, side, offset){
+    offset = offset || 0;
+    const r = el.getBoundingClientRect();
+    const c = container.getBoundingClientRect();
+    if(side==='top')    return { x: r.left + r.width/2 - c.left + offset, y: r.top    - c.top };
+    if(side==='bottom') return { x: r.left + r.width/2 - c.left + offset, y: r.bottom - c.top };
+    if(side==='left')   return { x: r.left  - c.left, y: r.top + r.height/2 - c.top + offset };
+    return                     { x: r.right - c.left, y: r.top + r.height/2 - c.top + offset }; // right
+  }
+
+  function addLabel(pts, textStr, colorKey, tag, opts){
+    opts = opts || {};
+    // Calculate point along the polyline
+    let targetDist = (opts.posRatio ?? 0.5);
+    let totalLen = 0;
+    const lens = [];
+    for(let i=0; i<pts.length-1; i++){
+      const l = Math.hypot(pts[i+1].x - pts[i].x, pts[i+1].y - pts[i].y);
+      lens.push(l);
+      totalLen += l;
+    }
+    let d = totalLen * targetDist;
+    let lx = pts[0].x, ly = pts[0].y;
+    for(let i=0; i<lens.length; i++){
+      if(d <= lens[i]){
+        const r = lens[i] > 0 ? d / lens[i] : 0;
+        lx = pts[i].x + (pts[i+1].x - pts[i].x) * r;
+        ly = pts[i].y + (pts[i+1].y - pts[i].y) * r;
+        break;
+      }
+      d -= lens[i];
+    }
+
+    const text = document.createElementNS(NS,'text');
+    text.setAttribute('x', lx + (opts.dx ?? 0));
+    text.setAttribute('y', ly + (opts.dy ?? -7));
+    text.setAttribute('fill', colors[colorKey]);
+    text.setAttribute('font-size','10');
+    text.setAttribute('font-family',"'IBM Plex Mono', monospace");
+    text.setAttribute('text-anchor', opts.anchor || 'middle');
+    text.dataset.path = tag || 'both';
+    text.textContent = textStr;
+    svg.appendChild(text);
+
+    const bbox = text.getBBox();
+    const pad = 3;
+    const bg = document.createElementNS(NS,'rect');
+    bg.setAttribute('x', bbox.x - pad);
+    bg.setAttribute('y', bbox.y - pad);
+    bg.setAttribute('width', bbox.width + pad*2);
+    bg.setAttribute('height', bbox.height + pad*2);
+    bg.setAttribute('fill', bgColor);
+    bg.setAttribute('opacity', '0.88');
+    bg.dataset.path = tag || 'both';
+    svg.insertBefore(bg, text);
+  }
+
+  function drawPoly(pts, colorKey, opts){
+    opts = opts || {};
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for(let i=1; i<pts.length; i++){
+      d += ` L ${pts[i].x} ${pts[i].y}`;
+    }
+    const path = document.createElementNS(NS,'path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', colors[colorKey]);
+    path.setAttribute('stroke-width', opts.width || 1.6);
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity', opts.opacity || 0.85);
+    if(opts.dashed) path.setAttribute('stroke-dasharray','4,4');
+    if(!opts.noMarker) path.setAttribute('marker-end', 'url(#arrow-'+colorKey+')');
+    path.dataset.path = opts.tag || 'both';
+    svg.appendChild(path);
+
+    if(opts.label){
+      addLabel(pts, opts.label, colorKey, opts.tag, opts.labelOpts);
+    }
+  }
+
+  /* ---------- Position phase boxes in circle ---------- */
+  function positionPhases(){
+    const ring = document.getElementById('loop-ring');
+    const phases = ring.querySelectorAll('.phase');
+    const cx = ring.offsetWidth  / 2;
+    const cy = ring.offsetHeight / 2;
+    const radius = 240; // radius in px
+    const startAngle = -90; // 0 deg = top (Timers)
+    phases.forEach((el, i) => {
+      const angle = startAngle + i * 60; // 6 phases, 60° each clockwise
+      const rad = angle * Math.PI / 180;
+      const x = cx + radius * Math.cos(rad) - el.offsetWidth  / 2;
+      const y = cy + radius * Math.sin(rad) - el.offsetHeight / 2;
+      el.style.left = Math.round(x) + 'px';
+      el.style.top  = Math.round(y) + 'px';
+    });
+  }
+
+  /* ---------- Draw circular flow arrows between phases ---------- */
+  function drawLoopArcs(){
+    const ring = document.getElementById('loop-ring');
+    const rRect = ring.getBoundingClientRect();
+    const cRect = container.getBoundingClientRect();
+    const cx = rRect.left + rRect.width/2 - cRect.left;
+    const cy = rRect.top  + rRect.height/2 - cRect.top;
+    const radius = 240;
+
+    // 6 connecting arcs between adjacent phases
+    for(let i=0; i<6; i++){
+      const a1 = (-90 + i*60 + 20) * Math.PI / 180;
+      const a2 = (-90 + (i+1)*60 - 20) * Math.PI / 180;
+      const x1 = cx + radius * Math.cos(a1);
+      const y1 = cy + radius * Math.sin(a1);
+      const x2 = cx + radius * Math.cos(a2);
+      const y2 = cy + radius * Math.sin(a2);
+
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`);
+      path.setAttribute('stroke', colors.loop);
+      path.setAttribute('stroke-width', '1.8');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.75');
+      path.setAttribute('marker-end', 'url(#arrow-loop)');
+      path.dataset.path = 'async';
+      svg.appendChild(path);
+    }
+  }
+
+  function draw(){
+    positionPhases();
+    ensureMarkers();
+    svg.querySelectorAll('path, text, rect').forEach(n=>{ if(!n.closest('defs')) n.remove(); });
+
+    svg.setAttribute('height', container.scrollHeight);
+
+    const cRect = container.getBoundingClientRect();
+    const ring = document.getElementById('loop-ring');
+    const ringRect = ring.getBoundingClientRect();
+    const ringRight = ringRect.right - cRect.left;
+    const ringLeft  = ringRect.left  - cRect.left;
+
+    // 1. Entry -> Sync (Call Stack) & Async (Bindings)
+    const jsCode = document.getElementById('js-code');
+    const callStack = document.getElementById('call-stack');
+    const bindings = document.getElementById('bindings');
+
+    const pJsSync = anchor(jsCode, 'bottom', -130);
+    const pJsAsync = anchor(jsCode, 'bottom', 130);
+    const pStackTop = anchor(callStack, 'top');
+    const pBindTop = anchor(bindings, 'top');
+
+    const midYEntry = pJsSync.y + 24;
+    drawPoly([pJsSync, {x: pJsSync.x, y: midYEntry}, {x: pStackTop.x, y: midYEntry}, pStackTop], 'sync', {
+      tag:'sync', label:'sync call', labelOpts:{posRatio:0.65}
+    });
+
+    drawPoly([pJsAsync, {x: pJsAsync.x, y: midYEntry}, {x: pBindTop.x, y: midYEntry}, pBindTop], 'bridge', {
+      tag:'async', label:'async call registered', labelOpts:{posRatio:0.65}
+    });
+
+    // 2. Bindings -> 4 Subsystem Boxes
+    const laneImmediate = document.getElementById('lane-immediate');
+    const laneTimer = document.getElementById('lane-timer');
+    const lanePool = document.getElementById('lane-pool');
+    const laneKernel = document.getElementById('lane-kernel');
+
+    const pImmTop = anchor(laneImmediate, 'top');
+    const pTimTop = anchor(laneTimer, 'top');
+    const pPoolTop = anchor(lanePool, 'top');
+    const pKerTop = anchor(laneKernel, 'top');
+
+    const pBindImm = anchor(bindings, 'bottom', pImmTop.x - (anchor(bindings,'bottom').x));
+    const pBindTim = anchor(bindings, 'bottom', pTimTop.x - (anchor(bindings,'bottom').x));
+    const pBindPool = anchor(bindings, 'bottom', pPoolTop.x - (anchor(bindings,'bottom').x));
+    const pBindKer = anchor(bindings, 'bottom', pKerTop.x - (anchor(bindings,'bottom').x));
+
+    drawPoly([pBindImm, pImmTop], 'bridge', {tag:'async'});
+    drawPoly([pBindTim, pTimTop], 'bridge', {tag:'async'});
+    drawPoly([pBindPool, pPoolTop], 'bridge', {tag:'async'});
+    drawPoly([pBindKer, pKerTop], 'bridge', {tag:'async'});
+
+    // 3. Subsystems -> Loop Phases
+    const phaseCheck = document.getElementById('phase-check');
+    const phaseTimers = document.getElementById('phase-timers');
+    const phasePoll = document.getElementById('phase-poll');
+
+    // 3A. lane-immediate -> phase-check (Direct vertical/elbow drop on left)
+    const pImmBot = anchor(laneImmediate, 'bottom');
+    const pCheckTop = anchor(phaseCheck, 'top');
+    const midYImm = (pImmBot.y + pCheckTop.y) / 2;
+    drawPoly([pImmBot, {x: pImmBot.x, y: midYImm}, {x: pCheckTop.x, y: midYImm}, pCheckTop], 'loop', {
+      tag:'async', label:'setImmediate() → check', labelOpts:{posRatio:0.25}
+    });
+
+    // 3B. lane-timer -> phase-timers (Direct drop to top of ring)
+    const pTimBot = anchor(laneTimer, 'bottom');
+    const pTimersTop = anchor(phaseTimers, 'top');
+    const midYTim = (pTimBot.y + pTimersTop.y) / 2;
+    drawPoly([pTimBot, {x: pTimBot.x, y: midYTim}, {x: pTimersTop.x, y: midYTim}, pTimersTop], 'timer', {
+      tag:'async', label:'timer expires', labelOpts:{posRatio:0.35}
+    });
+
+    // 3C. lane-pool -> phase-poll (Routes down the right side of the ring)
+    const pPoolBot = anchor(lanePool, 'bottom');
+    const pPollRight = anchor(phasePoll, 'right', -8);
+    const bypassXPool = ringRight + 22;
+    const yPoolDrop = pPoolBot.y + 20;
+    drawPoly([
+      pPoolBot,
+      {x: pPoolBot.x, y: yPoolDrop},
+      {x: bypassXPool, y: yPoolDrop},
+      {x: bypassXPool, y: pPollRight.y},
+      pPollRight
+    ], 'pool', {
+      tag:'async', label:'worker thread done', labelOpts:{posRatio:0.18}
+    });
+
+    // 3D. lane-kernel -> phase-poll (Routes parallel down far right)
+    const pKerBot = anchor(laneKernel, 'bottom');
+    const pPollRightKer = anchor(phasePoll, 'right', 8);
+    const bypassXKer = ringRight + 52;
+    const yKerDrop = pKerBot.y + 36;
+    drawPoly([
+      pKerBot,
+      {x: pKerBot.x, y: yKerDrop},
+      {x: bypassXKer, y: yKerDrop},
+      {x: bypassXKer, y: pPollRightKer.y},
+      pPollRightKer
+    ], 'kernel', {
+      tag:'async', label:'kernel: I/O ready', labelOpts:{posRatio:0.18}
+    });
+
+    // 4. Circular loop flow arcs
+    drawLoopArcs();
+
+    // 5. Loop -> Call Stack (Callback feedback)
+    const phaseClose = document.getElementById('phase-close');
+    const pCloseLeft = anchor(phaseClose, 'left');
+    const pStackBot = anchor(callStack, 'bottom', 30);
+    const corridorX = ringLeft - 40;
+    drawPoly([
+      pCloseLeft,
+      {x: corridorX, y: pCloseLeft.y},
+      {x: corridorX, y: pStackBot.y + 24},
+      {x: pStackBot.x, y: pStackBot.y + 24},
+      pStackBot
+    ], 'loop', {
+      tag:'async', dashed:true, width:1.4, opacity:0.75,
+      label:'callback → stack', labelOpts:{posRatio:0.35}
+    });
+
+    // 6. Call Stack <-> Microtasks
+    const micro = document.getElementById('micro');
+    const pMicroLeft1 = anchor(micro, 'left', -8);
+    const pMicroLeft2 = anchor(micro, 'left', 8);
+    const pStackDrain = anchor(callStack, 'bottom', -30);
+    const colLeft = 45;
+
+    // Call stack to microtasks (drain)
+    drawPoly([
+      pStackDrain,
+      {x: pStackDrain.x, y: pStackDrain.y + 14},
+      {x: colLeft + 20, y: pStackDrain.y + 14},
+      {x: colLeft + 20, y: pMicroLeft1.y},
+      pMicroLeft1
+    ], 'micro', {
+      tag:'both', dashed:true, width:1.4, opacity:0.75,
+      label:'drain queues', labelOpts:{posRatio:0.35}
+    });
+
+    // Microtasks to call stack (callback resume)
+    drawPoly([
+      pMicroLeft2,
+      {x: colLeft, y: pMicroLeft2.y},
+      {x: colLeft, y: pStackDrain.y + 8},
+      {x: pStackDrain.x - 20, y: pStackDrain.y + 8},
+      {x: pStackDrain.x - 20, y: pStackDrain.y}
+    ], 'micro', {
+      tag:'both', dashed:true, width:1.4, opacity:0.65
+    });
+  }
+
+  draw();
+  window.addEventListener('load', ()=>setTimeout(draw,150));
+  let t; window.addEventListener('resize', ()=>{ clearTimeout(t); t=setTimeout(draw,120); });
+
+  // sync/async path toggle
+  const buttons = document.querySelectorAll('.path-toggle button');
+  const diagram = document.getElementById('diagram');
+  const refGrid = document.getElementById('ref-grid');
+  buttons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      buttons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      diagram.classList.remove('mode-sync','mode-async');
+      refGrid.classList.remove('mode-sync','mode-async');
+      if(mode!=='all'){
+        diagram.classList.add('mode-'+mode);
+        refGrid.classList.add('mode-'+mode);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

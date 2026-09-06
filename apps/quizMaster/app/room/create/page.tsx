@@ -8,12 +8,32 @@ import { useUser } from "@/app/(auth)/context/GetUserContext";
 import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 
+const LoginRequired = () => (
+	<div className="relative min-h-[85vh] overflow-hidden bg-gradient-to-r from-[#340C97] via-[#5B32B4] to-[#7047C7] px-6 py-16 flex flex-col items-center justify-center text-center">
+		<div className="relative z-10 w-full max-w-md rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-8 shadow-2xl flex flex-col items-center gap-4 text-white">
+			<div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl mb-2">
+				🔒
+			</div>
+			<h2 className="text-2xl font-extrabold">Login Required</h2>
+			<p className="text-sm text-slate-200">
+				You need an authenticated account to create and host multiplayer rooms.
+			</p>
+			<a
+				href="/login"
+				className="mt-2 w-full py-3.5 px-6 rounded-2xl bg-[#F0DE4A] text-black font-extrabold hover:bg-[#e6d43f] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg text-center"
+			>
+				Login to Create Room
+			</a>
+		</div>
+	</div>
+);
+
 const generateRoomName = () => {
 	return `QM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 };
 
 const CreatePage = () => {
-	const { user, guest, isGuest, isLogin, loading, isMaxTryReached } = useUser();
+	const { user, isGuest, isLogin, loading, isMaxTryReached } = useUser();
 
 	const [roomName, setRoomName] = useState("");
 	const [step, setStep] = useState<"form" | "loading" | "share" | "failed">(
@@ -40,7 +60,7 @@ const CreatePage = () => {
 
 	const handleCreateRoom = async () => {
 		if (!user?.id) {
-			toast.error("User not ready. Try again.");
+			toast.error("You must be logged in to create a room. Please log in.");
 			return;
 		}
 		try {
@@ -135,6 +155,8 @@ const CreatePage = () => {
 	};
 
 	if (loading) return <Loading />;
+	const isBlocked = !loading && (!isLogin || isGuest || !user?.id);
+	if (isBlocked) return <LoginRequired />;
 
 	return (
 		<div className="min-h-[80dvh] flex flex-col justify-center items-center gap-6">

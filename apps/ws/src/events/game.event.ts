@@ -1,63 +1,64 @@
-import {
-	joinGame,
-	startGameLoop,
-	submitAnswer,
-} from "../services/game.service.js";
+import { GameEngine } from "../core/GameEngine.js";
 import type { JoinRoomPayload } from "../types/socket.types.js";
 
 export function gameEvents(io: any, socket: any) {
-	// 1. JOIN GAME (Reconnect or New)
+	// 1. JOIN GAME (Reconnect or New Sync)
 	socket.on("game:join", async ({ roomId, player }: JoinRoomPayload) => {
+		if (!roomId) return;
 		socket.join(roomId);
 
-		// Store user info on socket for later use
-		socket.data.roomId = roomId;
-		socket.data.playerId = player.id;
+		// Store user info on socket
+		const playerId = player?.id || socket.data?.playerId;
+		if (!playerId) return;
 
-		// Sync state (get current question if playing)
-		const state = await joinGame(roomId, player.id, {
-			name: player.name,
-			avatar: player.avatar || "avatar1.svg",
+		socket.data.roomId = roomId;
+		socket.data.playerId = playerId;
+
+		// Ensure player is registered in room:players and marked connected
+		await GameEngine.getInstance().joinRoom(roomId, playerId, socket.id, {
+			name: player?.name,
+			avatar: player?.avatar,
 		});
 
-		// Emit private sync event
-		socket.emit("game:sync", state);
+		// Fetch synchronized state from authoritative GameEngine
+		const syncState = await GameEngine.getInstance().getSyncPayload(roomId, playerId);
+
+		// Emit private sync event to client
+		socket.emit("game:sync", syncState);
 	});
 
 	// 2. START GAME (Host triggers)
 	socket.on("game:start", async ({ roomId }: any) => {
-		// Ideally verify host here or via API
-		await startGameLoop(roomId, io);
+		if (!roomId) return;
+		await GameEngine.getInstance().startGame(roomId);
 	});
 
-	// 3. SUBMIT ANSWER
+	// 3. SUBMIT ANSWER (Atomic Lua execution)
 	socket.on(
 		"game:submitAnswer",
 		async (data: { roomId: string; answer: string; timeTaken: number }) => {
 			const pId = socket.data.playerId;
+			if (!data?.roomId || !pId) return;
 
 			try {
-				const result = await submitAnswer(io, {
-					roomId: data.roomId,
-					userId: pId,
-					answer: data.answer,
-					timeTaken: data.timeTaken,
-				});
+				const result = await GameEngine.getInstance().submitAnswer(
+					data.roomId,
+					pId,
+					data.answer,
+					data.timeTaken || 0,
+				);
 
-				console.log("submit answer result", result);
+				console.log(`[GameEvent] submitAnswer result for ${pId}:`, result);
 				if (result.error) {
-					socket.emit("error", { message: result.error });
+					socket.emit("error", { message: result.message || result.error });
 					return;
 				}
 
-				// Emit result to THIS user
+				// Emit result to this submitting user
 				socket.emit("game:answerResult", result);
-
-				// Notify OTHERS that user answered (for avatars jump)
-				socket.to(data.roomId).emit("game:playerAnswered", { userId: pId });
 			} catch (e: any) {
-				console.error(e);
-				socket.emit("error", { message: e.message });
+				console.error("Submit answer error:", e);
+				socket.emit("error", { message: e.message || "Failed to submit answer" });
 			}
 		},
 	);

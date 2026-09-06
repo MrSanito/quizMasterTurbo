@@ -1,64 +1,45 @@
-import { redisClient } from "@repo/redis";
-import { startGameLoop } from "../services/game.service.js";
-import { joinLobby, leaveLobby } from "../services/lobby.service.js";
+import { GameEngine } from "../core/GameEngine.js";
 import type { JoinRoomPayload } from "../types/socket.types.js";
 
 export function lobbyEvents(io: any, socket: any) {
 	socket.on("lobby:join", async ({ roomId, player }: JoinRoomPayload) => {
-		console.log("join request come");
-		//  SAVE DATA ON SOCKET
+		if (!roomId || !player?.id) return;
+
+		// Save data on socket
 		socket.data.roomId = roomId;
 		socket.data.playerId = player.id;
 
-		console.log("player", player);
 		socket.join(roomId);
-		console.log("joined the room");
 
-		const players = await joinLobby(roomId, player, socket.id);
-		console.log("all players", players);
-
-		io.to(roomId).emit("lobby:players", players);
+		await GameEngine.getInstance().joinRoom(roomId, player.id, socket.id, {
+			name: player.name,
+			avatar: player.avatar,
+		});
 	});
+
 	socket.on("lobby:leave", async ({ roomId, player }: JoinRoomPayload) => {
-		console.log("player", player);
+		if (!roomId) return;
+		const playerId = player?.id || socket.data?.playerId;
+		if (!playerId) return;
+
 		socket.leave(roomId);
-		console.log("Left the room");
-
-		const players = await leaveLobby(roomId, player, socket.id);
-		console.log("all players", players);
-
-		io.to(roomId).emit("lobby:players", players);
+		await GameEngine.getInstance().leaveRoom(roomId, playerId, socket.id);
 	});
 
 	socket.on("lobby:letsstart", async ({ roomId }: any) => {
+		if (!roomId) return;
 
-		const originalRoomId = roomId;
+		const hostId = await GameEngine.getInstance().getHostId(roomId);
+		const isHost = hostId ? hostId === socket.data?.playerId : true;
 
-		const data = await redisClient.hget(`room:${roomId}`, "hostId");
-
-		if(!data) {
+		if (!isHost) {
+			socket.emit("lobby:error", {
+				message: "You are not authorized to start the game",
+			});
 			return;
 		}
 
-		const isHost =  data === socket.data.playerId;
-
-		if (!isHost) {
-			io.to(socket.id).emit("lobby:error", {
-				message: "You are not authorized to start the game",
-			});
-		}
-
-
-		console.log(` Host triggered start for room ${roomId}`);
-
-		// 1. Notify everyone to redirect
-		const response = {
-			success: true,
-			message: "i am from ws and room will be started",
-		};
-		io.to(roomId).emit("lobby:startingRoom", response);
-
-		// 2. Start the Game Loop (Countdown -> Questions)
-		await startGameLoop(roomId, io);
+		console.log(`[LobbyEvent] Host ${socket.data?.playerId} triggered start for room ${roomId}`);
+		await GameEngine.getInstance().startGame(roomId);
 	});
 }

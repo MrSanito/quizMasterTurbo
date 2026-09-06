@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import api from "@/app/lib/api";
 
@@ -195,7 +197,9 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 			}
 		} catch (err: any) {
 			console.error("Submit failed:", err.response?.data || err);
-			alert("Failed to submit quiz: " + (err.response?.data?.message || err.message));
+			toast.error(
+				"Failed to submit quiz: " + (err.response?.data?.message || err.message),
+			);
 			setIsSubmitting(false);
 		}
 	};
@@ -272,6 +276,7 @@ export default function ClientQuizPlayer({ quiz }: { quiz: any }) {
 	/* ---------------- PLAYING QUIZ UI ---------------- */
 	return (
 		<div className="flex items-center justify-center p-2 sm:p-4">
+			<ToastContainer position="top-center" theme="colored" />
 			<div className="w-full max-w-xl rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-gray-100">
 				<div className="flex flex-col gap-6">
 					{/* ================= TOP HEADER ================= */}

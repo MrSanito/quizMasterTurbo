@@ -1,7 +1,7 @@
+import "dotenv/config";
 import { prisma } from "@repo/db";
 import { redisClient } from "@repo/redis";
 import { Worker } from "bullmq";
-
 import { Redis } from "ioredis";
 
 console.log(

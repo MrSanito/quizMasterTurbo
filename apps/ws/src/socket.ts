@@ -1,6 +1,7 @@
 import type http from "node:http";
 import { instrument } from "@socket.io/admin-ui";
 import { Server } from "socket.io";
+import { SocketServer } from "./core/SocketServer.js";
  
 import { registerConnection } from "./handler/connction.js";
 import { authMiddleware } from "./middleware/auth.middleware.js";
@@ -29,8 +30,11 @@ export function setupSocket(server: http.Server) {
 
 	instrument(io, { auth: false });
 
+	// 🔌 Initialize SocketServer singleton
+	SocketServer.initialize(io);
+
 	// 🔐 Auth Middleware: Validate JWT & Redis Blacklist
-         io.use(authMiddleware);
+	io.use(authMiddleware);
 
 	io.on("connection", (socket) => registerConnection(io, socket));
 

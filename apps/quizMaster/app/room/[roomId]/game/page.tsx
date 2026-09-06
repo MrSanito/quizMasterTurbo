@@ -5,15 +5,18 @@ import { useEffect, useRef, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import { io } from "socket.io-client";
 import "react-toastify/dist/ReactToastify.css";
-import { Trophy } from "lucide-react";
+import {
+	Trophy,
+} from "lucide-react";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import api from "@/app/lib/api";
+import AbortedScreen from "@/components/AbortedScreen";
 import Loading from "@/components/Loading";
 import RealTimeQuizPlayer from "@/components/RealTimeQuizPlayer";
 
 /* ---------------- Types ---------------- */
 
-type GameState = "WAITING" | "COUNTDOWN" | "PLAYING" | "BREAK" | "FINISHED";
+type GameState = "WAITING" | "COUNTDOWN" | "PLAYING" | "BREAK" | "FINISHED" | "ABORTED";
 
 type Question = {
 	id: string;
@@ -61,132 +64,73 @@ const ResultScreen = ({
 	correctAnswer: string;
 	leaderboard: LeaderboardItem[];
 	myScore: number;
-}) => {
-	return (
-		<div className="max-w-xl w-full mx-auto p-4 flex flex-col gap-8 animate-in zoom-in duration-300">
-			{/* Result Card */}
-			<div className="card bg-base-100 shadow-lg border border-base-200">
-				<div className="p-8 text-center">
-					<h3 className="uppercase tracking-widest text-xs font-bold opacity-40 mb-3">
-						Correct Answer
-					</h3>
-					<p className="text-2xl md:text-3xl font-bold text-success">
-						{correctAnswer}
-					</p>
+}) => (
+	<div className="flex flex-col items-center justify-center min-h-[80vh] gap-6 animate-in fade-in zoom-in duration-300">
+		<h2 className="text-4xl font-black text-secondary">Round Over!</h2>
+		<div className="card w-96 bg-base-100 shadow-xl border border-base-200">
+			<div className="card-body items-center text-center">
+				<h3 className="card-title text-sm opacity-70">Correct Answer:</h3>
+				<p className="text-2xl font-bold text-success">
+					{correctAnswer || "Time's Up!"}
+				</p>
+				<div className="divider"></div>
+				<div className="stat">
+					<div className="stat-title">Current Score</div>
+					<div className="stat-value text-primary">{myScore} pts</div>
 				</div>
-				<div className="card-body p-8 pt-0 text-center border-t border-base-100">
-					<div className="flex flex-col gap-2 mt-4">
-						<span className="text-xs font-bold opacity-40 uppercase tracking-widest">
-							Your Score
-						</span>
-						<span className="text-5xl font-black text-primary tracking-tighter">
-							{myScore}
-						</span>
-					</div>
-				</div>
-			</div>
-
-			<div className="flex flex-col gap-4">
-				<div className="divider text-xs font-semibold opacity-30 uppercase tracking-widest">
-					Top Players
-				</div>
-				<ul className="flex flex-col gap-2">
-					{leaderboard.map((u, i) => (
-						<li
-							key={u.userId}
-							className={`
-                    flex items-center justify-between p-3 rounded-lg border transition-all
-                    ${
-											i === 0
-												? "bg-base-100 border-primary/20 shadow-sm"
-												: "bg-transparent border-transparent hover:bg-base-100"
-										}
-                `}
-						>
-							<div className="flex items-center gap-4">
-								<span
-									className={`
-                        w-6 text-center font-bold text-sm opacity-40
-                     `}
-								>
-									{i + 1}
-								</span>
-								<div className="flex flex-col">
-									<span
-										className={`font-medium ${i === 0 ? "text-primary font-bold" : "text-base-content"}`}
-									>
-										{u.name || "Unknown Player"}
-									</span>
-								</div>
-							</div>
-							<span
-								className={`font-mono font-bold ${i === 0 ? "text-primary" : "opacity-60"}`}
-							>
-								{u.score}
-							</span>
-						</li>
-					))}
-				</ul>
-			</div>
-		</div>
-	);
-};
-
-const FinalScreen = ({ leaderboard }: { leaderboard: LeaderboardItem[] }) => (
-	<div className="flex flex-col items-center justify-center min-h-[90vh] gap-8 p-6 animate-in fade-in duration-1000">
-		<div className="text-center space-y-4">
-			<h1 className="text-5xl md:text-7xl font-black text-base-content tracking-tight">
-				Game Over
-			</h1>
-			<p className="text-xl opacity-40 font-light">Final Statistics</p>
-		</div>
-
-		<div className="card w-full max-w-lg bg-base-100 shadow-xl border border-base-200">
-			<div className="card-body p-0">
-				<div className="flex flex-col divide-y divide-base-100">
-					{leaderboard.map((u, i) => (
-						<div
-							key={u.userId}
-							className={`flex items-center justify-between p-5 ${
-								i === 0 ? "bg-base-50" : ""
-							}`}
-						>
-							<div className="flex items-center gap-4">
-								<div
-									className={`
-                        w-8 h-8 rounded flex items-center justify-center text-sm font-bold
-                        ${i === 0 ? "bg-primary text-primary-content" : "bg-base-200 opacity-50"}
-                     `}
-								>
-									{i + 1}
-								</div>
-								<div className="flex flex-col">
-									<span
-										className={`font-bold text-lg ${i === 0 ? "text-primary" : ""}`}
-									>
-										{u.name || "Unknown Player"}
-									</span>
-								</div>
-							</div>
-							<div className="text-right">
-								<span
-									className={`block text-xl font-bold ${i === 0 ? "text-primary" : "opacity-60"}`}
-								>
-									{u.score}
-								</span>
-							</div>
-						</div>
-					))}
-				</div>
-			</div>
-			<div className="p-6 bg-base-50/50 flex justify-center border-t border-base-100">
-				<a href="/dashboard" className="btn btn-primary btn-outline btn-wide">
-					Return to Dashboard
-				</a>
 			</div>
 		</div>
 	</div>
 );
+
+const FinalScreen = ({
+	leaderboard,
+}: {
+	leaderboard: LeaderboardItem[];
+}) => (
+	<div className="flex flex-col items-center justify-center min-h-[80vh] gap-8 animate-in zoom-in duration-500">
+		<h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">
+			Podium Finish
+		</h1>
+		<div className="flex items-end justify-center gap-4 h-64">
+			{/* 2nd Place */}
+			{leaderboard[1] && (
+				<div className="flex flex-col items-center">
+					<span className="font-bold mb-2">{leaderboard[1].name || "Player 2"}</span>
+					<div className="w-24 bg-slate-300 h-36 rounded-t-lg flex items-center justify-center text-2xl font-black text-slate-700 shadow-lg">
+						2
+					</div>
+					<span className="text-sm font-semibold mt-1">{leaderboard[1].score} pts</span>
+				</div>
+			)}
+			{/* 1st Place */}
+			{leaderboard[0] && (
+				<div className="flex flex-col items-center">
+					<div className="badge badge-warning gap-1 mb-2 font-bold animate-bounce">
+						👑 Winner
+					</div>
+					<span className="font-extrabold mb-2 text-lg text-primary">{leaderboard[0].name || "Winner"}</span>
+					<div className="w-28 bg-yellow-400 h-48 rounded-t-lg flex items-center justify-center text-4xl font-black text-yellow-900 shadow-xl">
+						1
+					</div>
+					<span className="font-bold text-primary mt-1">{leaderboard[0].score} pts</span>
+				</div>
+			)}
+			{/* 3rd Place */}
+			{leaderboard[2] && (
+				<div className="flex flex-col items-center">
+					<span className="font-bold mb-2">{leaderboard[2].name || "Player 3"}</span>
+					<div className="w-24 bg-amber-700/40 h-24 rounded-t-lg flex items-center justify-center text-2xl font-black text-amber-900 shadow-lg">
+						3
+					</div>
+					<span className="text-sm font-semibold mt-1">{leaderboard[2].score} pts</span>
+				</div>
+			)}
+		</div>
+	</div>
+);
+
+/* ---------------- Main Component ---------------- */
 
 const GamePage = () => {
 	const router = useRouter();
@@ -196,6 +140,9 @@ const GamePage = () => {
 	// Socket & State
 	const socketRef = useRef<any>(null);
 	const [gameState, setGameState] = useState<GameState>("WAITING");
+	const [abortedMessage, setAbortedMessage] = useState<string>(
+		"This room has been aborted and closed.",
+	);
 	const [timeLeft, setTimeLeft] = useState(0);
 	const [startTime, setStartTime] = useState<number>(0);
 
@@ -266,6 +213,17 @@ const GamePage = () => {
 		// SYNC: Restores state on reconnect
 		socket.on("game:sync", (data: any) => {
 			console.log(" Sync:", data);
+			if (
+				data.error === "Room has been aborted and closed" ||
+				data.gameState === "ABORTED" ||
+				data.status === "ABORTED"
+			) {
+				setAbortedMessage(
+					data.message || data.error || "This room has been aborted and closed.",
+				);
+				setGameState("ABORTED");
+				return;
+			}
 			if (data.leaderboard) {
 				console.log(" Sync Leaderboard Data:", data.leaderboard);
 				setLeaderboard(data.leaderboard);
@@ -278,25 +236,27 @@ const GamePage = () => {
 				setTimeLeft(data.timeLeft || 15);
 				// Prefer server startTime, else approximate
 				setStartTime(
-					data.startTime || Date.now() - (15 - (data.timeLeft || 15)) * 1000,
+					data.startTime || Date.now() - (data.elapsedMs || 0),
 				);
+			} else {
+				setCurrentQuestion(null);
+			}
 
-				// Sync Progress
-				if (data.questionIndex !== undefined) setQIndex(data.questionIndex);
-				if (data.totalQuestions !== undefined) setTotalQ(data.totalQuestions);
+			if (data.gameState === "PLAYING") {
+				setQIndex(data.questionIndex);
+				setTotalQ(data.totalQuestions);
+			}
 
-				// Restore Answer
-				if (data.userAnswer) {
-					setSelectedAnswer(data.userAnswer);
-				} else {
-					setSelectedAnswer(null);
-				}
+			if (data.alreadyAnswered) {
+				setSelectedAnswer(data.userAnswer || "SUBMITTED");
+			} else {
+				setSelectedAnswer(null);
 			}
 		});
 
-		//  COUNTDOWN (Server Driven)
-		socket.on("game:countdown", (data: { timeLeft: number }) => {
-			console.log(" Countdown:", data.timeLeft);
+		// COUNTDOWN
+		socket.on("game:countdown", (data: any) => {
+			console.log(" Countdown:", data);
 			setGameState("COUNTDOWN"); // Ensure we are in countdown state
 			setTimeLeft(data.timeLeft);
 		});
@@ -391,20 +351,44 @@ const GamePage = () => {
 			}, 5000);
 		});
 
+		// DUPLICATE SESSION EVENT
+		const onDuplicateSession = (data: any) => {
+			const msg = data?.message || "You opened this quiz room in another tab or window.";
+			toast.warn(msg);
+			setAbortedMessage(msg);
+			setGameState("ABORTED");
+		};
+
+		socket.on("lobby:duplicateSession", onDuplicateSession);
+		socket.on("game:duplicateSession", onDuplicateSession);
+
+		// ABORT EVENT
+		const onRoomAborted = (data: any) => {
+			setAbortedMessage(
+				data?.message || "The room has been closed.",
+			);
+			setGameState("ABORTED");
+		};
+
+		socket.on("lobby:aborted", onRoomAborted);
+		socket.on("game:aborted", onRoomAborted);
+
 		// ERRORS
 		socket.on("error", (data: any) => {
 			console.error("Socket Error:", data);
-			toast.error(data.message || "An unknown error occurred");
 
-			// Redirect to Lobby if room is not active/valid
 			if (
-				data.message === "Room not active" ||
-				data.message === "User is not a participant in this game"
+				data?.message === "Room not active" ||
+				data?.message === "User is not a participant in this game" ||
+				data?.message?.toLowerCase().includes("aborted") ||
+				data?.message?.toLowerCase().includes("closed") ||
+				data?.message?.toLowerCase().includes("destroyed")
 			) {
-				setTimeout(() => {
-					router.replace(`/room/${roomId}/lobby`);
-				}, 2000);
+				setAbortedMessage(data.message || "This room has been aborted and closed.");
+				setGameState("ABORTED");
+				return;
 			}
+			toast.error(data?.message || "An unknown error occurred");
 		});
 		};
 
@@ -413,6 +397,10 @@ const GamePage = () => {
 		return () => {
 			isCancelled = true;
 			if (socket) {
+				socket.off("lobby:aborted");
+				socket.off("game:aborted");
+				socket.off("lobby:duplicateSession");
+				socket.off("game:duplicateSession");
 				socket.disconnect();
 			}
 		};
@@ -450,6 +438,10 @@ const GamePage = () => {
 	/* Render */
 	if (loading) return <Loading />;
 	if (!user) return <div className="p-10 text-center">Please Login</div>;
+
+	if (gameState === "ABORTED") {
+		return <AbortedScreen roomId={roomId} message={abortedMessage} />;
+	}
 
 	return (
 		<div className="min-h-screen bg-base-200 flex flex-col font-sans">

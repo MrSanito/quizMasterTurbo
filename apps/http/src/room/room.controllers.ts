@@ -91,6 +91,9 @@ export const updateLobby = async (req: Request, res: Response) => {
 		if (result.error === "NOT_FOUND") {
 			return res.status(404).json({ success: false, message: "Room not found" });
 		}
+		if (result.error === "ROOM_ABORTED") {
+			return res.status(410).json({ success: false, message: "Room has been aborted and destroyed", state: "ABORTED" });
+		}
 		if (result.error === "FORBIDDEN") {
 			return res.status(403).json({ success: false, message: "Only host can update room" });
 		}
@@ -125,6 +128,13 @@ export const startRoom = async (req: Request, res: Response) => {
 		const result = await startRoomService(roomId);
 		if (result.error === "NOT_FOUND") {
 			return res.status(404).json({ success: false, message: "Room not found" });
+		}
+		if (result.error === "ROOM_ABORTED") {
+			return res.status(410).json({
+				success: false,
+				message: "Room has been aborted and closed",
+				state: "ABORTED",
+			});
 		}
 		if (result.error === "NO_QUESTIONS") {
 			return res.status(400).json({

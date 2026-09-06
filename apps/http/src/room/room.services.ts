@@ -107,6 +107,7 @@ export async function updateLobbyStateService(roomName: string, hostId: string) 
 	});
 
 	if (!room) return { error: "NOT_FOUND" as const };
+	if (room.state === "ABANDONED" || (room.state as any) === "ABORTED") return { error: "ROOM_ABORTED" as const };
 	if (room.hostId !== hostId) return { error: "FORBIDDEN" as const };
 	if (room.state === "WAITING") return { alreadyInLobby: true, room };
 	if (room.state === "FINISHED") return { error: "GAME_FINISHED" as const };
@@ -147,6 +148,7 @@ export async function startRoomService(roomId: string) {
 	});
 
 	if (!room) return { error: "NOT_FOUND" as const };
+	if (room.state === "ABANDONED" || (room.state as any) === "ABORTED") return { error: "ROOM_ABORTED" as const };
 
 	const roomKey = `room:${roomId}`;
 	const lobbyPlayers = await redisClient.hgetall(`${roomKey}:players`);
