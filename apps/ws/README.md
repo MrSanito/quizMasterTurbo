@@ -85,3 +85,39 @@ Remove all old and unused directories:
 - Remove `src/handler/`
 - Remove `src/services/`
 - Remove `src/events/`
+
+---
+
+## ⚡ Background Worker Implementation Plan (`apps/worker`)
+
+The BullMQ worker runs as a dedicated background process that finalizes games, synchronizes volatile Redis state to PostgreSQL via Prisma, and cleans up memory without blocking WebSocket game ticks.
+
+### 📋 Actionable Implementation Checklist
+
+#### Phase 1: Reliability, Atomicity & Observability (High Priority)
+- [ ] **1. BullMQ Event Listeners**:
+  - In `apps/worker/src/worker.ts`, add `worker.on("failed", (job, err) => ...)` and `worker.on("completed", (job) => ...)`.
+  - Ensure unhandled exceptions inside the job processor are properly logged with job ID, room ID, retry attempts, and stack traces.
+- [ ] **2. Prisma Atomic Transaction (`prisma.$transaction`)**:
+  - Wrap the entire DB write sequence in `prisma.$transaction([ ... ])`:
+    1. Batch update `RoomPlayer` scores and points (`score: finalScore, pointsEarned: finalScore`).
+    2. Batch insert `PlayerAnswer` records (`skipDuplicates: true`).
+    3. Update `Room` state to `FINISHED` with `endedAt = new Date()`.
+  - Ensures all-or-nothing consistency so failed retries don't leave partial DB records.
+- [ ] **3. Non-Blocking Redis Cleanup**:
+  - Replace blocking `redisClient.keys('room:${roomId}:answers:*')` with a deterministic loop over `roomQuestions.length` (`room:${roomId}:answers:${i}` and `room:${roomId}:answers_meta:${i}`).
+  - Keeps Redis latency sub-millisecond in production.
+
+#### Phase 2: Data Integrity & Dynamic Scoring (Medium Priority)
+- [ ] **4. Dynamic Points from Question Model**:
+  - Replace hardcoded `+4` / `-1` points with `fullQuestion.points` and `fullQuestion.negativePoints` configured in the database.
+  - Set `0` points earned if player timed out without selecting an option.
+- [ ] **5. Guest / Anonymous User Handling**:
+  - Verify that `userId` exists in the `User` table before inserting into `PlayerAnswer` to prevent foreign key constraint violations (`PlayerAnswer_userId_fkey`).
+
+#### Phase 3: Additional Job Pipelines & Automation (Future Enhancement)
+- [ ] **6. Game Abort / Room Cleanup Jobs**:
+  - Support a `"game-aborted"` job type in `game-events` queue to asynchronously archive aborted rooms and set TTLs on orphaned Redis keys.
+- [ ] **7. User Stats & Leaderboard Aggregation**:
+  - Add a post-game pipeline step or secondary job to increment user career stats (total quizzes played, wins, average response times, category rankings).
+

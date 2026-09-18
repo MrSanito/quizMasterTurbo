@@ -27,7 +27,8 @@ const connection = process.env.REDIS_URL
 			enableReadyCheck: false,
 			family: 4,
 		});
-
+ 
+		// Createing a worker
 export const worker = new Worker(
 	"game-events",
 	async (job) => {
