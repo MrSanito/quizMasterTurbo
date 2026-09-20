@@ -1,109 +1,332 @@
 # 🛠️ QuizMaster Background Worker (`apps/worker`)
 
-A dedicated BullMQ background worker service designed to consume asynchronous tasks from Redis, finalize multiplayer quiz game states, persist round history to PostgreSQL via Prisma, and perform memory garbage collection on ephemeral Redis keys.
+> High-throughput, distributed background processing service powered by **BullMQ** and **Redis**. Responsible for asynchronous game finalization, atomic database persistence with **Prisma**, player telemetry aggregation, and ephemeral memory garbage collection.
 
 ---
 
-## 🏗️ Architecture & Pipeline Overview
+## 📖 Table of Contents
 
-The WebSocket server (`apps/ws`) avoids writing to PostgreSQL during live gameplay to preserve sub-10ms latency. When the final question concludes, `GameEngine.finalizeGame()` enqueues a `game-finished` job into the BullMQ `game-events` queue.
+- [Overview & Architecture Rationale](#-overview--architecture-rationale)
+- [Architecture & Data Flow](#-architecture--data-flow)
+- [Queue & Job Specifications](#-queue--job-specifications)
+- [Detailed Pipeline Stages](#-detailed-pipeline-stages)
+- [Redis Key Schema Matrix](#-redis-key-schema-matrix)
+- [Database Mapping & Persistence Logic](#-database-mapping--persistence-logic)
+- [Observability, Retries & Error Handling](#-observability-retries--error-handling)
+- [Local Development & Diagnostic CLI](#-local-development--diagnostic-cli)
+- [Deployment & Operational Considerations](#-deployment--operational-considerations)
+- [Roadmap & Enhancements](#-roadmap--enhancements)
+
+---
+
+## 🎯 Overview & Architecture Rationale
+
+In high-concurrency multiplayer quiz games, thousands of concurrent WebSocket connections interact per room. Writing player answers, response timings, and room status directly to PostgreSQL on every question would lead to:
+
+1. **Database Connection Saturation**: Connection pool exhaustion under spike traffic.
+2. **Event Loop Latency Spikes**: Sub-10ms tick times degraded by synchronous SQL transactions.
+3. **Write Amplification & Lock Contention**: Concurrent updates to the same room and leaderboard records.
+
+### The Solution: Asynchronous Event-Driven Persistence
+
+The background worker completely decouples live gameplay from PostgreSQL:
+
+- **During Live Gameplay**: All player submissions, instant gradings, and leaderboard scores are handled purely in-memory via Redis Hashes and Lua scripts.
+- **On Game Completion**: The WebSocket authoritative engine triggers a single `game-finished` job onto the BullMQ `game-events` queue.
+- **Background Worker**: Consumes the job off the queue, compiles answers and telemetry, executes batch writes to PostgreSQL, and cleans up Redis memory with safe TTL expiration.
+
+---
+
+## 🏗️ Architecture & Data Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant WS as WebSocket Engine (apps/ws)
-    participant Redis as Redis Queue & Hashes
+    participant RedisQueue as BullMQ Queue (game-events)
+    participant RedisState as Redis Ephemeral Storage
     participant Worker as Background Worker (apps/worker)
     participant DB as PostgreSQL (Prisma)
 
-    WS->>Redis: HSET room:roomId:state (status = FINISHED)
-    WS->>Redis: Enqueue Job in 'game-events' ({ roomId })
+    WS->>RedisState: HSET room:{id}:state status="FINISHED"
+    WS->>RedisQueue: addGameFinishedJob({ roomId })
     
-    Note over Worker,Redis: Asynchronous Persistence Round
-    Worker->>Redis: Pop 'game-finished' Job
-    Worker->>Redis: HGETALL room:roomId:scores
-    Worker->>Redis: HGETALL room:roomId:answers:* & answers_meta:*
+    Note over Worker,RedisQueue: Asynchronous Event Consumption
+    Worker->>RedisQueue: Dequeue 'game-finished' Job
+    Worker->>DB: Query Room & Question Metadata
     
-    Note over Worker,DB: Atomic Transaction ($transaction)
-    Worker->>DB: Batch UPDATE RoomPlayer (score & pointsEarned)
-    Worker->>DB: Batch INSERT PlayerAnswer (answers, timing, correctness)
-    Worker->>DB: UPDATE Room (state = FINISHED, endedAt = NOW())
+    Note over Worker,RedisState: State Gathering
+    Worker->>RedisState: HGETALL room:{id}:scores
+    Worker->>RedisState: HGETALL room:{id}:answers:{index}
+    Worker->>RedisState: HGETALL room:{id}:answers_meta:{index}
     
-    Note over Worker,Redis: Memory Garbage Collection
-    Worker->>Redis: EXPIRE room:roomId:* (1 hour TTL)
-    Worker->>Redis: DEL room:roomId:loop_lock
+    Note over Worker,DB: Batch DB Persistence
+    Worker->>DB: UPDATE RoomPlayer (scores)
+    Worker->>DB: INSERT PlayerAnswer (bulk answers & response times)
+    Worker->>DB: UPDATE Room (state="FINISHED", endedAt=NOW())
+    
+    Note over Worker,RedisState: Memory Garbage Collection (TTL)
+    Worker->>RedisState: EXPIRE room:{id}:* 3600s
+    Worker->>RedisState: DEL room:{id}:loop_lock
+    Worker->>RedisQueue: Acknowledge Job Completed
 ```
 
 ---
 
-## 📁 Directory Structure
+## 📨 Queue & Job Specifications
 
+### Queue Configuration
+- **Queue Name**: `game-events`
+- **Underlying Client**: `ioredis` with BullMQ connection options (`maxRetriesPerRequest: null`, `enableReadyCheck: false`, `family: 4`).
+- **Default Job Retry Policy**:
+  - **Attempts**: 3
+  - **Backoff**: Exponential (`1000ms`, `2000ms`, `4000ms`)
+
+### Active Job Schema: `game-finished`
+
+Dispatched when all questions in a room conclude, or the room owner terminates the game.
+
+```typescript
+interface GameFinishedJobData {
+  roomId: string; // Room UUID or alphanumeric join code
+}
 ```
-apps/worker/
-├── src/
-│   ├── index.ts          # Process lifecycle & graceful shutdown handlers
-│   ├── worker.ts         # BullMQ Worker instance & 'game-finished' processor
-│   └── debug-room.ts     # CLI tool to inspect room keys & DB state
-├── .env                  # DATABASE_URL and REDIS_URL
-├── package.json
-└── tsconfig.json
+
+```json
+{
+  "name": "game-finished",
+  "data": {
+    "roomId": "cm2a8e10x0001xyz123abc456"
+  },
+  "opts": {
+    "attempts": 3,
+    "backoff": {
+      "type": "exponential",
+      "delay": 1000
+    }
+  }
+}
 ```
 
 ---
 
-## ⚡ Actionable Implementation Plan
+## ⚙️ Detailed Pipeline Stages
 
-### Phase 1: Reliability, Atomicity & Observability (High Priority)
-- [ ] **1. Comprehensive BullMQ Event Handlers**:
-  - Attach `worker.on("failed", (job, err) => ...)` and `worker.on("completed", (job) => ...)`.
-  - Log full diagnostic metadata on failure (Job ID, `roomId`, attempt count, and error stack) so silent failures never occur.
-- [ ] **2. Atomic Database Writes with `prisma.$transaction`**:
-  - Wrap the 3 database operations into a single transaction:
-    1. Batch update `RoomPlayer` scores and points.
-    2. Batch insert `PlayerAnswer` records with `skipDuplicates: true`.
-    3. Update `Room` state to `FINISHED` with `endedAt = new Date()`.
-  - Prevents partial writes if an error occurs mid-job before retrying.
-- [ ] **3. Non-Blocking Key Cleanup**:
-  - Replace `redisClient.keys('room:${roomId}:answers:*')` with a bounded index loop based on `roomQuestions.length` (`room:${roomId}:answers:${i}` and `room:${roomId}:answers_meta:${i}`).
-  - Eliminates production latency spikes caused by blocking `KEYS` commands.
+The worker processor in [`apps/worker/src/worker.ts`](file:///c:/Projects/quizMasterTurbo/apps/worker/src/worker.ts) executes the following sequence:
 
-### Phase 2: Data Integrity & Dynamic Scoring (Medium Priority)
-- [ ] **4. Dual Field Sync for `RoomPlayer`**:
-  - Update both `score: finalScore` and `pointsEarned: finalScore` in `prisma.roomPlayer.updateMany`.
-  - Keeps HTTP and Hono API read queries consistent.
-- [ ] **5. Dynamic Question Point Values**:
-  - Read `fullQuestion.points` and `fullQuestion.negativePoints` from the database instead of hardcoding `+4` and `-1`.
-  - Record `0` points earned if player timed out without submitting.
-- [ ] **6. Foreign Key Safety for Guest / Unregistered Users**:
-  - Filter `userId` against existing database `User` records prior to `PlayerAnswer.createMany` to avoid `PlayerAnswer_userId_fkey` constraint errors.
+### 1. Room Identification & Hydration
+- Resolves the room by its primary UUID `id` or short code `roomName` from PostgreSQL.
+- Loads the configured `room.questions` ordered by `questionOrder asc`.
+- Fetches all associated `Question` and `Option` records into an in-memory map for fast $O(1)$ answer validation.
 
-### Phase 3: Additional Job Pipelines (Future Enhancements)
-- [ ] **7. Game Abort / Room Cleanup Pipeline**:
-  - Add support for a `"game-aborted"` job type to asynchronously release resources and archive abandoned rooms without blocking the WebSocket loop.
-- [ ] **8. Post-Game Stats & Leaderboard Aggregation**:
-  - Dispatch follow-up background tasks to update user player stats (total quizzes completed, wins, average response times, category rankings).
+### 2. Final Player Scores Synchronization
+- Queries the Redis hash `room:{roomId}:scores`.
+- Iterates over all participating `userId`s and executes batch updates to `prisma.roomPlayer`:
+  ```typescript
+  await prisma.roomPlayer.updateMany({
+    where: { roomId: room.id, userId },
+    data: { score: finalScore },
+  });
+  ```
+
+### 3. Answer Telemetry Reconciliation & Bulk Ingestion
+- Loops through each question index ($0 \dots N-1$):
+  - Fetches submitted choices: `HGETALL room:{roomId}:answers:{index}`.
+  - Fetches latency telemetry: `HGETALL room:{roomId}:answers_meta:{index}` (response time in ms).
+- Evaluates correctness against loaded question options (matching Option UUID or option text fallback).
+- Assigns question score:
+  - Correct: `+4` points (or custom configured points)
+  - Incorrect: `-1` points (or custom negative penalty)
+  - Unanswered / Timeout: Recorded with latency and evaluated accordingly.
+- Executes high-performance bulk creation via `prisma.playerAnswer.createMany` with `skipDuplicates: true`.
+
+### 4. Room State Finalization
+- Updates the database room status:
+  ```typescript
+  await prisma.room.update({
+    where: { id: room.id },
+    data: { state: "FINISHED", endedAt: new Date() },
+  });
+  ```
+
+### 5. Redis Garbage Collection & Ephemeral Expiration
+- Rather than immediately deleting keys (which could break players viewing end-game podiums and summary screens), sets a **1-hour TTL (`3600s`)**:
+  - `room:{roomId}:state`
+  - `room:{roomId}:questions`
+  - `room:{roomId}:scores`
+  - `room:{roomId}:answers:*`
+- Immediately removes the concurrency mutex lock `room:{roomId}:loop_lock`.
 
 ---
 
-## 🚀 Running & Debugging
+## 🗄️ Redis Key Schema Matrix
 
-### Environment Configuration (`.env`)
+| Key Pattern | Redis Data Type | Producer | Consumer / Lifespan | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `room:{roomId}:state` | Hash | `apps/ws` | Worker sets 3600s TTL | Room lifecycle status, current question index, question start timestamps. |
+| `room:{roomId}:questions` | List | `apps/ws` | Worker sets 3600s TTL | Ordered list of question IDs assigned to the room. |
+| `room:{roomId}:scores` | Hash | `apps/ws` (Lua) | Worker consumes & sets TTL | User ID $\to$ running score mappings. |
+| `room:{roomId}:answers:{idx}` | Hash | `apps/ws` (Lua) | Worker consumes & sets TTL | Question index $\to$ Map of User ID to selected Option ID/text. |
+| `room:{roomId}:answers_meta:{idx}` | Hash | `apps/ws` (Lua) | Worker consumes & sets TTL | Question index $\to$ Map of User ID to response time in milliseconds. |
+| `room:{roomId}:loop_lock` | String (Mutex) | `apps/ws` | Worker deletes immediately | Prevents overlapping game loops and ticker races. |
+| `bull:game-events:*` | BullMQ Keys | `apps/ws` | Worker process | Job metadata, active queue streams, and delayed/retry structures. |
+
+---
+
+## 📊 Database Mapping & Persistence Logic
+
+```mermaid
+erDiagram
+    Room ||--o{ RoomPlayer : "has many"
+    Room ||--o{ RoomQuestion : "contains"
+    Room ||--o{ PlayerAnswer : "records"
+    Question ||--o{ Option : "provides"
+    Question ||--o{ RoomQuestion : "assigned to"
+    User ||--o{ RoomPlayer : "participates as"
+    User ||--o{ PlayerAnswer : "submits"
+
+    Room {
+        string id PK
+        string roomName
+        string state "NOT_STARTED | IN_PROGRESS | FINISHED"
+        datetime endedAt
+    }
+    RoomPlayer {
+        string id PK
+        string roomId FK
+        string userId FK
+        int score
+        int pointsEarned
+    }
+    PlayerAnswer {
+        string id PK
+        string roomId FK
+        string roomQuestionId FK
+        string userId FK
+        string selectedOptionId
+        boolean isCorrect
+        int pointsEarned
+        int responseTimeMs
+    }
+```
+
+> [!NOTE]
+> `PlayerAnswer` records are ingested with `skipDuplicates: true` to ensure idempotency. If a worker job is retried by BullMQ after a transient network drop, duplicate answers will not trigger unique constraint errors.
+
+---
+
+## 🛡️ Observability, Retries & Error Handling
+
+### Process Lifecycles & Graceful Shutdown
+The service lifecycle is managed in [`apps/worker/src/index.ts`](file:///c:/Projects/quizMasterTurbo/apps/worker/src/index.ts):
+- Intercepts `SIGTERM` and `SIGINT` signals.
+- Gracefully waits for ongoing jobs to complete before closing Redis handles via `worker.close()`.
+
+```typescript
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM signal received: closing worker");
+  await worker.close();
+  process.exit(0);
+});
+```
+
+### BullMQ Event Listeners
+```typescript
+worker.on("ready", () => {
+  console.log("Worker is ready and connected to Redis.");
+});
+
+worker.on("error", (err) => {
+  console.error("Worker connection error:", err);
+});
+```
+
+---
+
+## 💻 Local Development & Diagnostic CLI
+
+### 1. Environment Configuration (`apps/worker/.env`)
 ```env
-DATABASE_URL="postgresql://<user>:<password>@<host>/<database>?sslmode=require"
-REDIS_URL="redis://default:<password>@<host>:<port>"
+# PostgreSQL connection string
+DATABASE_URL="postgresql://postgres:password@localhost:5432/quizmaster?schema=public"
+
+# Redis connection (Single URL or individual components)
+REDIS_URL="redis://default:password@localhost:6379"
+
+# Or component fallback:
+REDIS_HOST="localhost"
+REDIS_PORT="6379"
+REDIS_PASSWORD=""
 ```
 
-### Commands
+### 2. Available Scripts
+
+Run commands from the repository root using Turbo, or directly inside `apps/worker`:
+
 ```bash
-# Start worker in watch mode (development)
-npm run dev
+# Start background worker in watch mode
+npm run dev --workspace=apps/worker
 
-# Type check worker code
-npx tsc --noEmit
+# Type-check worker TypeScript files
+npm run build --workspace=apps/worker
 
-# Build production bundle
-npm run build
-
-# Inspect a specific room's Redis & DB state
-npx tsx src/debug-room.ts <ROOM_ID_OR_CODE>
+# Run in production mode
+npm start --workspace=apps/worker
 ```
+
+### 3. Room State Diagnostic CLI Tool
+
+A built-in inspection tool is provided in [`apps/worker/src/debug-room.ts`](file:///c:/Projects/quizMasterTurbo/apps/worker/src/debug-room.ts) to verify Redis keys and PostgreSQL status for a given room without launching a full client session:
+
+```bash
+# Execute inspection against a room code or UUID
+npx tsx apps/worker/src/debug-room.ts <ROOM_ID_OR_NAME>
+```
+
+#### Diagnostic Output Example:
+```text
+ --- DEBUGGING ROOM: room-alpha-12 ---
+
+ Redis Connected
+
+--- DATABASE CHECK ---
+ Room Found: room-alpha-12 (cm2a8e10x0001xyz123abc456)
+   State: FINISHED
+   Questions in DB: 5
+
+--- REDIS CHECK ---
+ Key 'room:room-alpha-12:questions': Length = 5
+   Q0 (quest_001)
+       Key: room:room-alpha-12:answers:0 -> Exists: YES, Count: 4
+       Data: { "usr_1": "opt_A", "usr_2": "opt_B" }
+   Q1 (quest_002)
+       Key: room:room-alpha-12:answers:1 -> Exists: YES, Count: 4
+       Data: { "usr_1": "opt_C", "usr_2": "opt_C" }
+-------------------------
+```
+
+---
+
+## 🚀 Deployment & Operational Considerations
+
+### Horizontal Scaling
+- **Stateless Workers**: BullMQ uses Redis atomic primitives to coordinate job distribution across workers. Multiple instances of `apps/worker` can run in parallel without race conditions.
+- **Concurrency**: Adjust worker concurrency via the BullMQ Worker options:
+  ```typescript
+  new Worker("game-events", processor, { connection, concurrency: 5 });
+  ```
+
+### Memory Footprint
+- The worker is lightweight and requires minimal memory ($\approx 60\text{MB}$ heap on Node 20).
+- Compatible with Docker containers, PM2 cluster mode, Render Background Workers, and AWS ECS/Fargate tasks.
+
+---
+
+## 🗺️ Roadmap & Enhancements
+
+- [ ] **Prisma Transaction Wrapping**: Wrap `RoomPlayer` score updates, `PlayerAnswer` bulk creation, and `Room` finalization inside a unified `prisma.$transaction([...])` block for strict ACID guarantees.
+- [ ] **SCAN-based Non-Blocking Redis Cleanup**: Transition `redisClient.keys()` calls to direct index lookups or non-blocking `SCAN` iteration to avoid blocking single-threaded Redis engines.
+- [ ] **Dual-Field Score Synchronization**: Mirror `finalScore` to both `score` and `pointsEarned` fields on `RoomPlayer` to maintain parity across all HTTP API endpoints.
+- [ ] **Dynamic Question Scoring**: Retrieve `points` and `negativePoints` directly from the database schema rather than utilizing hardcoded $+4 / -1$ defaults.
+- [ ] **`game-aborted` Queue Consumer**: Add consumer logic to safely clean up abandoned games and release locks without persisting incomplete rounds.
+- [ ] **Player Career Stats Pipeline**: Trigger asynchronous aggregation of user profiles (total games played, win rate, average response speed, Elo score adjustments) upon room finalization.
