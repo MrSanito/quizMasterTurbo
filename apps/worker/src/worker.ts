@@ -4,15 +4,7 @@ import { redisClient } from "@repo/redis";
 import { Worker } from "bullmq";
 import { Redis } from "ioredis";
 
-console.log(
-	"here is the env variables",
-	process.env.REDIS_URL,
-	process.env.REDIS_PASSWORD,
-	process.env.REDIS_HOST,
-	process.env.REDIS_PORT,
-);
-
-// Create Redis instance
+// Create Redis instance for BullMQ worker
 const connection = process.env.REDIS_URL
 	? new Redis(process.env.REDIS_URL, {
 			maxRetriesPerRequest: null,
@@ -27,111 +19,195 @@ const connection = process.env.REDIS_URL
 			enableReadyCheck: false,
 			family: 4,
 		});
- 
-		// Createing a worker
+
 export const worker = new Worker(
 	"game-events",
 	async (job) => {
-		console.log(` Worker received job: ${job.name} (ID: ${job.id})`);
+		console.log(`📦 [Worker] Received job: ${job.name} (ID: ${job.id})`);
 
 		if (job.name === "game-finished") {
 			const { roomId } = job.data;
 			if (!roomId) {
-				console.error(" Job missing roomId");
+				console.error("❌ [Worker] Job missing roomId");
 				return;
 			}
 
-			console.log(` Processing game finished for room ${roomId}`);
+			console.log(`🎮 [Worker] Processing game finished for room: ${roomId}`);
 			const roomKey = `room:${roomId}`;
 
 			try {
-				// 1. Get Final Scores from Redis
-				const scores = await redisClient.hgetall(`${roomKey}:scores`);
-
-				// Fetch Room Data (Need ID)
+				// 1. Fetch Room Data from PostgreSQL
 				const room = await prisma.room.findFirst({
 					where: { OR: [{ roomName: roomId }, { id: roomId }] },
-					include: { questions: { orderBy: { questionOrder: "asc" } } },
+					include: {
+						questions: { orderBy: { questionOrder: "asc" } },
+						quiz: {
+							include: {
+								Question: {
+									include: { Option: true },
+									orderBy: { createdAt: "asc" },
+								},
+							},
+						},
+					},
 				});
 
 				if (!room) {
-					console.error(` Room ${roomId} not found in DB`);
-					throw new Error("Room not found");
+					console.error(`❌ [Worker] Room ${roomId} not found in DB`);
+					throw new Error(`Room ${roomId} not found in DB`);
 				}
 
-				// 2. Update Player Scores in DB
-				const updates = Object.entries(scores).map(async ([userId, score]) => {
-					// Determine if score is valid number
-					const finalScore = parseInt(score, 10);
-					if (Number.isNaN(finalScore)) return;
-
-					await prisma.roomPlayer.updateMany({
-						where: { roomId: room.id, userId },
-						data: { score: finalScore },
+				// Ensure RoomQuestion records exist (auto-heal if startRoom failed or was bypassed)
+				let roomQuestions = room.questions;
+				if (roomQuestions.length === 0 && room.quiz?.Question?.length > 0) {
+					console.log(
+						`⚠️ [Worker] Room ${roomId} missing RoomQuestion records. Auto-creating from Quiz...`,
+					);
+					const toCreate = room.quiz.Question.map((q: any, idx: number) => ({
+						roomId: room.id,
+						questionId: q.id,
+						questionOrder: idx,
+					}));
+					await prisma.roomQuestion.createMany({
+						data: toCreate,
+						skipDuplicates: true,
 					});
-				});
-				await Promise.all(updates);
+					roomQuestions = await prisma.roomQuestion.findMany({
+						where: { roomId: room.id },
+						orderBy: { questionOrder: "asc" },
+					});
+				}
 
-				// 3.  SAVE PLAYER ANSWERS
-				const roomQuestions = room.questions;
-				const playerAnswersToCreate: any[] = [];
+				// 2. Fetch initial room state from Redis in parallel
+				const [scores, playersData] = await Promise.all([
+					redisClient.hgetall(`${roomKey}:scores`),
+					redisClient.hgetall(`${roomKey}:players`),
+				]);
 
-				// FETCH Questions separately to map options
-				// (Optimize: fetch only what's needed)
-				const questionIds = roomQuestions.map((rq) => rq.questionId);
-				const questionsData = await prisma.question.findMany({
-					where: { id: { in: questionIds } },
-					include: { Option: true },
-				});
+				// 3. Redis Pipeline: Fetch answers & metadata for ALL questions in ONE network trip (Fixes Redis N+1)
+				const questionMap = new Map(
+					(room.quiz?.Question || []).map((q: any) => [q.id, q]),
+				);
 
-				const questionMap = new Map(questionsData.map((q) => [q.id, q]));
+				const answersPipeline = redisClient.pipeline();
+				for (const [index] of roomQuestions.entries()) {
+					answersPipeline.hgetall(`${roomKey}:answers:${index}`);
+					answersPipeline.hgetall(`${roomKey}:answers_meta:${index}`);
+				}
+				const pipelineResults = await answersPipeline.exec();
+
+				const rawAnswersPerQuestion: {
+					rq: any;
+					answersMap: Record<string, string>;
+					metaMap: Record<string, string>;
+					fullQuestion: any;
+				}[] = [];
+
+				const allUserIdsSet = new Set<string>(Object.keys(scores));
 
 				for (const [index, rq] of roomQuestions.entries()) {
-					const answersKey = `${roomKey}:answers:${index}`;
-					console.log(` [Worker] Fetching answers from key: ${answersKey}`);
+					const answersRes = pipelineResults?.[index * 2];
+					const metaRes = pipelineResults?.[index * 2 + 1];
 
-					const answersMetaMap = await redisClient.hgetall(
-						`${roomKey}:answers_meta:${index}`,
-					);
-					const answersMap = await redisClient.hgetall(answersKey);
+					const answersMap = (answersRes?.[1] || {}) as Record<string, string>;
+					const metaMap = (metaRes?.[1] || {}) as Record<string, string>;
 					const fullQuestion = questionMap.get(rq.questionId);
 
-					console.log(
-						` processing question ${rq.questionId} (index ${index}). Found ${Object.keys(answersMap).length} answers.`,
-					);
-
-					if (!fullQuestion) {
-						console.warn(
-							` Question ${rq.questionId} not found in DB map. Skipping.`,
-						);
-						continue;
+					for (const uid of Object.keys(answersMap)) {
+						allUserIdsSet.add(uid);
 					}
 
-					for (const [userId, selectedValue] of Object.entries(answersMap)) {
-						// Get Time Taken
-						const timeTaken = parseInt(answersMetaMap[userId] || "0", 10);
+					rawAnswersPerQuestion.push({
+						rq,
+						answersMap,
+						metaMap,
+						fullQuestion,
+					});
+				}
 
-						// Check if value matches ID or Text
-						// Normalize comparison (trim, etc if needed)
-						const selectedOption = fullQuestion.Option.find(
-							(o) => o.id === selectedValue || o.text === selectedValue,
-						);
-						const correctOption = fullQuestion.Option.find((o) => o.isCorrect);
+				// 4. Validate user IDs against Postgres User table to PREVENT foreign key violation crashes (P2003)
+				const candidateUserIds = Array.from(allUserIdsSet).filter(Boolean);
+				const validUsers = await prisma.user.findMany({
+					where: { id: { in: candidateUserIds } },
+					select: { id: true, username: true, avatar: true },
+				});
+				const validUserMap = new Map(validUsers.map((u: any) => [u.id, u]));
 
-						if (!selectedOption) {
-							console.warn(
-								` User ${userId} answer '${selectedValue}' did not match any option for Q ${rq.questionId}. Options: ${fullQuestion.Option.map((o) => o.text).join(", ")}`,
-							);
+				console.log(
+					`👥 [Worker] Validated ${validUsers.length}/${candidateUserIds.length} candidate users in DB for room ${roomId}`,
+				);
+
+				// 5. Batch update/insert RoomPlayer records (Fixes DB N+1 queries)
+				const existingRoomPlayers = await prisma.roomPlayer.findMany({
+					where: { roomId: room.id },
+					select: { userId: true },
+				});
+				const existingUserIds = new Set(
+					existingRoomPlayers.map((p: any) => p.userId),
+				);
+
+				const playersToCreate: any[] = [];
+				const playersToUpdate: { userId: string; score: number }[] = [];
+
+				for (const [userId, scoreStr] of Object.entries(scores)) {
+					if (!validUserMap.has(userId)) continue;
+					const finalScore = parseInt(scoreStr, 10);
+					if (Number.isNaN(finalScore)) continue;
+
+					if (existingUserIds.has(userId)) {
+						playersToUpdate.push({ userId, score: finalScore });
+					} else {
+						const pRaw = playersData[userId];
+						let usernameSnapshot =
+							validUserMap.get(userId)?.username || "Player";
+						let avatarSnapshot =
+							validUserMap.get(userId)?.avatar || "avatar1.svg";
+
+						if (pRaw) {
+							try {
+								const p = JSON.parse(pRaw);
+								usernameSnapshot = p.username || p.name || usernameSnapshot;
+								avatarSnapshot = p.avatar || avatarSnapshot;
+							} catch {
+								// ignore
+							}
 						}
 
-						// If matched strict ID/Text, use that. If not, use the raw value as fallback (might be "TIMEOUT")
+						playersToCreate.push({
+							roomId: room.id,
+							userId,
+							score: finalScore,
+							usernameSnapshot,
+							avatarSnapshot,
+							hasJoinedGame: true,
+							gameJoinedAt: new Date(),
+						});
+					}
+				}
+
+				// 6. Build PlayerAnswer records
+				const playerAnswersToCreate: any[] = [];
+
+				for (const item of rawAnswersPerQuestion) {
+					const { rq, answersMap, metaMap, fullQuestion } = item;
+					if (!fullQuestion) continue;
+
+					for (const [userId, selectedValue] of Object.entries(answersMap)) {
+						// Skip users that do not exist in DB (prevents FK violation)
+						if (!validUserMap.has(userId)) continue;
+
+						const timeTaken = parseInt(metaMap[userId] || "0", 10);
+
+						const selectedOption = fullQuestion.Option.find(
+							(o: any) => o.id === selectedValue || o.text === selectedValue,
+						);
+						const correctOption = fullQuestion.Option.find(
+							(o: any) => o.isCorrect,
+						);
+
 						const validSelectedOptionId = selectedOption
 							? selectedOption.id
 							: String(selectedValue);
-
-						console.log(
-							` [Worker] User ${userId} Answer: '${selectedValue}' -> Saved as: '${validSelectedOptionId}'`,
-						);
 
 						const isCorrect = selectedOption
 							? selectedOption.isCorrect
@@ -149,43 +225,67 @@ export const worker = new Worker(
 					}
 				}
 
-				console.log(
-					` [Worker] Total answers to create: ${playerAnswersToCreate.length}`,
-				);
-
-				if (playerAnswersToCreate.length > 0) {
-					await prisma.playerAnswer.createMany({
-						data: playerAnswersToCreate,
-						skipDuplicates: true,
-					});
-					console.log(
-						` Saved ${playerAnswersToCreate.length} player answers to DB`,
+				// 7. Atomic DB Transaction: Execute player creates, score updates, answers, and room FINISHED in 1 DB trip
+				const finalizeDbOps: any[] = [];
+				if (playersToCreate.length > 0) {
+					finalizeDbOps.push(
+						prisma.roomPlayer.createMany({
+							data: playersToCreate,
+							skipDuplicates: true,
+						}),
 					);
 				}
-
-				// 4. Mark Room as Finished
-				await prisma.room.update({
-					where: { id: room.id },
-					data: { state: "FINISHED", endedAt: new Date() },
-				});
-
-				// 5. Cleanup Redis (expire in 1 hour)
-				await redisClient.expire(`${roomKey}:state`, 3600);
-				await redisClient.expire(`${roomKey}:questions`, 3600);
-				await redisClient.expire(`${roomKey}:scores`, 3600);
-
-				const answerKeys = await redisClient.keys(`${roomKey}:answers:*`);
-				for (const k of answerKeys) {
-					await redisClient.expire(k, 3600);
+				for (const p of playersToUpdate) {
+					finalizeDbOps.push(
+						prisma.roomPlayer.updateMany({
+							where: { roomId: room.id, userId: p.userId },
+							data: { score: p.score },
+						}),
+					);
 				}
+				if (playerAnswersToCreate.length > 0) {
+					finalizeDbOps.push(
+						prisma.playerAnswer.createMany({
+							data: playerAnswersToCreate,
+							skipDuplicates: true,
+						}),
+					);
+				}
+				finalizeDbOps.push(
+					prisma.room.update({
+						where: { id: room.id },
+						data: { state: "FINISHED", endedAt: new Date() },
+					}),
+				);
 
-				//  UNLOCK
-				await redisClient.del(`${roomKey}:loop_lock`);
+				// 8. Redis Pipeline: Set TTL and release lock in ONE roundtrip without blocking KEYS command
+				const cleanupPipeline = redisClient.pipeline();
+				cleanupPipeline.expire(`${roomKey}:state`, 3600);
+				cleanupPipeline.expire(`${roomKey}:questions`, 3600);
+				cleanupPipeline.expire(`${roomKey}:scores`, 3600);
+				cleanupPipeline.expire(`${roomKey}:players`, 3600);
 
-				console.log(` Game ${roomId} finalized successfully by worker!`);
+				for (let i = 0; i < roomQuestions.length; i++) {
+					cleanupPipeline.expire(`${roomKey}:answers:${i}`, 3600);
+					cleanupPipeline.expire(`${roomKey}:answers_meta:${i}`, 3600);
+					cleanupPipeline.expire(`${roomKey}:order:${i}`, 3600);
+				}
+				cleanupPipeline.del(`${roomKey}:loop_lock`);
+
+				await Promise.all([
+					prisma.$transaction(finalizeDbOps),
+					cleanupPipeline.exec(),
+				]);
+
+				console.log(
+					`💾 [Worker] Saved ${playerAnswersToCreate.length} answers & finalized room in DB with single transaction`,
+				);
+				console.log(
+					`✅ [Worker] Game ${roomId} finalized successfully by worker!`,
+				);
 			} catch (error) {
-				console.error(` Error processing game ${roomId}:`, error);
-				throw error; // Let BullMQ handle retries
+				console.error(`🔴 [Worker] Error processing game ${roomId}:`, error);
+				throw error; // Let BullMQ retry per configured backoff
 			}
 		}
 	},
@@ -193,9 +293,9 @@ export const worker = new Worker(
 );
 
 worker.on("ready", () => {
-	console.log(" Worker is ready and connected to Redis.");
+	console.log("🟢 [Worker] BullMQ Worker is ready and connected to Redis.");
 });
 
 worker.on("error", (err) => {
-	console.error(" Worker Error:", err);
+	console.error("🔴 [Worker] BullMQ Worker Error:", err);
 });
