@@ -213,12 +213,14 @@ export class GameEngine {
 			return;
 		}
 
-		// Persist hostId and status in room state if missing
-		await redis.getClient().hset(stateKey, "hostId", hostId);
+		// Persist hostId and status in room state if missing via pipeline
+		const initPipeline = redis.getClient().pipeline();
+		initPipeline.hset(stateKey, "hostId", hostId);
 		if (!stateRaw.status) {
-			await redis.getClient().hset(stateKey, "status", "LOBBY");
+			initPipeline.hset(stateKey, "status", "LOBBY");
 		}
-		await redis.expire(stateKey, 7200);
+		initPipeline.expire(stateKey, 7200);
+		await initPipeline.exec();
 
 		// If game already in progress, warn player
 		if (
@@ -290,19 +292,15 @@ export class GameEngine {
 			score: existingScore,
 		};
 
-		// Write player data and reverse lookup map
-		await redis.getClient().hset(playersKey, userId, JSON.stringify(playerData));
-		await redis.expire(playersKey, 7200);
-
-		await redis.setHash(socketMetaKey, { roomId, userId });
-		await redis.expire(socketMetaKey, 7200);
-
-		// Ensure scores hash exists for player
-		const hasScore = await redis.getClient().hexists(this.getScoresKey(roomId), userId);
-		if (!hasScore) {
-			await redis.getClient().hset(this.getScoresKey(roomId), userId, String(existingScore));
-			await redis.expire(this.getScoresKey(roomId), 7200);
-		}
+		// Write player data, reverse lookup map, and score in ONE pipeline roundtrip
+		const joinPipeline = redis.getClient().pipeline();
+		joinPipeline.hset(playersKey, userId, JSON.stringify(playerData));
+		joinPipeline.expire(playersKey, 7200);
+		joinPipeline.hset(socketMetaKey, "roomId", roomId, "userId", userId);
+		joinPipeline.expire(socketMetaKey, 7200);
+		joinPipeline.hsetnx(this.getScoresKey(roomId), userId, String(existingScore));
+		joinPipeline.expire(this.getScoresKey(roomId), 7200);
+		await joinPipeline.exec();
 
 		// Cancel player grace timer if reconnecting
 		this.clearTimer(`playerGrace:${roomId}:${userId}`);
@@ -700,14 +698,16 @@ export class GameEngine {
 
 		const startTime = Date.now();
 
-		// Update state in Redis
-		await redis.setHash(stateKey, {
+		// Update state in Redis in ONE pipeline roundtrip
+		const advPipeline = redis.getClient().pipeline();
+		advPipeline.hset(stateKey, {
 			status: "PLAYING",
 			currentQuestionIndex: index,
 			questionStartTime: startTime,
 			totalQuestions: questions.length,
 		});
-		await redis.expire(stateKey, 7200);
+		advPipeline.expire(stateKey, 7200);
+		await advPipeline.exec();
 
 		// Resolve options array
 		let rawOptions: string[] = [];
@@ -777,9 +777,11 @@ export class GameEngine {
 			return;
 		}
 
-		// Update state to BREAK
-		await redis.setHashField(stateKey, "status", "BREAK");
-		await redis.expire(stateKey, 7200);
+		// Update state to BREAK in ONE pipeline roundtrip
+		const breakPipeline = redis.getClient().pipeline();
+		breakPipeline.hset(stateKey, "status", "BREAK");
+		breakPipeline.expire(stateKey, 7200);
+		await breakPipeline.exec();
 
 		// Get question to extract correct answer
 		const questionsKey = this.getQuestionsKey(roomId);
@@ -831,7 +833,7 @@ export class GameEngine {
 		const scoresKey = this.getScoresKey(roomId);
 		const playersKey = this.getPlayersKey(roomId);
 
-		// 1. Ensure user is registered in the room
+		// 1. Ensure user is registered in the room in 1 pipeline
 		const isMember = await redis.getClient().hexists(playersKey, userId);
 		if (!isMember) {
 			const playerData: PlayerData = {
@@ -843,14 +845,12 @@ export class GameEngine {
 				lastSeen: Date.now(),
 				score: 0,
 			};
-			await redis.getClient().hset(playersKey, userId, JSON.stringify(playerData));
-			await redis.expire(playersKey, 7200);
-
-			const hasScore = await redis.getClient().hexists(scoresKey, userId);
-			if (!hasScore) {
-				await redis.getClient().hset(scoresKey, userId, "0");
-				await redis.expire(scoresKey, 7200);
-			}
+			const memberPipeline = redis.getClient().pipeline();
+			memberPipeline.hset(playersKey, userId, JSON.stringify(playerData));
+			memberPipeline.expire(playersKey, 7200);
+			memberPipeline.hsetnx(scoresKey, userId, "0");
+			memberPipeline.expire(scoresKey, 7200);
+			await memberPipeline.exec();
 		}
 
 		// 2. Verify room state is PLAYING
@@ -943,8 +943,10 @@ export class GameEngine {
 		this.clearAllRoomTimers(roomId);
 
 		const stateKey = this.getStateKey(roomId);
-		await redis.setHashField(stateKey, "status", "FINISHED");
-		await redis.expire(stateKey, 7200);
+		const finPipeline = redis.getClient().pipeline();
+		finPipeline.hset(stateKey, "status", "FINISHED");
+		finPipeline.expire(stateKey, 7200);
+		await finPipeline.exec();
 
 		const results = await this.getLeaderboard(roomId);
 		console.log(`🏆 [GameEngine] Game FINISHED for room ${roomId}. Final results:`, results);
@@ -1093,19 +1095,39 @@ export class GameEngine {
 		const qIndex = Number.parseInt(stateRaw.currentQuestionIndex || "0", 10);
 		const qStartTime = Number.parseInt(stateRaw.questionStartTime || "0", 10);
 		const totalQ = Number.parseInt(stateRaw.totalQuestions || "0", 10);
-
-		// Get current player score
 		const scoresKey = this.getScoresKey(roomId);
-		const scoreStr = await redis.getClient().hget(scoresKey, userId);
+
+		// Pipeline all player state, answer, question data, and leaderboard in 1 roundtrip
+		const syncPipeline = redis.getClient().pipeline();
+		syncPipeline.hget(scoresKey, userId);
+		if (qIndex >= 0) {
+			syncPipeline.hget(this.getAnswersKey(roomId, qIndex), userId);
+		} else {
+			syncPipeline.echo("no_answer");
+		}
+		if ((status === "PLAYING" || status === "BREAK") && qIndex >= 0) {
+			syncPipeline.lindex(this.getQuestionsKey(roomId), qIndex);
+			syncPipeline.get(this.getOrderKey(roomId, qIndex));
+		} else {
+			syncPipeline.echo("no_q");
+			syncPipeline.echo("no_order");
+		}
+		syncPipeline.hgetall(scoresKey);
+		syncPipeline.hgetall(this.getPlayersKey(roomId));
+
+		const syncResults = await syncPipeline.exec();
+
+		const scoreStr = (syncResults?.[0]?.[1] as string) || "0";
 		const myScore = Number.parseInt(scoreStr || "0", 10);
 
-		// Check if user has already answered current question
 		let alreadyAnswered = false;
 		let userAnswer: string | null = null;
 		if (qIndex >= 0) {
-			const answersKey = this.getAnswersKey(roomId, qIndex);
-			userAnswer = await redis.getClient().hget(answersKey, userId);
-			alreadyAnswered = userAnswer !== null;
+			const ansVal = syncResults?.[1]?.[1];
+			if (ansVal && ansVal !== "no_answer") {
+				userAnswer = ansVal as string;
+				alreadyAnswered = true;
+			}
 		}
 
 		// Calculate timing
@@ -1125,16 +1147,14 @@ export class GameEngine {
 		// Retrieve sanitized question with matching option order
 		let currentQuestion: ClientQuestion | null = null;
 		if ((status === "PLAYING" || status === "BREAK") && qIndex >= 0) {
-			const questionsKey = this.getQuestionsKey(roomId);
-			const rawQuestionStr = await redis.getListItem(questionsKey, qIndex);
-			if (rawQuestionStr) {
+			const rawQuestionStr = syncResults?.[2]?.[1] as string;
+			if (rawQuestionStr && rawQuestionStr !== "no_q") {
 				try {
 					const rawQ = JSON.parse(rawQuestionStr) as RawQuestion;
-					const orderKey = this.getOrderKey(roomId, qIndex);
 					let options: string[] = [];
-					const cachedOrder = await redis.getClient().get(orderKey);
+					const cachedOrder = syncResults?.[3]?.[1] as string;
 
-					if (cachedOrder) {
+					if (cachedOrder && cachedOrder !== "no_order") {
 						options = JSON.parse(cachedOrder);
 					} else if (Array.isArray(rawQ.Option)) {
 						options = rawQ.Option.map((o) => o.text);
@@ -1154,7 +1174,37 @@ export class GameEngine {
 			}
 		}
 
-		const leaderboard = await this.getLeaderboard(roomId, 5);
+		const allScores = (syncResults?.[4]?.[1] || {}) as Record<string, string>;
+		const allPlayers = (syncResults?.[5]?.[1] || {}) as Record<string, string>;
+
+		const leaderboardEntries: LeaderboardEntry[] = Object.entries(allScores).map(([uid, sc]) => {
+			const rawPlayer = allPlayers[uid];
+			let name = `Player_${uid.slice(0, 4)}`;
+			let avatar = "avatar1.svg";
+			let connected = true;
+
+			if (rawPlayer) {
+				try {
+					const p = JSON.parse(rawPlayer);
+					name = p.username || p.name || name;
+					avatar = p.avatar || avatar;
+					connected = p.connected ?? true;
+				} catch {
+					// ignore
+				}
+			}
+
+			return {
+				userId: uid,
+				name,
+				avatar,
+				score: Number.parseInt(sc || "0", 10),
+				connected,
+			};
+		});
+
+		leaderboardEntries.sort((a, b) => b.score - a.score);
+		const leaderboard = leaderboardEntries.slice(0, 5);
 
 		return {
 			gameState: status,
@@ -1185,10 +1235,13 @@ export class GameEngine {
 		const scoresKey = this.getScoresKey(roomId);
 		const playersKey = this.getPlayersKey(roomId);
 
-		const [allScores, allPlayers] = await Promise.all([
-			redis.getClient().hgetall(scoresKey),
-			redis.getClient().hgetall(playersKey),
-		]);
+		const pipe = redis.getClient().pipeline();
+		pipe.hgetall(scoresKey);
+		pipe.hgetall(playersKey);
+		const results = await pipe.exec();
+
+		const allScores = (results?.[0]?.[1] || {}) as Record<string, string>;
+		const allPlayers = (results?.[1]?.[1] || {}) as Record<string, string>;
 
 		const entries: LeaderboardEntry[] = Object.entries(allScores).map(([userId, sc]) => {
 			const rawPlayer = allPlayers[userId];
