@@ -7,29 +7,41 @@ export async function createRoomService(data: {
 	roomName: string;
 	quizId: string;
 }) {
-	await redisClient.hset(`room:${data.roomName}`, {
+	const pipeline = redisClient.pipeline();
+	pipeline.hset(`room:${data.roomName}`, {
 		hostId: data.hostId,
 		quizId: data.quizId,
-		createdAt: new Date(),
-		expiry: new Date(Date.now() + 3600000),
+		roomName: data.roomName,
 		state: "CREATED",
 		maxPlayers: 10,
 	});
-	return await prisma.room.create({
-		data: {
-			roomName: data.roomName,
-			maxPlayers: 10,
-			state: "CREATED",
-			host: {
-				connect: { id: data.hostId },
-			},
-			quiz: {
-				connect: { id: data.quizId },
-			},
-		},
-	});
+	pipeline.expire(`room:${data.roomName}`, 7200);
 
-	 
+	pipeline.hset(`room:${data.roomName}:state`, {
+		hostId: data.hostId,
+		status: "LOBBY",
+		currentQuestionIndex: -1,
+	});
+	pipeline.expire(`room:${data.roomName}:state`, 7200);
+
+	const [, room] = await Promise.all([
+		pipeline.exec(),
+		prisma.room.create({
+			data: {
+				roomName: data.roomName,
+				maxPlayers: 10,
+				state: "CREATED",
+				host: {
+					connect: { id: data.hostId },
+				},
+				quiz: {
+					connect: { id: data.quizId },
+				},
+			},
+		}),
+	]);
+
+	return room;
 }
 
 export async function getRoomByNameService(roomName: string) {
@@ -42,28 +54,29 @@ export async function getRoomResultService(roomId: string) {
 	const room = await prisma.room.findFirst({
 		where: { OR: [{ roomName: roomId }, { id: roomId }] },
 		include: {
+			quiz: {
+				include: {
+					Question: {
+						include: { Option: true },
+					},
+				},
+			},
 			players: { orderBy: { score: "desc" }, include: { user: true } },
 			questions: {
 				orderBy: { questionOrder: "asc" },
+			},
+			answers: {
+				include: { user: true },
 			},
 		},
 	});
 
 	if (!room) return null;
 
-	const questionIds = room.questions.map((rq: any) => rq.questionId);
-	const questionsData = await prisma.question.findMany({
-		where: { id: { in: questionIds } },
-		include: { Option: true },
-	});
-	const questionMap = new Map<string, any>(questionsData.map((q: any) => [q.id, q]));
+	const questionMap = new Map((room.quiz?.Question || []).map((q: any) => [q.id, q]));
+	const answers = room.answers;
 
-	const answers = await prisma.playerAnswer.findMany({
-		where: { roomId: room.id },
-		include: { user: true },
-	});
-
-	const detailedResults = room.players.map((p: any) => {
+	const detailedResults = room.players.map((p: any, index: number) => {
 		const userAnswers = (answers as any[]).filter(
 			(a: any) => a.userId === p.userId,
 		);
@@ -88,7 +101,7 @@ export async function getRoomResultService(roomId: string) {
 		return {
 			user: p.user,
 			score: p.score,
-			rank: 0,
+			rank: index + 1,
 			answers: answersDetails,
 		};
 	});
@@ -126,6 +139,18 @@ export async function updateLobbyStateService(roomName: string, hostId: string) 
 		},
 	});
 
+	await redisClient.hset(`room:${roomName}`, {
+		hostId,
+		state: "WAITING",
+	});
+	await redisClient.expire(`room:${roomName}`, 7200);
+
+	await redisClient.hset(`room:${roomName}:state`, {
+		hostId,
+		status: "LOBBY",
+	});
+	await redisClient.expire(`room:${roomName}:state`, 7200);
+
 	return { updatedRoom };
 }
 
@@ -153,8 +178,16 @@ export async function startRoomService(roomId: string) {
 	const roomKey = `room:${roomId}`;
 	const lobbyPlayers = await redisClient.hgetall(`${roomKey}:players`);
 
-	const playersToSync = Object.entries(lobbyPlayers).map(
-		([userId, dataStr]) => {
+	const candidateUserIds = Object.keys(lobbyPlayers).filter(Boolean);
+	const validUsers = await prisma.user.findMany({
+		where: { id: { in: candidateUserIds } },
+		select: { id: true },
+	});
+	const validUserSet = new Set(validUsers.map((u: any) => u.id));
+
+	const playersToSync = Object.entries(lobbyPlayers)
+		.filter(([userId]) => validUserSet.has(userId))
+		.map(([userId, dataStr]) => {
 			let parsed: any = {};
 			try {
 				parsed = JSON.parse(dataStr);
@@ -171,35 +204,11 @@ export async function startRoomService(roomId: string) {
 				hasJoinedGame: true,
 				gameJoinedAt: new Date(),
 			};
-		},
-	);
-
-	if (playersToSync.length > 0) {
-		await prisma.roomPlayer.createMany({
-			data: playersToSync,
-			skipDuplicates: true,
 		});
-	}
-
-	await redisClient.hset(`${roomKey}:state`, {
-		status: "COUNTDOWN",
-		currentQuestionIndex: -1,
-		startTime: Date.now(),
-	});
-	await redisClient.expire(`${roomKey}:state`, 3600);
 
 	const questions = room.quiz.Question.map((q: any) => JSON.stringify(q));
 	if (questions.length === 0) {
 		return { error: "NO_QUESTIONS" as const };
-	}
-
-	await redisClient.del(`${roomKey}:questions`);
-	await redisClient.rpush(`${roomKey}:questions`, ...questions);
-	await redisClient.expire(`${roomKey}:questions`, 3600);
-
-	const oldAnswerKeys = await redisClient.keys(`${roomKey}:answers:*`);
-	if (oldAnswerKeys.length > 0) {
-		await redisClient.del(oldAnswerKeys);
 	}
 
 	const roomQuestionsData = room.quiz.Question.map((q: any, index: number) => ({
@@ -208,26 +217,59 @@ export async function startRoomService(roomId: string) {
 		questionOrder: index,
 	}));
 
-	await prisma.roomQuestion.deleteMany({ where: { roomId: room.id } });
-	await prisma.roomQuestion.createMany({ data: roomQuestionsData });
-
 	const playerScores: Record<string, string> = {};
 	Object.keys(lobbyPlayers).forEach((userId) => {
-		playerScores[userId] = "0";
+		if (validUserSet.has(userId)) playerScores[userId] = "0";
 	});
 	room.players.forEach((p: any) => {
-		if (!playerScores[p.userId]) playerScores[p.userId] = "0";
+		if (validUserSet.has(p.userId) && !playerScores[p.userId]) playerScores[p.userId] = "0";
 	});
 
-	if (Object.keys(playerScores).length > 0) {
-		await redisClient.hset(`${roomKey}:scores`, playerScores);
-		await redisClient.expire(`${roomKey}:scores`, 3600);
+	const startPipeline = redisClient.pipeline();
+	startPipeline.hset(`${roomKey}:state`, {
+		status: "COUNTDOWN",
+		currentQuestionIndex: -1,
+		startTime: Date.now(),
+		hostId: room.hostId,
+	});
+	startPipeline.expire(`${roomKey}:state`, 3600);
+
+	startPipeline.hset(roomKey, {
+		hostId: room.hostId,
+		quizId: room.quizId,
+		state: "COUNTDOWN",
+	});
+	startPipeline.expire(roomKey, 3600);
+
+	startPipeline.del(`${roomKey}:questions`);
+	startPipeline.rpush(`${roomKey}:questions`, ...questions);
+	startPipeline.expire(`${roomKey}:questions`, 3600);
+
+	for (let i = 0; i < room.quiz.Question.length; i++) {
+		startPipeline.del(`${roomKey}:answers:${i}`);
+		startPipeline.del(`${roomKey}:answers_meta:${i}`);
+		startPipeline.del(`${roomKey}:order:${i}`);
 	}
 
-	await prisma.room.update({
-		where: { id: room.id },
-		data: { state: "COUNTDOWN", startedAt: new Date() },
-	});
+	if (Object.keys(playerScores).length > 0) {
+		startPipeline.hset(`${roomKey}:scores`, playerScores);
+		startPipeline.expire(`${roomKey}:scores`, 3600);
+	}
+
+	await Promise.all([
+		startPipeline.exec(),
+		prisma.$transaction([
+			...(playersToSync.length > 0
+				? [prisma.roomPlayer.createMany({ data: playersToSync, skipDuplicates: true })]
+				: []),
+			prisma.roomQuestion.deleteMany({ where: { roomId: room.id } }),
+			prisma.roomQuestion.createMany({ data: roomQuestionsData }),
+			prisma.room.update({
+				where: { id: room.id },
+				data: { state: "COUNTDOWN", startedAt: new Date() },
+			}),
+		]),
+	]);
 
 	return { synced: playersToSync.length };
 }
@@ -236,33 +278,36 @@ export async function finalizeRoomService(roomId: string) {
 	const roomKey = `room:${roomId}`;
 	const scores = await redisClient.hgetall(`${roomKey}:scores`);
 
-	const room = (await prisma.room.findUnique({
-		where: { roomName: roomId },
-		include: { questions: { orderBy: { questionOrder: "asc" } } },
+	const room = (await prisma.room.findFirst({
+		where: { OR: [{ roomName: roomId }, { id: roomId }] },
+		include: {
+			questions: { orderBy: { questionOrder: "asc" } },
+			quiz: {
+				include: {
+					Question: {
+						include: { Option: true },
+					},
+				},
+			},
+		},
 	})) as any;
 
 	if (!room) return { error: "NOT_FOUND" as const };
 
-	const updates = Object.entries(scores).map(async ([userId, score]) => {
-		return prisma.roomPlayer.updateMany({
-			where: { roomId: room.id, userId },
-			data: { score: parseInt(score, 10) },
-		});
-	});
-	await Promise.all(updates);
-
 	const roomQuestions = room.questions;
 	const playerAnswersToCreate: any[] = [];
+	const questionMap = new Map<string, any>((room.quiz?.Question || []).map((q: any) => [q.id, q]));
 
-	const questionsData = await prisma.question.findMany({
-		where: { id: { in: (roomQuestions as any[]).map((rq: any) => rq.questionId) } },
-		include: { Option: true },
-	});
-	const questionMap = new Map<string, any>(questionsData.map((q: any) => [q.id, q]));
+	// Pipeline answers fetch for all questions (Fixes Redis N+1)
+	const answersPipeline = redisClient.pipeline();
+	for (const [index] of (roomQuestions as any[]).entries()) {
+		answersPipeline.hgetall(`${roomKey}:answers:${index}`);
+	}
+	const answersResults = await answersPipeline.exec();
 
 	for (const [index, rq] of (roomQuestions as any[]).entries()) {
-		const answersMap = await redisClient.hgetall(`${roomKey}:answers:${index}`);
-		const fullQuestion = questionMap.get(rq.questionId);
+		const answersMap = (answersResults?.[index]?.[1] || {}) as Record<string, string>;
+		const fullQuestion: any = questionMap.get(rq.questionId);
 		if (!fullQuestion) continue;
 
 		for (const [userId, selectedText] of Object.entries(answersMap)) {
@@ -284,26 +329,59 @@ export async function finalizeRoomService(roomId: string) {
 		}
 	}
 
-	if (playerAnswersToCreate.length > 0) {
-		await prisma.playerAnswer.createMany({
-			data: playerAnswersToCreate,
-			skipDuplicates: true,
-		});
-	}
+	const allUserIds = Array.from(
+		new Set([...Object.keys(scores), ...playerAnswersToCreate.map((a) => a.userId)]),
+	).filter(Boolean);
 
-	await prisma.room.update({
-		where: { id: room.id },
-		data: { state: "FINISHED", endedAt: new Date() },
+	const validUsers = await prisma.user.findMany({
+		where: { id: { in: allUserIds } },
+		select: { id: true },
 	});
+	const validUserSet = new Set(validUsers.map((u: any) => u.id));
 
-	await redisClient.expire(`${roomKey}:state`, 3600);
-	await redisClient.expire(`${roomKey}:questions`, 3600);
-	await redisClient.expire(`${roomKey}:scores`, 3600);
-	const answerKeys = await redisClient.keys(`${roomKey}:answers:*`);
-	for (const k of answerKeys) {
-		await redisClient.expire(k, 3600);
+	const safeAnswers = playerAnswersToCreate.filter((a) => validUserSet.has(a.userId));
+
+	const scoreUpdates = Object.entries(scores)
+		.filter(([userId, s]) => validUserSet.has(userId) && !Number.isNaN(parseInt(s, 10)))
+		.map(([userId, score]) =>
+			prisma.roomPlayer.updateMany({
+				where: { roomId: room.id, userId },
+				data: { score: parseInt(score, 10) },
+			}),
+		);
+
+	const dbOps: any[] = [
+		...scoreUpdates,
+		prisma.room.update({
+			where: { id: room.id },
+			data: { state: "FINISHED", endedAt: new Date() },
+		}),
+	];
+
+	if (safeAnswers.length > 0) {
+		dbOps.push(
+			prisma.playerAnswer.createMany({
+				data: safeAnswers,
+				skipDuplicates: true,
+			}),
+		);
 	}
-	await redisClient.del(`${roomKey}:loop_lock`);
+
+	const cleanupPipeline = redisClient.pipeline();
+	cleanupPipeline.expire(`${roomKey}:state`, 3600);
+	cleanupPipeline.expire(`${roomKey}:questions`, 3600);
+	cleanupPipeline.expire(`${roomKey}:scores`, 3600);
+	for (let i = 0; i < roomQuestions.length; i++) {
+		cleanupPipeline.expire(`${roomKey}:answers:${i}`, 3600);
+		cleanupPipeline.expire(`${roomKey}:answers_meta:${i}`, 3600);
+		cleanupPipeline.expire(`${roomKey}:order:${i}`, 3600);
+	}
+	cleanupPipeline.del(`${roomKey}:loop_lock`);
+
+	await Promise.all([
+		prisma.$transaction(dbOps),
+		cleanupPipeline.exec(),
+	]);
 
 	return { success: true };
 }
