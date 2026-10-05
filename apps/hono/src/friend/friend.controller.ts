@@ -318,71 +318,71 @@ export const listFriends = catchAsync(async (c: any) => {
 	const userPayload = c.get("user");
 	const { userId } = userPayload;
 
-	const friendships = await prisma.friendship.findMany({
-		where: {
-			OR: [{ userAId: userId }, { userBId: userId }],
-		},
-		include: {
-			userA: {
-				select: {
-					id: true,
-					username: true,
-					firstName: true,
-					lastName: true,
-					avatar: true,
-					email: true,
+	const [friendships, incomingRequests, outgoingRequests] = await Promise.all([
+		prisma.friendship.findMany({
+			where: {
+				OR: [{ userAId: userId }, { userBId: userId }],
+			},
+			include: {
+				userA: {
+					select: {
+						id: true,
+						username: true,
+						firstName: true,
+						lastName: true,
+						avatar: true,
+						email: true,
+					},
+				},
+				userB: {
+					select: {
+						id: true,
+						username: true,
+						firstName: true,
+						lastName: true,
+						avatar: true,
+						email: true,
+					},
 				},
 			},
-			userB: {
-				select: {
-					id: true,
-					username: true,
-					firstName: true,
-					lastName: true,
-					avatar: true,
-					email: true,
+		}),
+		prisma.friendRequest.findMany({
+			where: {
+				receiverId: userId,
+				status: FriendRequestStatus.PENDING,
+			},
+			include: {
+				sender: {
+					select: {
+						id: true,
+						username: true,
+						firstName: true,
+						lastName: true,
+						avatar: true,
+						email: true,
+					},
 				},
 			},
-		},
-	});
-
-	const incomingRequests = await prisma.friendRequest.findMany({
-		where: {
-			receiverId: userId,
-			status: FriendRequestStatus.PENDING,
-		},
-		include: {
-			sender: {
-				select: {
-					id: true,
-					username: true,
-					firstName: true,
-					lastName: true,
-					avatar: true,
-					email: true,
+		}),
+		prisma.friendRequest.findMany({
+			where: {
+				senderId: userId,
+				status: FriendRequestStatus.PENDING,
+			},
+			include: {
+				receiver: {
+					select: {
+						id: true,
+						username: true,
+						firstName: true,
+						lastName: true,
+						avatar: true,
+						email: true,
+					},
 				},
 			},
-		},
-	});
-
-	const outgoingRequests = await prisma.friendRequest.findMany({
-		where: {
-			senderId: userId,
-			status: FriendRequestStatus.PENDING,
-		},
-		include: {
-			receiver: {
-				select: {
-					id: true,
-					username: true,
-					firstName: true,
-					lastName: true,
-					avatar: true,
-					email: true,
-				},
-			},
-		},
-	});
+		}),
+	]);
 
 	const friends = friendships.map((f) => {
 		const friendUser = f.userAId === userId ? f.userB : f.userA;
@@ -493,27 +493,28 @@ export const friendshipStatus = catchAsync(async (c: any) => {
 		return c.json({ status: "SELF" }, 200);
 	}
 
-	const friendship = await prisma.friendship.findFirst({
-		where: {
-			OR: [
-				{ userAId: userId, userBId: targetUserId },
-				{ userAId: targetUserId, userBId: userId },
-			],
-		},
-	});
+	const [friendship, request] = await Promise.all([
+		prisma.friendship.findFirst({
+			where: {
+				OR: [
+					{ userAId: userId, userBId: targetUserId },
+					{ userAId: targetUserId, userBId: userId },
+				],
+			},
+		}),
+		prisma.friendRequest.findFirst({
+			where: {
+				OR: [
+					{ senderId: userId, receiverId: targetUserId },
+					{ senderId: targetUserId, receiverId: userId },
+				],
+			},
+		}),
+	]);
 
 	if (friendship) {
 		return c.json({ status: "ACCEPTED", friendshipId: friendship.id }, 200);
 	}
-
-	const request = await prisma.friendRequest.findFirst({
-		where: {
-			OR: [
-				{ senderId: userId, receiverId: targetUserId },
-				{ senderId: targetUserId, receiverId: userId },
-			],
-		},
-	});
 
 	if (request) {
 		if (request.status === FriendRequestStatus.PENDING) {

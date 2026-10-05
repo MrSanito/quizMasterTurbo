@@ -12,23 +12,28 @@ export async function getNonFriends(
 	const { excludePending = true, search, skip = 0 } = options;
 	const take = Math.min(options.take ?? 20, 100);
 
-	const friendships = await prisma.friendship.findMany({
-		where: { OR: [{ userAId: userId }, { userBId: userId }] },
-		select: { userAId: true, userBId: true },
-	});
+	const [friendships, pending] = await Promise.all([
+		prisma.friendship.findMany({
+			where: { OR: [{ userAId: userId }, { userBId: userId }] },
+			select: { userAId: true, userBId: true },
+		}),
+		excludePending
+			? prisma.friendRequest.findMany({
+					where: {
+						status: FriendRequestStatus.PENDING,
+						OR: [{ senderId: userId }, { receiverId: userId }],
+					},
+					select: { senderId: true, receiverId: true },
+				})
+			: Promise.resolve([]),
+	]);
+
 	const excludeIds = new Set<string>([userId]);
 	friendships.forEach((f) =>
 		excludeIds.add(f.userAId === userId ? f.userBId : f.userAId),
 	);
 
 	if (excludePending) {
-		const pending = await prisma.friendRequest.findMany({
-			where: {
-				status: FriendRequestStatus.PENDING,
-				OR: [{ senderId: userId }, { receiverId: userId }],
-			},
-			select: { senderId: true, receiverId: true },
-		});
 		pending.forEach((p) =>
 			excludeIds.add(p.senderId === userId ? p.receiverId : p.senderId),
 		);

@@ -289,8 +289,6 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 			TTL,
 		);
 	}
-	await pipeline.exec();
-
 	const isProd = process.env.NODE_ENV === "production";
 	setCookie(c, "refreshToken", refreshToken, {
 		path: "/",
@@ -300,22 +298,25 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 		maxAge: TTL, // seconds
 	});
 
-	await prisma.session.create({
-		data: {
-			id: sessionId,
-			sessionToken: refreshToken,
-			familyId,
-			userId: user.id,
-			expiresAt: new Date(Date.now() + TTL * 1000),
-			ipAddress: ip ?? null,
-			userAgent: c.req.header("user-agent") ?? null,
-			browser: browser ?? null,
-			os: os ?? null,
-			deviceType: deviceType ?? null,
-			deviceName: deviceName ?? null,
-			publicKeyThumbprint: publicKeyThumbprint ?? null,
-		},
-	});
+	await Promise.all([
+		pipeline.exec(),
+		prisma.session.create({
+			data: {
+				id: sessionId,
+				sessionToken: refreshToken,
+				familyId,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + TTL * 1000),
+				ipAddress: ip ?? null,
+				userAgent: c.req.header("user-agent") ?? null,
+				browser: browser ?? null,
+				os: os ?? null,
+				deviceType: deviceType ?? null,
+				deviceName: deviceName ?? null,
+				publicKeyThumbprint: publicKeyThumbprint ?? null,
+			},
+		}),
+	]);
 
 	return c.json({ success: true, accessToken, message: "Login successful" }, 200);
 });
@@ -441,17 +442,8 @@ export const refreshTokenController = catchAsync(async (c: any) => {
 		}
 	}
 
-	await redis.del(rtKey(userId, familyId, sessionId));
-
 	const newRefreshToken = generateRefreshToken(userId, sessionId, familyId);
 	const TTL = 7 * 24 * 60 * 60;
-
-	await redis.set(
-		rtKey(userId, familyId, sessionId),
-		newRefreshToken,
-		"EX",
-		TTL,
-	);
 
 	const newAccessToken = generateAccessToken(userId, sessionId, familyId, c);
 	const isProd = process.env.NODE_ENV === "production";
@@ -463,14 +455,22 @@ export const refreshTokenController = catchAsync(async (c: any) => {
 		maxAge: TTL, // seconds
 	});
 
-	await prisma.session.update({
-		where: { id: sessionId },
-		data: {
-			sessionToken: newRefreshToken,
-			expiresAt: new Date(Date.now() + TTL * 1000),
-			lastUsedAt: new Date(),
-		},
-	});
+	await Promise.all([
+		redis.set(
+			rtKey(userId, familyId, sessionId),
+			newRefreshToken,
+			"EX",
+			TTL,
+		),
+		prisma.session.update({
+			where: { id: sessionId },
+			data: {
+				sessionToken: newRefreshToken,
+				expiresAt: new Date(Date.now() + TTL * 1000),
+				lastUsedAt: new Date(),
+			},
+		}),
+	]);
 
 	return c.json({ success: true, accessToken: newAccessToken, message: "Token refreshed" }, 200);
 });
@@ -561,9 +561,11 @@ export const logout = catchAsync(async (c: any) => {
 	pipeline.del(rtKey(userId, familyId, sessionId));
 	pipeline.srem(familyKey(familyId), sessionId);
 	pipeline.set(`blacklist:${sessionId}`, "1", "EX", 7 * 24 * 60 * 60);
-	await pipeline.exec();
 
-	await prisma.session.delete({ where: { id: sessionId } }).catch(() => {});
+	await Promise.all([
+		pipeline.exec(),
+		prisma.session.delete({ where: { id: sessionId } }).catch(() => {}),
+	]);
 
 	clearAuthCookies(c);
 	return c.json({ success: true, message: "Logged out" }, 200);
