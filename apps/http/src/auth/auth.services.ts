@@ -260,6 +260,10 @@ export async function loginWithOtpService(email: string, password: string) {
 		throw new Error("INVALID_CREDENTIALS");
 	}
 
+	if (!user.password) {
+		throw new Error("OAUTH_USER_NO_PASSWORD");
+	}
+
 	const passwordOk = await bcrypt.compare(password, user.password);
 	if (!passwordOk) {
 		throw new Error("INVALID_CREDENTIALS");
@@ -310,57 +314,19 @@ export async function verifyLoginOtpService(
 
 	await redis.del(otpKey(email));
 
-	const sessionId = crypto.randomUUID();
-	const familyId = crypto.randomUUID();
-
-	let publicKeyThumbprint: string | undefined;
-	if (publicKeyJwk) {
-		publicKeyThumbprint = await computeJwkThumbprint(publicKeyJwk);
-	}
-
-	const refreshToken = generateRefreshToken(user.id, sessionId, familyId);
-	const accessToken = generateAccessToken(user.id, sessionId, familyId, res);
-
-	const pipeline = redis.pipeline();
-	pipeline.set(rtKey(user.id, familyId, sessionId), refreshToken, "EX", TTL);
-	pipeline.sadd(familyKey(familyId), sessionId);
-	pipeline.expire(familyKey(familyId), TTL);
-	if (publicKeyJwk) {
-		pipeline.set(
-			`pubkey:${sessionId}`,
-			JSON.stringify(publicKeyJwk),
-			"EX",
-			TTL,
-		);
-	}
-	await pipeline.exec();
-
-	const isProd = process.env.NODE_ENV === "production";
-	res.cookie("refreshToken", refreshToken, {
-		httpOnly: true,
-		secure: isProd,
-		sameSite: isProd ? "none" : "lax",
-		maxAge: TTL * 1000,
+	const sessionResult = await createAuthSession({
+		userId: user.id,
+		res,
+		ip: opts.ip,
+		userAgent: opts.userAgent,
+		browser: opts.browser,
+		os: opts.os,
+		deviceType: opts.deviceType,
+		deviceName: opts.deviceName,
+		publicKeyJwk,
 	});
 
-	await prisma.session.create({
-		data: {
-			id: sessionId,
-			sessionToken: refreshToken,
-			familyId,
-			userId: user.id,
-			expiresAt: new Date(Date.now() + TTL * 1000),
-			ipAddress: opts.ip ?? null,
-			userAgent: opts.userAgent ?? null,
-			browser: opts.browser ?? null,
-			os: opts.os ?? null,
-			deviceType: opts.deviceType ?? null,
-			deviceName: opts.deviceName ?? null,
-			publicKeyThumbprint: publicKeyThumbprint ?? null,
-		},
-	});
-
-	return { user, accessToken };
+	return { user, accessToken: sessionResult.accessToken };
 }
 
 export async function refreshSessionService(
@@ -594,3 +560,223 @@ export async function forgotPasswordService(email: string) {
 
 	await redis.set(`verifyKey:${randomId}`, email, "EX", 3600, "NX");
 }
+
+
+export async function createAuthSession(params: {
+  userId: string;
+  res: Response;
+  ip?: string;
+  userAgent?: string;
+  browser?: string;
+  os?: string;
+  deviceType?: string;
+  deviceName?: string;
+  publicKeyJwk?: any;
+}) {
+  const { userId, res, ip, userAgent, browser, os, deviceType, deviceName, publicKeyJwk } = params;
+  const sessionId = crypto.randomUUID();
+  const familyId = crypto.randomUUID();
+
+  let publicKeyThumbprint: string | undefined;
+  if (publicKeyJwk) {
+    publicKeyThumbprint = await computeJwkThumbprint(publicKeyJwk);
+  }
+
+  const refreshToken = generateRefreshToken(userId, sessionId, familyId);
+  const accessToken = generateAccessToken(userId, sessionId, familyId, res);
+
+  const pipeline = redis.pipeline();
+  pipeline.set(rtKey(userId, familyId, sessionId), refreshToken, "EX", TTL);
+  pipeline.sadd(familyKey(familyId), sessionId);
+  pipeline.expire(familyKey(familyId), TTL);
+  if (publicKeyJwk) {
+    pipeline.set(`pubkey:${sessionId}`, JSON.stringify(publicKeyJwk), "EX", TTL);
+  }
+  await pipeline.exec();
+
+  const isProd = process.env.NODE_ENV === "production";
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: TTL * 1000,
+  });
+
+  await prisma.session.create({
+    data: {
+      id: sessionId,
+      sessionToken: refreshToken,
+      familyId,
+      userId,
+      expiresAt: new Date(Date.now() + TTL * 1000),
+      ipAddress: ip ?? null,
+      userAgent: userAgent ?? null,
+      browser: browser ?? null,
+      os: os ?? null,
+      deviceType: deviceType ?? null,
+      deviceName: deviceName ?? null,
+      publicKeyThumbprint: publicKeyThumbprint ?? null,
+    },
+  });
+
+  return { accessToken, sessionId };
+}
+
+export async function getGoogleAuthUrlService(options?: { from?: string }) {
+	const clientId = process.env.GOOGLE_CLIENT_ID;
+	if (!clientId) {
+		throw new Error("GOOGLE_CLIENT_ID_MISSING");
+	}
+
+	const redirectUri =
+		process.env.GOOGLE_CALLBACK_URL || `${BASE_URL}/api/v1/auth/google/callback`;
+	const state = crypto.randomBytes(32).toString("hex");
+
+	const from = options?.from === "register" ? "register" : "login";
+	// Save state with origin in Redis for 10 minutes
+	await redis.set(
+		`oauth-state:${state}`,
+		JSON.stringify({ from, createdAt: Date.now() }),
+		"EX",
+		600,
+	);
+
+	const params = new URLSearchParams({
+		client_id: clientId,
+		redirect_uri: redirectUri,
+		response_type: "code",
+		scope: "openid email profile",
+		state,
+		access_type: "offline",
+		prompt: "select_account",
+	});
+
+	return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+export async function googleOAuthCallbackService(params: {
+	code: string;
+	state?: string;
+	res: Response;
+	ip?: string;
+	userAgent?: string;
+}) {
+	const { code, state, res, ip, userAgent } = params;
+
+	// 1. Verify CSRF state token if provided
+	if (state) {
+		const storedState = await redis.get(`oauth-state:${state}`);
+		if (!storedState) {
+			throw new Error("INVALID_OAUTH_STATE");
+		}
+		await redis.del(`oauth-state:${state}`);
+	}
+
+	const clientId = process.env.GOOGLE_CLIENT_ID;
+	const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+	const redirectUri =
+		process.env.GOOGLE_CALLBACK_URL || `${BASE_URL}/api/v1/auth/google/callback`;
+
+	if (!clientId || !clientSecret) {
+		throw new Error("GOOGLE_OAUTH_CONFIG_MISSING");
+	}
+
+	// 2. Exchange authorization code for tokens
+	const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+		},
+		body: new URLSearchParams({
+			code,
+			client_id: clientId,
+			client_secret: clientSecret,
+			redirect_uri: redirectUri,
+			grant_type: "authorization_code",
+		}),
+	});
+
+	if (!tokenResponse.ok) {
+		const errBody = await tokenResponse.text();
+		logger.error({ errBody }, "Google token exchange failed");
+		throw new Error("GOOGLE_TOKEN_EXCHANGE_FAILED");
+	}
+
+	const tokenData = (await tokenResponse.json()) as {
+		access_token: string;
+		id_token?: string;
+	};
+
+	// 3. Fetch Google user profile
+	const userInfoResponse = await fetch(
+		"https://www.googleapis.com/oauth2/v3/userinfo",
+		{
+			headers: {
+				Authorization: `Bearer ${tokenData.access_token}`,
+			},
+		},
+	);
+
+	if (!userInfoResponse.ok) {
+		throw new Error("GOOGLE_USERINFO_FAILED");
+	}
+
+	const googleUser = (await userInfoResponse.json()) as {
+		sub: string;
+		email: string;
+		name?: string;
+		given_name?: string;
+		family_name?: string;
+		picture?: string;
+		email_verified?: boolean;
+	};
+
+	if (!googleUser.email) {
+		throw new Error("GOOGLE_EMAIL_MISSING");
+	}
+
+	// 4. Find or create user in DB (linking if account exists with same email)
+	let user = await prisma.user.findFirst({
+		where: {
+			OR: [{ googleId: googleUser.sub }, { email: googleUser.email }],
+		},
+	});
+
+	if (user) {
+		if (!user.googleId) {
+			user = await prisma.user.update({
+				where: { id: user.id },
+				data: { googleId: googleUser.sub },
+			});
+		}
+	} else {
+		const baseUsername = (googleUser.email.split("@")[0] || "user")
+			.toLowerCase()
+			.replace(/[^a-z0-9_]/g, "")
+			.slice(0, 15);
+		const randomSuffix = crypto.randomBytes(3).toString("hex");
+		const username = `${baseUsername}_${randomSuffix}`;
+
+		user = await prisma.user.create({
+			data: {
+				email: googleUser.email,
+				username,
+				firstName: googleUser.given_name || googleUser.name || "User",
+				lastName: googleUser.family_name || "",
+				googleId: googleUser.sub,
+				avatar: "avatar1.svg",
+			},
+		});
+	}
+
+	// 5. Create native session and set identical cookies
+	const sessionResult = await createAuthSession({
+		userId: user.id,
+		res,
+		ip,
+		userAgent,
+	});
+
+	return { user, accessToken: sessionResult.accessToken };
+}
+

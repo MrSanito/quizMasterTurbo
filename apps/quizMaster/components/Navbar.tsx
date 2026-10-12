@@ -6,18 +6,71 @@ import {
 	Brain,
 	ChevronDown,
 	Flame,
+	LayoutDashboard,
+	LogOut,
 	Menu,
+	Pencil,
 	Trophy,
 	User,
 	X,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
+import api from "@/app/lib/api";
 
 const Navbar = () => {
-	const { user, loading, isLogin } = useUser();
+	const { user, loading, isLogin, refreshAuth } = useUser();
+	const router = useRouter();
 	const [isOpen, setIsOpen] = useState(false);
+
+	/* ---------- Desktop profile hover popover ---------- */
+	const [profileOpen, setProfileOpen] = useState(false);
+	const [loggingOut, setLoggingOut] = useState(false);
+	const [logoutError, setLogoutError] = useState<string | null>(null);
+	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const avatarSrc = user?.avatar
+		? `/avatars/${user.avatar}`
+		: "/avatars/avatar1.svg";
+	const fullName =
+		[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Player";
+
+	const openProfile = () => {
+		if (closeTimer.current) clearTimeout(closeTimer.current);
+		setProfileOpen(true);
+	};
+
+	// Small delay so the popover doesn't flicker shut while the mouse
+	// travels from the avatar to the panel.
+	const closeProfile = () => {
+		if (closeTimer.current) clearTimeout(closeTimer.current);
+		closeTimer.current = setTimeout(() => setProfileOpen(false), 150);
+	};
+
+	useEffect(() => {
+		return () => {
+			if (closeTimer.current) clearTimeout(closeTimer.current);
+		};
+	}, []);
+
+	const handleLogout = async () => {
+		setLoggingOut(true);
+		setLogoutError(null);
+		try {
+			await api.post("/auth/logout"); // cookie cleared by Express
+			await refreshAuth?.();
+			setProfileOpen(false);
+			router.replace("/login");
+			router.refresh();
+		} catch (err) {
+			console.error("Logout failed", err);
+			setLogoutError("Couldn't log out. Try again.");
+		} finally {
+			setLoggingOut(false);
+		}
+	};
 
 	return (
 		<>
@@ -155,26 +208,124 @@ const Navbar = () => {
 								>
 									Rankings
 								</Link>
-								<Link
-									href="/dashboard"
-									className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-[#1b0654]/80 border border-[#5B32B4]/40 hover:border-indigo-400/60 transition-all shadow-md group"
-								>
-									<Avatar
-										src={
-											user?.avatar
-												? `/avatars/${user.avatar}`
-												: "/avatars/avatar1.svg"
+
+								{/* Profile trigger + hover popover */}
+								<div
+									className="relative"
+									onMouseEnter={openProfile}
+									onMouseLeave={closeProfile}
+									onFocus={openProfile}
+									onBlur={(e) => {
+										// only close when focus leaves the whole widget
+										if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+											closeProfile();
 										}
-										sx={{
-											width: 32,
-											height: 32,
-											border: "2px solid rgba(255,255,255,0.3)",
-										}}
-									/>
-									<span className="text-xs font-semibold text-white group-hover:text-indigo-200 transition-colors max-w-[100px] truncate">
-										{user?.firstName || "Dashboard"}
-									</span>
-								</Link>
+									}}
+									onKeyDown={(e) => {
+										if (e.key === "Escape") setProfileOpen(false);
+									}}
+								>
+									<Link
+										href="/dashboard"
+										aria-expanded={profileOpen}
+										className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full bg-[#1b0654]/80 border border-[#5B32B4]/40 hover:border-indigo-400/60 transition-all shadow-md group"
+									>
+										<Avatar
+											src={avatarSrc}
+											sx={{
+												width: 32,
+												height: 32,
+												border: "2px solid rgba(255,255,255,0.3)",
+											}}
+										/>
+										<span className="text-xs font-semibold text-white group-hover:text-indigo-200 transition-colors max-w-[100px] truncate">
+											{user?.firstName || "Dashboard"}
+										</span>
+										<ChevronDown
+											size={14}
+											className={`opacity-70 transition-transform duration-200 ${
+												profileOpen ? "rotate-180" : ""
+											}`}
+										/>
+									</Link>
+
+									{/* pt-2 keeps the hover area continuous (no dead gap between
+									    the trigger and the panel) */}
+									<div
+										className={`absolute right-0 top-full z-50 w-64 pt-2 transition-all duration-150 ${
+											profileOpen
+												? "visible translate-y-0 opacity-100"
+												: "pointer-events-none invisible -translate-y-1 opacity-0"
+										}`}
+									>
+										<div className="rounded-2xl border border-[#5B32B4]/40 bg-[#1b0654] p-2 text-white shadow-2xl backdrop-blur-xl">
+											{/* User summary */}
+											<div className="flex items-center gap-3 rounded-xl px-3 py-3">
+												<Avatar
+													src={avatarSrc}
+													sx={{
+														width: 44,
+														height: 44,
+														border: "2px solid rgba(255,255,255,0.3)",
+													}}
+												/>
+												<div className="min-w-0">
+													<p className="truncate text-sm font-bold">
+														{fullName}
+													</p>
+													{/* PLACEHOLDER (quick stats): "🔥 3-day streak · Rank #42"
+													    once a /quizzes/stats endpoint exists. */}
+													<p className="text-xs text-indigo-300/80">
+														Signed in
+													</p>
+												</div>
+											</div>
+
+											<div className="my-1 h-px bg-[#5B32B4]/30" />
+
+											<Link
+												href="/dashboard"
+												onClick={() => setProfileOpen(false)}
+												className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold hover:bg-[#340C97]"
+											>
+												<LayoutDashboard size={15} className="text-[#F0DE4A]" />
+												Dashboard
+											</Link>
+											<Link
+												href="/dashboard/profile/edit"
+												onClick={() => setProfileOpen(false)}
+												className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-semibold hover:bg-[#340C97]"
+											>
+												<Pencil size={15} className="text-indigo-300" />
+												Edit profile
+											</Link>
+
+											{/* PLACEHOLDER (more shortcuts): "My quiz history", "Friends",
+											    "Settings" — same Link style as above. */}
+
+											<div className="my-1 h-px bg-[#5B32B4]/30" />
+
+											<button
+												type="button"
+												onClick={handleLogout}
+												disabled={loggingOut}
+												className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-60"
+											>
+												<LogOut size={15} />
+												{loggingOut ? "Logging out..." : "Log out"}
+											</button>
+
+											{logoutError && (
+												<p
+													role="alert"
+													className="px-3 pb-2 pt-1 text-[11px] text-red-300"
+												>
+													{logoutError}
+												</p>
+											)}
+										</div>
+									</div>
+								</div>
 							</div>
 						) : (
 							<div className="flex items-center gap-3">
@@ -242,11 +393,7 @@ const Navbar = () => {
 							className="flex items-center gap-3 mb-6 p-3 rounded-2xl bg-[#340C97]/50 border border-[#5B32B4]/40 text-white hover:bg-[#340C97]/80 transition"
 						>
 							<Avatar
-								src={
-									user?.avatar
-										? `/avatars/${user.avatar}`
-										: "/avatars/avatar1.svg"
-								}
+								src={avatarSrc}
 								sx={{
 									width: 44,
 									height: 44,

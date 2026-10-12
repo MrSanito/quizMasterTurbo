@@ -1,18 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FiEye, FiEyeOff, FiLock, FiMail } from "react-icons/fi";
+import { toast } from "react-toastify";
 import { useUser } from "@/app/(auth)/context/GetUserContext";
 import api from "@/app/lib/api";
 import Loading from "@/components/Loading";
 import { GetDeviceDetails } from "../components/deviceKey";
 
-const LoginPage = () => {
+export default function LoginPage() {
+	return (
+		<Suspense fallback={<Loading />}>
+			<LoginPageContent />
+		</Suspense>
+	);
+}
+
+const LoginPageContent = () => {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { loading, isLogin, isMaxTryReached, refreshAuth } = useUser();
 
 	const [form, setForm] = useState({
@@ -21,9 +31,35 @@ const LoginPage = () => {
 	});
 	const [showPassword, setShowPassword] = useState(false);
 	const [isPending, setIsPending] = useState(false);
+	const [isGooglePending, setIsGooglePending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const [success, setSuccess] = useState(false);
+
+	// Detect any OAuth error returned from callback redirect
+	useEffect(() => {
+		const oauthError = searchParams.get("error");
+		if (oauthError) {
+			const errorMap: Record<string, string> = {
+				oauth_failed: "Google authentication failed. Please try again.",
+				missing_code: "Google sign-in was cancelled or code was not provided.",
+				no_code: "Authorization was cancelled.",
+				access_denied: "Google sign-in was cancelled.",
+				invalid_state: "Session timed out or invalid OAuth state. Please try again.",
+				token_exchange_failed: "Failed to exchange authorization token with Google.",
+				userinfo_failed: "Failed to fetch Google profile information.",
+				google_not_configured: "Google sign-in is not configured on the server yet.",
+			};
+			const msg = errorMap[oauthError] || decodeURIComponent(oauthError);
+			toast.error(msg);
+			setError(msg);
+
+			// Clean query parameter from URL without page reload
+			if (typeof window !== "undefined") {
+				window.history.replaceState({}, "", window.location.pathname);
+			}
+		}
+	}, [searchParams]);
 
 	useEffect(() => {
 		const fingerprintData = {
@@ -94,10 +130,12 @@ const LoginPage = () => {
 			if (res.data?.success) {
 				localStorage.setItem("email", form.email);
 				setSuccess(true);
-				// Redirect to OTP verification page
+				toast.success("OTP sent to your email!");
 				router.push(`/login/otp`);
 			} else {
-				setError(res.data?.message || "Login failed");
+				const msg = res.data?.message || "Login failed";
+				setError(msg);
+				toast.error(msg);
 			}
 		} catch (err: any) {
 			console.error("Login error:", err);
@@ -105,13 +143,32 @@ const LoginPage = () => {
 				err.response?.data?.message ||
 				"Connection refused. Please verify backend is running.";
 			setError(msg);
+			toast.error(msg);
 		} finally {
 			setIsPending(false);
 		}
 	};
 
-	const handleGoogleLogin = () => {
-		console.log("Google login button clicked");
+	const handleGoogleLogin = async () => {
+		setIsGooglePending(true);
+		setError(null);
+		try {
+			// Pre-flight check via POST: ensures backend is running & credentials configured
+			const res = await api.post("/auth/google", { from: "login" });
+			if (res.data?.url) {
+				window.location.href = res.data.url;
+			} else {
+				toast.error("Failed to generate Google login URL");
+			}
+		} catch (err: any) {
+			const msg =
+				err.response?.data?.message ||
+				"Google login unavailable. Please check backend configuration.";
+			toast.error(msg);
+			setError(msg);
+		} finally {
+			setIsGooglePending(false);
+		}
 	};
 
 	if (isLogin) return null;
@@ -180,7 +237,7 @@ const LoginPage = () => {
 							placeholder="name@example.com"
 							value={form.email}
 							onChange={handleChange}
-							disabled={isPending}
+							disabled={isPending || isGooglePending}
 						/>
 						{fieldErrors.email && (
 							<span className="mt-1 block text-xs text-red-500">
@@ -206,13 +263,13 @@ const LoginPage = () => {
 								placeholder="••••••••"
 								value={form.password}
 								onChange={handleChange}
-								disabled={isPending}
+								disabled={isPending || isGooglePending}
 							/>
 							<button
 								type="button"
 								className="absolute inset-y-0 right-0 flex items-center px-4 text-[#7047C7] hover:opacity-70 transition"
 								onClick={toggleEyeHandler}
-								disabled={isPending}
+								disabled={isPending || isGooglePending}
 							>
 								{showPassword ? (
 									<FiEyeOff className="text-lg" />
@@ -228,11 +285,11 @@ const LoginPage = () => {
 						)}
 					</div>
 
-					{/* Submit Button, styled after the hero's PLAY TODAY button */}
+					{/* Submit Button */}
 					<button
 						type="submit"
 						className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-[#F0DE4A] px-6 py-3 font-bold tracking-wide text-black shadow-md transition-all duration-300 hover:bg-[#e6d43f] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isPending || !isFormValid}
+						disabled={isPending || isGooglePending || !isFormValid}
 					>
 						{isPending ? (
 							<span className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
@@ -251,10 +308,16 @@ const LoginPage = () => {
 						type="button"
 						onClick={handleGoogleLogin}
 						className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-300 hover:border-[#7047C7]/40 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-						disabled={isPending}
+						disabled={isPending || isGooglePending}
 					>
-						<FcGoogle className="text-xl" />
-						Continue with Google
+						{isGooglePending ? (
+							<span className="h-5 w-5 animate-spin rounded-full border-2 border-[#7047C7]/30 border-t-[#7047C7]" />
+						) : (
+							<>
+								<FcGoogle className="text-xl" />
+								Continue with Google
+							</>
+						)}
 					</button>
 				</form>
 
@@ -293,5 +356,3 @@ const LoginPage = () => {
 		</div>
 	);
 };
-
-export default LoginPage;

@@ -24,6 +24,8 @@ import {
 	revokeSpecificSessionService,
 	verifyLoginOtpService,
 	verifyRegistrationService,
+	getGoogleAuthUrlService,
+	googleOAuthCallbackService,
 } from "./auth.services.js";
 
 // ─── Register ────────────────────────────────────────────────────────────────
@@ -102,6 +104,12 @@ export const login = TryCatch(async (req: Request, res: Response) => {
 		await loginWithOtpService(parsed.data.email, parsed.data.password);
 		return res.status(200).json({ success: true, message: "OTP sent to your email" });
 	} catch (err: any) {
+		if (err.message === "OAUTH_USER_NO_PASSWORD") {
+			return res.status(400).json({
+				success: false,
+				message: "This account was registered using Google. Please sign in with Google.",
+			});
+		}
 		if (err.message === "INVALID_CREDENTIALS") {
 			return res.status(401).json({ success: false, message: "Invalid credentials" });
 		}
@@ -335,5 +343,130 @@ export const generateWsTicket = TryCatch(async (req: Request, res: Response) => 
 	);
 
 	return res.status(200).json({ success: true, ticket });
+});
+
+// ─── Google OAuth ────────────────────────────────────────────────────────────
+
+export const googleLogin = TryCatch(async (req: Request, res: Response) => {
+	const from =
+		(req.query.from as string) || (req.body?.from as string) || "login";
+	const targetPage = from === "register" ? "register" : "login";
+	const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+	try {
+		const authUrl = await getGoogleAuthUrlService({ from: targetPage });
+
+		// If browser navigating directly via GET (or not requesting JSON), redirect to Google
+		if (
+			req.method === "GET" ||
+			(!req.xhr && !req.headers.accept?.includes("application/json"))
+		) {
+			return res.redirect(authUrl);
+		}
+
+		// If requested via JSON API POST, return URL in JSON
+		return res.status(200).json({ success: true, url: authUrl });
+	} catch (err: any) {
+		logger.error(err, "Google OAuth login initiation error");
+		if (
+			req.method === "GET" ||
+			(!req.xhr && !req.headers.accept?.includes("application/json"))
+		) {
+			return res.redirect(
+				`${frontendUrl}/${targetPage}?error=google_not_configured`,
+			);
+		}
+		return res.status(500).json({
+			success: false,
+			message:
+				err.message === "GOOGLE_CLIENT_ID_MISSING"
+					? "Google OAuth is not configured on the server"
+					: err.message || "Failed to generate Google login URL",
+		});
+	}
+});
+
+export const googleCallback = TryCatch(async (req: Request, res: Response) => {
+	const code = (req.query.code as string) || req.body?.code;
+	const state = (req.query.state as string) || req.body?.state;
+	const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+	// Determine origin page (login or register) from state stored in Redis
+	let fromPage = "login";
+	if (state) {
+		const storedState = await redis.get(`oauth-state:${state}`);
+		if (storedState) {
+			try {
+				const parsed = JSON.parse(storedState);
+				if (parsed?.from === "register" || parsed?.from === "login") {
+					fromPage = parsed.from;
+				}
+			} catch {
+				if (storedState === "register") fromPage = "register";
+			}
+		}
+	}
+
+	// Check if Google returned an error query param directly (e.g. user denied consent)
+	const googleError = (req.query.error as string) || (req.body?.error as string);
+	if (googleError) {
+		logger.warn({ googleError }, "Google OAuth returned error query param");
+		if (req.method === "GET") {
+			return res.redirect(
+				`${frontendUrl}/${fromPage}?error=${encodeURIComponent(googleError)}`,
+			);
+		}
+		return res.status(400).json({ success: false, message: googleError });
+	}
+
+	if (!code) {
+		if (req.method === "GET") {
+			return res.redirect(`${frontendUrl}/${fromPage}?error=missing_code`);
+		}
+		return res
+			.status(400)
+			.json({ success: false, message: "Authorization code missing" });
+	}
+
+	try {
+		const result = await googleOAuthCallbackService({
+			code,
+			state,
+			res,
+			ip: req.ip,
+			userAgent: req.headers["user-agent"],
+		});
+
+		// Upon successful browser redirect, redirect user directly to dashboard
+		if (req.method === "GET") {
+			return res.redirect(`${frontendUrl}/dashboard`);
+		}
+
+		return res.status(200).json({
+			success: true,
+			accessToken: result.accessToken,
+			message: "Google login successful",
+		});
+	} catch (err: any) {
+		logger.error(err, "Google OAuth callback error");
+		const errCode =
+			err.message === "INVALID_OAUTH_STATE"
+				? "invalid_state"
+				: err.message === "GOOGLE_TOKEN_EXCHANGE_FAILED"
+				? "token_exchange_failed"
+				: err.message === "GOOGLE_USERINFO_FAILED"
+				? "userinfo_failed"
+				: err.message === "GOOGLE_OAUTH_CONFIG_MISSING"
+				? "google_not_configured"
+				: "oauth_failed";
+
+		if (req.method === "GET") {
+			return res.redirect(`${frontendUrl}/${fromPage}?error=${errCode}`);
+		}
+		return res.status(500).json({
+			success: false,
+			message: err.message || "Failed to authenticate with Google",
+		});
+	}
 });
 

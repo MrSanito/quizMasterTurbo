@@ -14,6 +14,8 @@ import {
 	validateUser,
 	verify,
 	verifyLoginOTP,
+	googleLogin,
+	googleCallback,
 } from "./auth.controllers";
 import { isAuthenticated } from "./auth.middleware";
 
@@ -33,6 +35,12 @@ authRouter.post("/revoke/:sessionId", isAuthenticated, revokeSession);
 authRouter.get("/sessions", isAuthenticated, getAllSessions);
 authRouter.post("/edit", isAuthenticated, editUser);
 authRouter.post("/forgot_password", forgotPassword);
+
+// Google OAuth routes
+authRouter.get("/google", googleLogin);
+authRouter.post("/google", googleLogin);
+authRouter.get("/google/callback", googleCallback);
+authRouter.post("/google/callback", googleCallback);
 
 export default authRouter;
 

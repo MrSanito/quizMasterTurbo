@@ -197,6 +197,16 @@ export const login = catchAsync(async (c: any) => {
 		return c.json({ success: false, message: "Invalid credentials" }, 401);
 	}
 
+	if (!user.password) {
+		return c.json(
+			{
+				success: false,
+				message: "This account was registered using Google. Please sign in with Google.",
+			},
+			400,
+		);
+	}
+
 	const passwordOk = await bcrypt.compare(password, user.password);
 
 	if (!passwordOk) {
@@ -263,6 +273,37 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 	await redis.del(otpKey(email));
 	await redis.del(rateKey);
 
+	const sessionResult = await createAuthSessionHono({
+		userId: user.id,
+		c,
+		ip,
+		userAgent: c.req.header("user-agent"),
+		browser,
+		os,
+		deviceType,
+		deviceName,
+		publicKeyJwk,
+	});
+
+	return c.json(
+		{ success: true, accessToken: sessionResult.accessToken, message: "Login successful" },
+		200,
+	);
+});
+
+export async function createAuthSessionHono(params: {
+	userId: string;
+	c: any;
+	ip?: string;
+	userAgent?: string;
+	browser?: string;
+	os?: string;
+	deviceType?: string;
+	deviceName?: string;
+	publicKeyJwk?: any;
+}) {
+	const { userId, c, ip, userAgent, browser, os, deviceType, deviceName, publicKeyJwk } =
+		params;
 	const sessionId = crypto.randomUUID();
 	const familyId = crypto.randomUUID();
 
@@ -272,13 +313,13 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 		publicKeyThumbprint = await computeJwkThumbprint(publicKeyJwk);
 	}
 
-	const refreshToken = generateRefreshToken(user.id, sessionId, familyId);
-	const accessToken = generateAccessToken(user.id, sessionId, familyId, c); // sets cookie
+	const refreshToken = generateRefreshToken(userId, sessionId, familyId);
+	const accessToken = generateAccessToken(userId, sessionId, familyId, c);
 
 	const TTL = 7 * 24 * 60 * 60; // 7 days in seconds
 
 	const pipeline = redis.pipeline();
-	pipeline.set(rtKey(user.id, familyId, sessionId), refreshToken, "EX", TTL);
+	pipeline.set(rtKey(userId, familyId, sessionId), refreshToken, "EX", TTL);
 	pipeline.sadd(familyKey(familyId), sessionId);
 	pipeline.expire(familyKey(familyId), TTL);
 	if (publicKeyJwk) {
@@ -305,10 +346,10 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 				id: sessionId,
 				sessionToken: refreshToken,
 				familyId,
-				userId: user.id,
+				userId,
 				expiresAt: new Date(Date.now() + TTL * 1000),
 				ipAddress: ip ?? null,
-				userAgent: c.req.header("user-agent") ?? null,
+				userAgent: userAgent ?? null,
 				browser: browser ?? null,
 				os: os ?? null,
 				deviceType: deviceType ?? null,
@@ -318,8 +359,8 @@ export const verifyLoginOTP = catchAsync(async (c: any) => {
 		}),
 	]);
 
-	return c.json({ success: true, accessToken, message: "Login successful" }, 200);
-});
+	return { accessToken, sessionId };
+}
 
 export const checkUsername = catchAsync(async (c: any) => {
 	const body = await c.req.json();
@@ -697,4 +738,242 @@ export const generateWsTicket = catchAsync(async (c: any) => {
 
 	return c.json({ success: true, ticket }, 200);
 });
+
+// ─── Google OAuth ────────────────────────────────────────────────────────────
+
+export const googleLogin = catchAsync(async (c: any) => {
+	const from =
+		c.req.query("from") ||
+		(await c.req.json().catch(() => ({})))?.from ||
+		"login";
+	const targetPage = from === "register" ? "register" : "login";
+	const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+	const clientId = process.env.GOOGLE_CLIENT_ID;
+
+	if (!clientId) {
+		if (
+			c.req.method === "GET" ||
+			!(c.req.header("accept") || "").includes("application/json")
+		) {
+			return c.redirect(
+				`${frontendUrl}/${targetPage}?error=google_not_configured`,
+			);
+		}
+		return c.json(
+			{
+				success: false,
+				message: "Google OAuth is not configured on the server",
+			},
+			500,
+		);
+	}
+
+	const baseUrl = process.env.BASE_URL || "http://localhost:3001";
+	const redirectUri =
+		process.env.GOOGLE_CALLBACK_URL || `${baseUrl}/api/v1/auth/google/callback`;
+	const state = crypto.randomBytes(32).toString("hex");
+
+	await redis.set(
+		`oauth-state:${state}`,
+		JSON.stringify({ from: targetPage, createdAt: Date.now() }),
+		"EX",
+		600,
+	);
+
+	const params = new URLSearchParams({
+		client_id: clientId,
+		redirect_uri: redirectUri,
+		response_type: "code",
+		scope: "openid email profile",
+		state,
+		access_type: "offline",
+		prompt: "select_account",
+	});
+
+	const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+	const accept = c.req.header("accept") || "";
+	if (c.req.method === "GET" || !accept.includes("application/json")) {
+		return c.redirect(authUrl);
+	}
+
+	return c.json({ success: true, url: authUrl });
+});
+
+export const googleCallback = catchAsync(async (c: any) => {
+	const code =
+		c.req.query("code") || (await c.req.json().catch(() => ({})))?.code;
+	const state =
+		c.req.query("state") || (await c.req.json().catch(() => ({})))?.state;
+	const googleError =
+		c.req.query("error") || (await c.req.json().catch(() => ({})))?.error;
+	const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+	let fromPage = "login";
+	if (state) {
+		const storedState = await redis.get(`oauth-state:${state}`);
+		if (storedState) {
+			try {
+				const parsed = JSON.parse(storedState);
+				if (parsed?.from === "register" || parsed?.from === "login") {
+					fromPage = parsed.from;
+				}
+			} catch {
+				if (storedState === "register") fromPage = "register";
+			}
+		}
+	}
+
+	if (googleError) {
+		logger.warn({ googleError }, "Google OAuth returned error param");
+		if (c.req.method === "GET") {
+			return c.redirect(
+				`${frontendUrl}/${fromPage}?error=${encodeURIComponent(googleError)}`,
+			);
+		}
+		return c.json({ success: false, message: googleError }, 400);
+	}
+
+	if (!code) {
+		if (c.req.method === "GET") {
+			return c.redirect(`${frontendUrl}/${fromPage}?error=missing_code`);
+		}
+		return c.json({ success: false, message: "Authorization code missing" }, 400);
+	}
+
+	if (state) {
+		const storedState = await redis.get(`oauth-state:${state}`);
+		if (!storedState) {
+			if (c.req.method === "GET") {
+				return c.redirect(`${frontendUrl}/${fromPage}?error=invalid_state`);
+			}
+			return c.json({ success: false, message: "Invalid OAuth state" }, 400);
+		}
+		await redis.del(`oauth-state:${state}`);
+	}
+
+	const clientId = process.env.GOOGLE_CLIENT_ID;
+	const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+	const baseUrl = process.env.BASE_URL || "http://localhost:3001";
+	const redirectUri =
+		process.env.GOOGLE_CALLBACK_URL || `${baseUrl}/api/v1/auth/google/callback`;
+
+	if (!clientId || !clientSecret) {
+		if (c.req.method === "GET") {
+			return c.redirect(
+				`${frontendUrl}/${fromPage}?error=google_not_configured`,
+			);
+		}
+		return c.json(
+			{ success: false, message: "Google OAuth credentials not configured" },
+			500,
+		);
+	}
+
+	const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+		method: "POST",
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		body: new URLSearchParams({
+			code,
+			client_id: clientId,
+			client_secret: clientSecret,
+			redirect_uri: redirectUri,
+			grant_type: "authorization_code",
+		}),
+	});
+
+	if (!tokenResponse.ok) {
+		const errBody = await tokenResponse.text();
+		logger.error({ errBody }, "Google token exchange failed");
+		if (c.req.method === "GET") {
+			return c.redirect(
+				`${frontendUrl}/${fromPage}?error=token_exchange_failed`,
+			);
+		}
+		return c.json(
+			{ success: false, message: "Failed to exchange Google token" },
+			500,
+		);
+	}
+
+	const tokenData = (await tokenResponse.json()) as { access_token: string };
+
+	const userInfoResponse = await fetch(
+		"https://www.googleapis.com/oauth2/v3/userinfo",
+		{
+			headers: { Authorization: `Bearer ${tokenData.access_token}` },
+		},
+	);
+
+	if (!userInfoResponse.ok) {
+		if (c.req.method === "GET") {
+			return c.redirect(`${frontendUrl}/${fromPage}?error=userinfo_failed`);
+		}
+		return c.json(
+			{ success: false, message: "Failed to fetch Google user info" },
+			500,
+		);
+	}
+
+	const googleUser = (await userInfoResponse.json()) as {
+		sub: string;
+		email: string;
+		name?: string;
+		given_name?: string;
+		family_name?: string;
+	};
+
+	let user = await prisma.user.findFirst({
+		where: {
+			OR: [{ googleId: googleUser.sub }, { email: googleUser.email }],
+		},
+	});
+
+	if (user) {
+		if (!user.googleId) {
+			user = await prisma.user.update({
+				where: { id: user.id },
+				data: { googleId: googleUser.sub },
+			});
+		}
+	} else {
+		const baseUsername = (googleUser.email.split("@")[0] || "user")
+			.toLowerCase()
+			.replace(/[^a-z0-9_]/g, "")
+			.slice(0, 15);
+		const randomSuffix = crypto.randomBytes(3).toString("hex");
+		const username = `${baseUsername}_${randomSuffix}`;
+
+		user = await prisma.user.create({
+			data: {
+				email: googleUser.email,
+				username,
+				firstName: googleUser.given_name || googleUser.name || "User",
+				lastName: googleUser.family_name || "",
+				googleId: googleUser.sub,
+				avatar: "avatar1.svg",
+			},
+		});
+	}
+
+	const ip = getClientIp(c);
+	const userAgent = c.req.header("user-agent");
+	const sessionResult = await createAuthSessionHono({
+		userId: user.id,
+		c,
+		ip,
+		userAgent,
+	});
+
+	if (c.req.method === "GET") {
+		return c.redirect(`${frontendUrl}/dashboard`);
+	}
+
+	return c.json({
+		success: true,
+		accessToken: sessionResult.accessToken,
+		message: "Google login successful",
+	});
+});
+
 
