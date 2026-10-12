@@ -1,6 +1,7 @@
 // deviceKey.ts  — runs once per device, persists in IndexedDB via idb-keyval
 
 import { get, set } from "idb-keyval";
+import { UAParser } from "ua-parser-js";
 
 export async function getOrCreateDeviceKeyPair(): Promise<{
 	publicKeyJwk: JsonWebKey;
@@ -107,54 +108,86 @@ export async function getDeviceFingerprint(): Promise<string> {
 	return hashHex;
 }
 
-export function getBrowserAndOS() {
+export function getBrowserAndOS(): {
+	browser: string;
+	os: string;
+	deviceType: "mobile" | "desktop" | "tablet" | "unknown";
+	deviceName: string;
+} {
 	if (typeof window === "undefined" || typeof navigator === "undefined") {
 		return {
-			browser: "Unknown",
-			os: "Unknown",
-			deviceType: "Unknown",
-			deviceName: "Unknown",
+			browser: "Unknown Browser",
+			os: "Unknown OS",
+			deviceType: "unknown",
+			deviceName: "Unknown Device",
 		};
 	}
+
 	const ua = navigator.userAgent;
-	let browser = "Unknown Browser";
-	let os = "Unknown OS";
-	let deviceType = "Desktop";
-	let deviceName = "Unknown Device";
 
-	// Browser detection
-	if (ua.includes("Firefox")) browser = "Firefox";
-	else if (ua.includes("SamsungBrowser")) browser = "Samsung Browser";
-	else if (ua.includes("Opera") || ua.includes("OPR")) browser = "Opera";
-	else if (ua.includes("Trident")) browser = "Internet Explorer";
-	else if (ua.includes("Edge") || ua.includes("Edg")) browser = "Edge";
-	else if (ua.includes("Chrome")) browser = "Chrome";
-	else if (ua.includes("Safari")) browser = "Safari";
+	try {
+		const parser = new UAParser(ua);
+		const res = parser.getResult();
 
-	// OS detection
-	if (ua.includes("Windows")) os = "Windows";
-	else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
-	else if (ua.includes("Android")) {
-		os = "Android";
-		deviceType = "Mobile";
-	} else if (ua.includes("iPhone") || ua.includes("iPad")) {
-		os = "iOS";
-		deviceType = "Mobile";
-	} else if (ua.includes("Linux")) os = "Linux";
+		let browser = res.browser.name || "";
+		let os = res.os.name || "";
+		let deviceType: "mobile" | "desktop" | "tablet" | "unknown" = "desktop";
 
-	// Device detection
-	if (/mobile/i.test(ua)) deviceType = "Mobile";
-	else if (/tablet|ipad/i.test(ua)) deviceType = "Tablet";
+		if (res.device.type === "mobile") {
+			deviceType = "mobile";
+		} else if (res.device.type === "tablet") {
+			deviceType = "tablet";
+		} else if (
+			/mobile|iphone|ipod|android.*mobile|blackberry|opera mini|iemobile/i.test(
+				ua,
+			)
+		) {
+			deviceType = "mobile";
+		} else if (/tablet|ipad|android(?!.*mobile)/i.test(ua)) {
+			deviceType = "tablet";
+		} else {
+			deviceType = "desktop";
+		}
 
-	// Quick platform-based device name
-	if (ua.includes("iPhone")) deviceName = "iPhone";
-	else if (ua.includes("iPad")) deviceName = "iPad";
-	else if (ua.includes("Windows")) deviceName = "Windows PC";
-	else if (ua.includes("Macintosh")) deviceName = "Macintosh";
-	else if (ua.includes("Android")) {
-		const match = ua.match(/Android\s+([^\s;]+)/);
-		deviceName = match ? `Android Device (${match[1]})` : "Android Device";
+		// Fallback browser detection
+		if (!browser) {
+			if (/firefox|fxios/i.test(ua)) browser = "Firefox";
+			else if (/samsungbrowser/i.test(ua)) browser = "Samsung Browser";
+			else if (/opr|opera/i.test(ua)) browser = "Opera";
+			else if (/edg/i.test(ua)) browser = "Edge";
+			else if (/chrome|crios/i.test(ua)) browser = "Chrome";
+			else if (/safari/i.test(ua)) browser = "Safari";
+			else browser = "Unknown Browser";
+		}
+
+		// Fallback OS detection
+		if (!os) {
+			if (/windows nt/i.test(ua)) os = "Windows";
+			else if (/macintosh|mac os x/i.test(ua)) os = "macOS";
+			else if (/android/i.test(ua)) os = "Android";
+			else if (/iphone|ipad|ipod/i.test(ua)) os = "iOS";
+			else if (/linux/i.test(ua)) os = "Linux";
+			else os = "Unknown OS";
+		}
+
+		// Friendly device name
+		let deviceName = res.device.model || "";
+		if (!deviceName) {
+			if (os === "Windows") deviceName = "Windows PC";
+			else if (os === "macOS") deviceName = "Macintosh";
+			else if (os === "Linux") deviceName = "Linux Device";
+			else if (os === "iOS") deviceName = /ipad/i.test(ua) ? "iPad" : "iPhone";
+			else if (os === "Android") deviceName = "Android Device";
+			else deviceName = `${browser} on ${os}`;
+		}
+
+		return { browser, os, deviceType, deviceName };
+	} catch {
+		return {
+			browser: "Unknown Browser",
+			os: "Unknown OS",
+			deviceType: "desktop",
+			deviceName: "Unknown Device",
+		};
 	}
-
-	return { browser, os, deviceType, deviceName };
 }

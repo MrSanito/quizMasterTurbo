@@ -17,6 +17,7 @@ import {
 import { sendResendEmail } from "../configs/resend.js";
 import { logger } from "../utils/logger.js";
 import { catchAsync } from "../utils/catchAsync.js";
+import { parseUserAgent } from "../utils/userAgent.js";
 import {
 	computeJwkThumbprint,
 	familyKey,
@@ -302,8 +303,25 @@ export async function createAuthSessionHono(params: {
 	deviceName?: string;
 	publicKeyJwk?: any;
 }) {
-	const { userId, c, ip, userAgent, browser, os, deviceType, deviceName, publicKeyJwk } =
-		params;
+	const { userId, c, ip, userAgent, publicKeyJwk } = params;
+	let { browser, os, deviceType, deviceName } = params;
+
+	if (
+		userAgent &&
+		(!browser ||
+			!os ||
+			!deviceType ||
+			!deviceName ||
+			browser.toLowerCase().includes("unknown") ||
+			os.toLowerCase().includes("unknown"))
+	) {
+		const parsed = parseUserAgent(userAgent);
+		if (!browser || browser.toLowerCase().includes("unknown")) browser = parsed.browser;
+		if (!os || os.toLowerCase().includes("unknown")) os = parsed.os;
+		if (!deviceType || deviceType.toLowerCase().includes("unknown")) deviceType = parsed.deviceType;
+		if (!deviceName || deviceName.toLowerCase().includes("unknown")) deviceName = parsed.deviceName;
+	}
+
 	const sessionId = crypto.randomUUID();
 	const familyId = crypto.randomUUID();
 
@@ -578,6 +596,7 @@ export const getAllSessions = catchAsync(async (c: any) => {
 			expiresAt: true,
 			lastUsedAt: true,
 			ipAddress: true,
+			userAgent: true,
 			browser: true,
 			os: true,
 			deviceType: true,
@@ -586,10 +605,43 @@ export const getAllSessions = catchAsync(async (c: any) => {
 		orderBy: { lastUsedAt: "desc" },
 	});
 
-	const withCurrent = sessions.map((s) => ({
-		...s,
-		isCurrent: s.id === currentSessionId,
-	}));
+	const withCurrent = sessions.map((s) => {
+		let browser = s.browser;
+		let os = s.os;
+		let deviceType = s.deviceType;
+		let deviceName = s.deviceName;
+
+		if (
+			s.userAgent &&
+			(!browser ||
+				!os ||
+				!deviceName ||
+				browser.toLowerCase().includes("unknown") ||
+				os.toLowerCase().includes("unknown"))
+		) {
+			const parsed = parseUserAgent(s.userAgent);
+			if (!browser || browser.toLowerCase().includes("unknown")) browser = parsed.browser;
+			if (!os || os.toLowerCase().includes("unknown")) os = parsed.os;
+			if (!deviceType || deviceType.toLowerCase().includes("unknown")) deviceType = parsed.deviceType;
+			if (!deviceName || deviceName.toLowerCase().includes("unknown")) deviceName = parsed.deviceName;
+
+			prisma.session
+				.update({
+					where: { id: s.id },
+					data: { browser, os, deviceType, deviceName },
+				})
+				.catch(() => {});
+		}
+
+		return {
+			...s,
+			browser,
+			os,
+			deviceType,
+			deviceName,
+			isCurrent: s.id === currentSessionId,
+		};
+	});
 
 	return c.json({ success: true, sessions: withCurrent }, 200);
 });

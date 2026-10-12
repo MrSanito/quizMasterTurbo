@@ -11,6 +11,7 @@ import {
 } from "../configs/email.js";
 import { sendResendEmail } from "../configs/resend.js";
 import { logger } from "../utils/logger.js";
+import { parseUserAgent } from "../utils/userAgent.js";
 
 const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET!;
@@ -459,6 +460,7 @@ export async function getAllUserSessionsService(userId: string, currentSessionId
 			expiresAt: true,
 			lastUsedAt: true,
 			ipAddress: true,
+			userAgent: true,
 			browser: true,
 			os: true,
 			deviceType: true,
@@ -467,10 +469,44 @@ export async function getAllUserSessionsService(userId: string, currentSessionId
 		orderBy: { lastUsedAt: "desc" },
 	});
 
-	return sessions.map((s: any) => ({
-		...s,
-		isCurrent: s.id === currentSessionId,
-	}));
+	return sessions.map((s: any) => {
+		let browser = s.browser;
+		let os = s.os;
+		let deviceType = s.deviceType;
+		let deviceName = s.deviceName;
+
+		if (
+			s.userAgent &&
+			(!browser ||
+				!os ||
+				!deviceName ||
+				browser.toLowerCase().includes("unknown") ||
+				os.toLowerCase().includes("unknown"))
+		) {
+			const parsed = parseUserAgent(s.userAgent);
+			if (!browser || browser.toLowerCase().includes("unknown")) browser = parsed.browser;
+			if (!os || os.toLowerCase().includes("unknown")) os = parsed.os;
+			if (!deviceType || deviceType.toLowerCase().includes("unknown")) deviceType = parsed.deviceType;
+			if (!deviceName || deviceName.toLowerCase().includes("unknown")) deviceName = parsed.deviceName;
+
+			// Asynchronously backfill DB record
+			prisma.session
+				.update({
+					where: { id: s.id },
+					data: { browser, os, deviceType, deviceName },
+				})
+				.catch(() => {});
+		}
+
+		return {
+			...s,
+			browser,
+			os,
+			deviceType,
+			deviceName,
+			isCurrent: s.id === currentSessionId,
+		};
+	});
 }
 
 export async function logoutSessionService(
@@ -573,7 +609,25 @@ export async function createAuthSession(params: {
   deviceName?: string;
   publicKeyJwk?: any;
 }) {
-  const { userId, res, ip, userAgent, browser, os, deviceType, deviceName, publicKeyJwk } = params;
+  const { userId, res, ip, userAgent, publicKeyJwk } = params;
+  let { browser, os, deviceType, deviceName } = params;
+
+  if (
+    userAgent &&
+    (!browser ||
+      !os ||
+      !deviceType ||
+      !deviceName ||
+      browser.toLowerCase().includes("unknown") ||
+      os.toLowerCase().includes("unknown"))
+  ) {
+    const parsed = parseUserAgent(userAgent);
+    if (!browser || browser.toLowerCase().includes("unknown")) browser = parsed.browser;
+    if (!os || os.toLowerCase().includes("unknown")) os = parsed.os;
+    if (!deviceType || deviceType.toLowerCase().includes("unknown")) deviceType = parsed.deviceType;
+    if (!deviceName || deviceName.toLowerCase().includes("unknown")) deviceName = parsed.deviceName;
+  }
+
   const sessionId = crypto.randomUUID();
   const familyId = crypto.randomUUID();
 

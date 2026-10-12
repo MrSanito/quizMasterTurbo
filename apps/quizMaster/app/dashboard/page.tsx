@@ -51,6 +51,8 @@ type Session = {
 	id: string;
 	os?: string;
 	browser?: string;
+	deviceName?: string;
+	deviceType?: string;
 	ipAddress?: string;
 	isCurrent?: boolean;
 	lastUsedAt?: string;
@@ -362,7 +364,7 @@ function ActiveSessions({ onLogoutAll }: { onLogoutAll: () => void }) {
 								<div className="flex items-center gap-2">
 									<span className="text-sm font-semibold text-gray-800">
 										{session.os || "Unknown OS"} •{" "}
-										{session.browser || "Unknown browser"}
+										{session.browser || "Unknown Browser"}
 									</span>
 									{session.isCurrent && (
 										<span className="rounded-full bg-[#7047C7]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7047C7]">
@@ -370,6 +372,11 @@ function ActiveSessions({ onLogoutAll }: { onLogoutAll: () => void }) {
 										</span>
 									)}
 								</div>
+								{session.deviceName && (
+									<span className="text-xs font-medium text-gray-600">
+										{session.deviceName}
+									</span>
+								)}
 								<span className="text-xs text-gray-500">
 									IP: {session.ipAddress || "Unknown"}
 								</span>

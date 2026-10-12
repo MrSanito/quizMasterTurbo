@@ -20,7 +20,7 @@ export type ValidateRegisterSchema = z.infer<typeof ValidateRegisterSchema>;
 export const DeviceContextSchema = z.object({
 	browser: z.string().optional(),
 	os: z.string().optional(),
-	deviceType: z.enum(["mobile", "desktop", "tablet", "unknown"]).optional(),
+	deviceType: z.string().optional(),
 	deviceName: z.string().optional(),
 	// Public JWK the client generated (P-256). Server stores thumbprint.
 	publicKeyJwk: z
