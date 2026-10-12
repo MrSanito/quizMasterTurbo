@@ -228,8 +228,9 @@ const FriendRequest = () => {
 	const handleDeclineRequest = async (requestId: string, isIncoming = true) => {
 		setActionLoadingId(requestId);
 		try {
-			const res = await api.post("/friends/decline", { requestId });
-			if (res.data.success) {
+			const endpoint = isIncoming ? "/friends/decline" : "/friends/cancel";
+			const res = await api.post(endpoint, { requestId });
+			if (res.data?.success) {
 				toast.info(
 					isIncoming ? "Friend request declined" : "Friend request cancelled",
 				);
@@ -255,9 +256,12 @@ const FriendRequest = () => {
 							: u,
 					),
 				);
+			} else {
+				toast.error(res.data?.message || "Operation failed");
 			}
-		} catch (_err: any) {
-			toast.error("Operation failed");
+		} catch (err: any) {
+			console.error("Error declining/cancelling friend request:", err);
+			toast.error(err.response?.data?.message || "Operation failed");
 		} finally {
 			setActionLoadingId(null);
 		}

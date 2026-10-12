@@ -209,7 +209,7 @@ export const acceptRequest = TryCatch(async (req: Request, res: Response) => {
 
 export const rejectRequest = TryCatch(async (req: Request, res: Response) => {
 	const { userId } = req.user;
-	const requestId = req.params.id || req.body.requestId;
+	const requestId = req.params.id || req.body.requestId || req.body.id;
 
 	if (!requestId) {
 		return res
@@ -227,16 +227,21 @@ export const rejectRequest = TryCatch(async (req: Request, res: Response) => {
 			.json({ success: false, message: "Friend request not found" });
 	}
 
-	if (friendRequest.receiverId !== userId) {
+	if (friendRequest.receiverId !== userId && friendRequest.senderId !== userId) {
 		return res.status(403).json({
 			success: false,
-			message: "You are not authorized to reject this request",
+			message: "You are not authorized to reject or cancel this request",
 		});
 	}
 
+	const targetStatus =
+		friendRequest.senderId === userId
+			? FriendRequestStatus.CANCELLED
+			: FriendRequestStatus.REJECTED;
+
 	const updatedRequest = await prisma.friendRequest.update({
 		where: { id: requestId },
-		data: { status: FriendRequestStatus.REJECTED },
+		data: { status: targetStatus },
 	});
 
 	res.status(200).json({ success: true, friendRequest: updatedRequest });
@@ -244,7 +249,7 @@ export const rejectRequest = TryCatch(async (req: Request, res: Response) => {
 
 export const cancelRequest = TryCatch(async (req: Request, res: Response) => {
 	const { userId } = req.user;
-	const requestId = req.params.id || req.body.requestId;
+	const requestId = req.params.id || req.body.requestId || req.body.id;
 
 	if (!requestId) {
 		return res
@@ -262,16 +267,21 @@ export const cancelRequest = TryCatch(async (req: Request, res: Response) => {
 			.json({ success: false, message: "Friend request not found" });
 	}
 
-	if (friendRequest.senderId !== userId) {
+	if (friendRequest.senderId !== userId && friendRequest.receiverId !== userId) {
 		return res.status(403).json({
 			success: false,
 			message: "You are not authorized to cancel this request",
 		});
 	}
 
+	const targetStatus =
+		friendRequest.senderId === userId
+			? FriendRequestStatus.CANCELLED
+			: FriendRequestStatus.REJECTED;
+
 	const updatedRequest = await prisma.friendRequest.update({
 		where: { id: requestId },
-		data: { status: FriendRequestStatus.CANCELLED },
+		data: { status: targetStatus },
 	});
 
 	res.status(200).json({ success: true, friendRequest: updatedRequest });
