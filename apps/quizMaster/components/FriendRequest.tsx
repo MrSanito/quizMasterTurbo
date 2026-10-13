@@ -60,6 +60,11 @@ const FriendRequest = () => {
 	const [searchLoading, setSearchLoading] = useState(false);
 	const [discoverLoading, setDiscoverLoading] = useState(false);
 	const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+	const [friendToRemove, setFriendToRemove] = useState<{
+		friendshipId: string;
+		friendName: string;
+		friendUserId: string;
+	} | null>(null);
 
 	// Fetch friends and pending requests on load
 	const fetchData = useCallback(async () => {
@@ -267,17 +272,17 @@ const FriendRequest = () => {
 		}
 	};
 
-	const handleRemoveFriend = async (
+	const handleRemoveFriend = (
 		friendshipId: string,
 		friendName: string,
 		friendUserId: string,
 	) => {
-		if (
-			!confirm(
-				`Are you sure you want to remove ${friendName} from your friends?`,
-			)
-		)
-			return;
+		setFriendToRemove({ friendshipId, friendName, friendUserId });
+	};
+
+	const confirmRemoveFriend = async () => {
+		if (!friendToRemove) return;
+		const { friendshipId, friendName, friendUserId } = friendToRemove;
 
 		setActionLoadingId(friendshipId);
 		try {
@@ -296,13 +301,28 @@ const FriendRequest = () => {
 							: u,
 					),
 				);
+				setFriendToRemove(null);
+			} else {
+				toast.error(res.data?.message || "Failed to remove friend");
 			}
-		} catch (_err: any) {
-			toast.error("Failed to remove friend");
+		} catch (err: any) {
+			console.error("Error removing friend:", err);
+			toast.error(err.response?.data?.message || "Failed to remove friend");
 		} finally {
 			setActionLoadingId(null);
 		}
 	};
+
+	useEffect(() => {
+		if (!friendToRemove) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape" && !actionLoadingId) {
+				setFriendToRemove(null);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [friendToRemove, actionLoadingId]);
 
 	const getAvatarUrl = (avatarName: string) => {
 		return avatarName ? `/avatars/${avatarName}` : "/avatars/avatar1.svg";
@@ -852,6 +872,100 @@ const FriendRequest = () => {
 					</AnimatePresence>
 				)}
 			</div>
+
+			{/* Remove Friend Confirmation Modal */}
+			<AnimatePresence>
+				{friendToRemove && (
+					<motion.div
+						key="remove-friend-backdrop"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.15 }}
+						role="presentation"
+						onClick={() => !actionLoadingId && setFriendToRemove(null)}
+						className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+					>
+						<motion.div
+							key="remove-friend-modal"
+							initial={{ opacity: 0, scale: 0.95, y: 12 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.95, y: 12 }}
+							transition={{ type: "spring", duration: 0.25, bounce: 0.15 }}
+							role="dialog"
+							aria-modal="true"
+							aria-labelledby="remove-friend-title"
+							aria-describedby="remove-friend-description"
+							onClick={(e) => e.stopPropagation()}
+							className="relative w-full max-w-md rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-gray-100"
+						>
+							{/* Close Button */}
+							<button
+								type="button"
+								onClick={() => !actionLoadingId && setFriendToRemove(null)}
+								disabled={Boolean(actionLoadingId)}
+								className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition disabled:opacity-50"
+								aria-label="Close modal"
+							>
+								<X className="h-4 w-4" />
+							</button>
+
+							{/* Icon badge */}
+							<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-500 border border-red-100 mb-4 shadow-sm">
+								<UserMinus className="h-6 w-6" />
+							</div>
+
+							{/* Title & Description */}
+							<h3
+								id="remove-friend-title"
+								className="text-lg md:text-xl font-bold text-gray-900"
+							>
+								Remove Friend
+							</h3>
+							<p
+								id="remove-friend-description"
+								className="mt-2 text-sm text-gray-500 leading-relaxed"
+							>
+								Are you sure you want to remove{" "}
+								<span className="font-semibold text-gray-800">
+									@{friendToRemove.friendName}
+								</span>{" "}
+								from your friends? You will no longer be able to challenge each other directly.
+							</p>
+
+							{/* Action Buttons */}
+							<div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5">
+								<button
+									type="button"
+									onClick={() => setFriendToRemove(null)}
+									disabled={Boolean(actionLoadingId)}
+									className="rounded-full bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-200 disabled:opacity-50"
+								>
+									Cancel
+								</button>
+								<button
+									type="button"
+									onClick={confirmRemoveFriend}
+									disabled={Boolean(actionLoadingId)}
+									className="flex items-center justify-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/20 transition hover:bg-red-600 disabled:opacity-60"
+								>
+									{actionLoadingId ? (
+										<>
+											<span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+											Removing...
+										</>
+									) : (
+										<>
+											<UserMinus className="h-4 w-4" />
+											Remove Friend
+										</>
+									)}
+								</button>
+							</div>
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };
