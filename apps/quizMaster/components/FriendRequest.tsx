@@ -12,7 +12,7 @@ import {
 	UserX,
 	X,
 } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import api from "@/app/lib/api";
 
@@ -351,6 +351,7 @@ const FriendRequest = () => {
 					{/* Navigation Tabs */}
 					<div className="flex bg-gray-50 p-1.5 rounded-xl border border-gray-200">
 						<button
+							type="button"
 							onClick={() => setActiveTab("friends")}
 							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
 								activeTab === "friends"
@@ -374,6 +375,7 @@ const FriendRequest = () => {
 						</button>
 
 						<button
+							type="button"
 							onClick={() => setActiveTab("pending")}
 							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
 								activeTab === "pending"
@@ -391,6 +393,7 @@ const FriendRequest = () => {
 						</button>
 
 						<button
+							type="button"
 							onClick={() => setActiveTab("add")}
 							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
 								activeTab === "add"
@@ -432,6 +435,7 @@ const FriendRequest = () => {
 											quiz circle.
 										</p>
 										<button
+											type="button"
 											onClick={() => setActiveTab("add")}
 											className="mt-4 inline-flex items-center rounded-full bg-[#7047C7] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#5B32B4]"
 										>
@@ -468,6 +472,7 @@ const FriendRequest = () => {
 												</div>
 
 												<button
+													type="button"
 													onClick={() =>
 														handleRemoveFriend(
 															item.friendshipId,
@@ -478,6 +483,7 @@ const FriendRequest = () => {
 													disabled={actionLoadingId === item.friendshipId}
 													className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50"
 													title="Remove Friend"
+													aria-label={`Remove friend ${item.user.username}`}
 												>
 													{actionLoadingId === item.friendshipId ? (
 														<span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
@@ -541,6 +547,7 @@ const FriendRequest = () => {
 
 													<div className="flex gap-2">
 														<button
+															type="button"
 															onClick={() =>
 																handleAcceptRequest(item.requestId)
 															}
@@ -555,6 +562,7 @@ const FriendRequest = () => {
 															Accept
 														</button>
 														<button
+															type="button"
 															onClick={() =>
 																handleDeclineRequest(item.requestId, true)
 															}
@@ -609,6 +617,7 @@ const FriendRequest = () => {
 													</div>
 
 													<button
+														type="button"
 														onClick={() =>
 															handleDeclineRequest(item.requestId, false)
 														}
@@ -652,6 +661,8 @@ const FriendRequest = () => {
 									/>
 									{searchQuery && (
 										<button
+											type="button"
+											aria-label="Clear search query"
 											onClick={() => setSearchQuery("")}
 											className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-700"
 										>
@@ -710,6 +721,7 @@ const FriendRequest = () => {
 														<div>
 															{user.friendshipStatus === "NONE" && (
 																<button
+																	type="button"
 																	onClick={() =>
 																		handleSendRequest(user.username, user.id)
 																	}
@@ -734,6 +746,7 @@ const FriendRequest = () => {
 
 															{user.friendshipStatus === "PENDING_OUTGOING" && (
 																<button
+																	type="button"
 																	onClick={() =>
 																		user.friendshipId &&
 																		handleDeclineRequest(
@@ -756,6 +769,7 @@ const FriendRequest = () => {
 
 															{user.friendshipStatus === "PENDING_INCOMING" && (
 																<button
+																	type="button"
 																	onClick={() =>
 																		user.friendshipId &&
 																		handleAcceptRequest(user.friendshipId)
@@ -824,6 +838,7 @@ const FriendRequest = () => {
 														<div>
 															{user.friendshipStatus === "NONE" && (
 																<button
+																	type="button"
 																	onClick={() =>
 																		handleSendRequest(user.username, user.id)
 																	}
@@ -841,6 +856,7 @@ const FriendRequest = () => {
 
 															{user.friendshipStatus === "PENDING_OUTGOING" && (
 																<button
+																	type="button"
 																	onClick={() =>
 																		user.friendshipId &&
 																		handleDeclineRequest(
@@ -930,7 +946,8 @@ const FriendRequest = () => {
 								<span className="font-semibold text-gray-800">
 									@{friendToRemove.friendName}
 								</span>{" "}
-								from your friends? You will no longer be able to challenge each other directly.
+								from your friends? You will no longer be able to challenge each
+								other directly.
 							</p>
 
 							{/* Action Buttons */}

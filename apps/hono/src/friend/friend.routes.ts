@@ -35,6 +35,8 @@ router.get("/friends/status/:userId", friendshipStatus);
 router.post("/friends/request", sendRequest);
 router.post("/friends/accept", acceptRequest);
 router.post("/friends/decline", rejectRequest);
+router.post("/friends/cancel", cancelRequest);
+router.delete("/friends/cancel", cancelRequest);
 router.post("/friends/remove", removeFriend);
 router.get("/friends/search", discoverFriends);
 
